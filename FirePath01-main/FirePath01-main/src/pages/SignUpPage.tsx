@@ -5,7 +5,7 @@ import { Navigation } from '../components/Navigation';
 
 export const SignUpPage = () => {
   const navigate = useNavigate();
-  const { signIn } = useAuth();
+  const { register } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -31,21 +31,8 @@ export const SignUpPage = () => {
 
       // In a real app, you'd call a backend API to create the user.
       // Here, we'll just create a user object and sign them in.
-      const user = {
-        id: Math.random().toString(36).substr(2, 9),
-        name,
-        email,
-        financialData: {
-            monthlyIncome: 0,
-            currentSavings: 0,
-            monthlyExpenses: 0,
-            age: 0,
-            targetRetirementAge: 0,
-        },
-        createdAt: new Date(),
-      };
 
-      signIn(user);
+      await register(name, email, password);
       navigate('/questionnaire');
 
     } catch (err) {

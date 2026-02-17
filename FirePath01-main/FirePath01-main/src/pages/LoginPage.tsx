@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth, type User } from '../context/AuthContext';
+import { useAuth } from '../context/AuthContext';
 import { Navigation } from '../components/Navigation';
 
 export const LoginPage = () => {
   const navigate = useNavigate();
-  const { signIn } = useAuth();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -21,21 +21,9 @@ export const LoginPage = () => {
         throw new Error('Please fill in all fields');
       }
 
-      // This is where you would typically call a backend to verify credentials.
-      // For this demo, we'll retrieve the user from localStorage.
-      const savedUser = localStorage.getItem('firePathUser');
-      if (savedUser) {
-        const user: User = JSON.parse(savedUser);
-        // NOTE: In a real app, you'd verify the password hash. Here we just check email.
-        if (user.email === email) {
-          signIn(user);
-          navigate('/profile');
-        } else {
-          throw new Error('Invalid email or password');
-        }
-      } else {
-        throw new Error('No account found with this email.');
-      }
+      await login(email, password);
+      // If no error thrown, login successful
+      navigate('/profile');
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');

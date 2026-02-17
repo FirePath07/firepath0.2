@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Navigation } from '../components/Navigation';
+import { useAuth } from '../context/AuthContext';
 
 interface MutualFund {
   name: string;
@@ -25,7 +26,16 @@ interface RiskProfileData {
 export const RiskPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [selectedRisk, setSelectedRisk] = useState<'safe' | 'medium' | 'risky'>('medium');
+  const { user } = useAuth();
+
+  const [selectedRisk, setSelectedRisk] = useState<'safe' | 'medium' | 'risky'>(() => {
+    // Priority: 1. State from navigation (e.g. from questionnaire)
+    //           2. User's saved profile from context
+    //           3. Default to 'medium'
+    if (location.state?.riskProfile) return location.state.riskProfile as 'safe' | 'medium' | 'risky';
+    if (user?.financialData?.riskProfile) return user.financialData.riskProfile;
+    return 'medium';
+  });
 
   // Mock mutual fund data - In production, this would come from an API like:
   // - Finnhub API (finnhub.io)
@@ -157,12 +167,12 @@ export const RiskPage = () => {
   const profile = riskProfiles[selectedRisk];
 
   const handleNext = () => {
-    navigate('/simulation', { 
-      state: { 
+    navigate('/simulation', {
+      state: {
         ...location.state,
         riskProfile: selectedRisk,
         expectedReturn: profile.expectedReturn
-      } 
+      }
     });
   };
 
@@ -193,14 +203,13 @@ export const RiskPage = () => {
                   <button
                     key={riskLevel}
                     onClick={() => setSelectedRisk(riskLevel)}
-                    style={selectedRisk === riskLevel ? { 
-                      borderColor: colorMap[prof.color as keyof typeof colorMap], 
+                    style={selectedRisk === riskLevel ? {
+                      borderColor: colorMap[prof.color as keyof typeof colorMap],
                       backgroundColor: bgColorMap[prof.color as keyof typeof bgColorMap],
                       boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
                     } : {}}
-                    className={`p-6 rounded-xl border-2 transition ${
-                      selectedRisk === riskLevel ? 'shadow-lg' : 'border-gray-200 bg-white hover:shadow-md'
-                    }`}
+                    className={`p-6 rounded-xl border-2 transition ${selectedRisk === riskLevel ? 'shadow-lg' : 'border-gray-200 bg-white hover:shadow-md'
+                      }`}
                   >
                     <div className="text-4xl mb-3">{prof.icon}</div>
                     <h3 className="text-xl font-bold text-gray-900 mb-1">{prof.name}</h3>
@@ -218,7 +227,7 @@ export const RiskPage = () => {
               {/* Asset Allocation */}
               <div className="bg-gray-50 rounded-xl p-8 border border-gray-200">
                 <h3 className="text-2xl font-bold text-gray-900 mb-4">{profile.name} Portfolio Details</h3>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
                   {/* Allocation */}
                   <div>
@@ -230,9 +239,9 @@ export const RiskPage = () => {
                           <span className="font-bold text-gray-900">{profile.allocation.stocks}%</span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-blue-500 h-2 rounded-full" 
-                            style={{width: `${profile.allocation.stocks}%`}}
+                          <div
+                            className="bg-blue-500 h-2 rounded-full"
+                            style={{ width: `${profile.allocation.stocks}%` }}
                           ></div>
                         </div>
                       </div>
@@ -242,9 +251,9 @@ export const RiskPage = () => {
                           <span className="font-bold text-gray-900">{profile.allocation.bonds}%</span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-amber-500 h-2 rounded-full" 
-                            style={{width: `${profile.allocation.bonds}%`}}
+                          <div
+                            className="bg-amber-500 h-2 rounded-full"
+                            style={{ width: `${profile.allocation.bonds}%` }}
                           ></div>
                         </div>
                       </div>
@@ -254,9 +263,9 @@ export const RiskPage = () => {
                           <span className="font-bold text-gray-900">{profile.allocation.cash}%</span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-green-500 h-2 rounded-full" 
-                            style={{width: `${profile.allocation.cash}%`}}
+                          <div
+                            className="bg-green-500 h-2 rounded-full"
+                            style={{ width: `${profile.allocation.cash}%` }}
                           ></div>
                         </div>
                       </div>
@@ -297,7 +306,7 @@ export const RiskPage = () => {
                   <h3 className="text-2xl font-bold text-gray-900">📊 Recommended Mutual Funds</h3>
                   <p className="text-gray-600 mt-2">Top-rated funds suitable for your {profile.name} risk profile</p>
                 </div>
-                
+
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
@@ -343,12 +352,12 @@ export const RiskPage = () => {
 
           {/* Navigation Buttons */}
           <div className="flex justify-between p-8 border-t border-gray-200">
-            <button 
+            <button
               onClick={() => navigate('/expenses', { state: location.state })}
               className="px-6 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition">
               Back
             </button>
-            <button 
+            <button
               onClick={handleNext}
               className="px-8 py-3 bg-emerald-700 text-white rounded-lg font-bold hover:bg-emerald-800 transition shadow-lg">
               Next: FIRE Simulation

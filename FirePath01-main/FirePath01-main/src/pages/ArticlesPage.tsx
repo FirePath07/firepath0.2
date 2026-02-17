@@ -39,11 +39,11 @@ export const ArticlesPage = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await fetch(
         `https://newsapi.org/v2/everything?q=finance+OR+stocks+OR+investing+OR+economy&sortBy=publishedAt&language=en&pageSize=12&apiKey=${key}`
       );
-      
+
       if (!response.ok) {
         if (response.status === 401) {
           throw new Error('Invalid API key. Please check your NewsAPI key.');
@@ -52,7 +52,7 @@ export const ArticlesPage = () => {
         }
         throw new Error('Failed to fetch news');
       }
-      
+
       const data = await response.json();
       if (data.articles) {
         setNews(data.articles);
@@ -148,17 +148,17 @@ export const ArticlesPage = () => {
   useEffect(() => {
     // Fetch market data immediately
     fetchMarketData();
-    
+
     // Update market data every 60 seconds
     const marketInterval = setInterval(fetchMarketData, 60000);
-    
+
     // Fetch news if API key is available
     if (ENV_API_KEY) {
       fetchNews(ENV_API_KEY);
     } else {
       setLoading(false);
     }
-    
+
     return () => clearInterval(marketInterval);
   }, []);
 
@@ -171,7 +171,7 @@ export const ArticlesPage = () => {
       {/* Hero Section */}
       <div className="relative bg-emerald-900 overflow-hidden">
         <div className="absolute inset-0">
-          <img 
+          <img
             className="w-full h-full object-cover opacity-30"
             src="https://images.unsplash.com/photo-1452587925148-ce544e77e70d?ixlib=rb-4.0.3&auto=format&fit=crop&w=2021&q=80"
             alt="Financial News"
@@ -189,7 +189,7 @@ export const ArticlesPage = () => {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        
+
         {/* Real-Time Market Data Section */}
         <div className="mb-16">
           <div className="flex items-center justify-between mb-2">
@@ -202,7 +202,7 @@ export const ArticlesPage = () => {
             </button>
           </div>
           <p className="text-center text-gray-600 mb-8">Real-time data of major Indian stock market indices updated every 60 seconds</p>
-          
+
           {/* Market API Setup Section */}
           {showMarketSetup && (
             <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-8">
@@ -213,16 +213,16 @@ export const ArticlesPage = () => {
               <p className="text-sm text-green-700 mb-4">
                 API Endpoint: <code className="bg-white px-2 py-1 rounded font-mono text-xs">https://api.groww.in/v1/live-data/quote</code>
               </p>
-              
+
               <div className="bg-green-100 border border-green-300 rounded p-4 mt-4">
                 <p className="text-sm text-green-800">
-                  <strong>✓ Live NSE Data Enabled</strong><br/>
+                  <strong>✓ Live NSE Data Enabled</strong><br />
                   Market data for Nifty 50, Bank Nifty, and Sensex is being fetched in real-time via Groww.
                 </p>
               </div>
             </div>
           )}
-          
+
           {marketLoading ? (
             <div className="flex justify-center items-center py-12">
               <div className="text-center">
@@ -233,7 +233,7 @@ export const ArticlesPage = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {marketData.map((index) => (
-                <div 
+                <div
                   key={index.symbol}
                   className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl shadow-lg p-8 border-l-4 border-emerald-700 hover:shadow-xl transition duration-300"
                 >
@@ -244,7 +244,7 @@ export const ArticlesPage = () => {
                       <p className="text-sm text-gray-600 font-semibold">{index.symbol}</p>
                     </div>
                   </div>
-                  
+
                   <div className="bg-white rounded-lg p-4 mb-4">
                     <div className="text-3xl font-bold text-emerald-700 mb-2">
                       ₹{index.price.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
@@ -255,7 +255,7 @@ export const ArticlesPage = () => {
                       <span>({index.changePercent >= 0 ? '+' : ''}{index.changePercent.toFixed(2)}%)</span>
                     </div>
                   </div>
-                  
+
                   <div className="text-xs text-gray-600 text-center">
                     Last updated: {new Date().toLocaleTimeString('en-IN')}
                   </div>
@@ -288,51 +288,51 @@ export const ArticlesPage = () => {
           <div className="mb-16">
             <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">📰 Latest Financial News</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {news.map((article, idx) => (
-              <a
-                key={idx}
-                href={article.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group bg-white rounded-xl shadow-md hover:shadow-xl transition duration-300 overflow-hidden block"
-              >
-                <div className="h-48 overflow-hidden bg-gray-200">
-                  {article.urlToImage ? (
-                    <img 
-                      src={article.urlToImage} 
-                      alt={article.title} 
-                      className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1526304640581-d334cdbbf45b?auto=format&fit=crop&w=800&q=80';
-                      }}
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-emerald-100 to-emerald-50">
-                      <span className="text-4xl">📰</span>
+              {news.map((article, idx) => (
+                <a
+                  key={idx}
+                  href={article.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group bg-white rounded-xl shadow-md hover:shadow-xl transition duration-300 overflow-hidden block"
+                >
+                  <div className="h-48 overflow-hidden bg-gray-200">
+                    {article.urlToImage ? (
+                      <img
+                        src={article.urlToImage}
+                        alt={article.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1526304640581-d334cdbbf45b?auto=format&fit=crop&w=800&q=80';
+                        }}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-emerald-100 to-emerald-50">
+                        <span className="text-4xl">📰</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-6">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-xs bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full font-semibold">
+                        {article.source.name}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        {new Date(article.publishedAt).toLocaleDateString()}
+                      </span>
                     </div>
-                  )}
-                </div>
-                <div className="p-6">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-xs bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full font-semibold">
-                      {article.source.name}
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      {new Date(article.publishedAt).toLocaleDateString()}
+                    <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-emerald-700 transition">
+                      {article.title}
+                    </h3>
+                    <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+                      {article.description || 'Click to read full article'}
+                    </p>
+                    <span className="text-emerald-700 font-semibold text-sm group-hover:text-emerald-900">
+                      Read Full Article →
                     </span>
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-emerald-700 transition">
-                    {article.title}
-                  </h3>
-                  <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-                    {article.description || 'Click to read full article'}
-                  </p>
-                  <span className="text-emerald-700 font-semibold text-sm group-hover:text-emerald-900">
-                    Read Full Article →
-                  </span>
-                </div>
-              </a>
-            ))}
+                </a>
+              ))}
             </div>
           </div>
         )}

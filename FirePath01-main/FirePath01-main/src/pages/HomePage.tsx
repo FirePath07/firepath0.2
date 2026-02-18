@@ -13,7 +13,7 @@ export const HomePage = () => {
       {/* Hero Section */}
       <div className="relative bg-emerald-900 overflow-hidden">
         <div className="absolute inset-0">
-          <img 
+          <img
             className="w-full h-full object-cover opacity-30"
             src="https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?ixlib=rb-4.0.3&auto=format&fit=crop&w=2021&q=80"
             alt="Travel and Freedom"
@@ -21,27 +21,27 @@ export const HomePage = () => {
         </div>
         <div className="relative max-w-7xl mx-auto py-24 px-4 sm:px-6 lg:px-8 flex flex-col items-center text-center">
           <h1 className="text-4xl md:text-6xl font-extrabold text-white tracking-tight mb-4">
-            Master Your Finances.<br/>
+            Master Your Finances.<br />
             <span className="text-amber-400">Design Your Freedom.</span>
           </h1>
           <p className="mt-4 max-w-2xl text-xl text-gray-200">
-            The ultimate resource for Financial Independence and Early Retirement. 
+            The ultimate resource for Financial Independence and Early Retirement.
             Calculate your number, learn the strategy, and join the community.
           </p>
           <div className="mt-8 flex gap-4">
             {isSignedIn ? (
               <>
-                <button 
-                  onClick={() => navigate('/expenses')}
+                <button
+                  onClick={() => navigate('/profile')}
                   className="bg-amber-500 text-white px-8 py-3 rounded-lg font-bold text-lg hover:bg-amber-600 transition shadow-lg">
                   Continue Planning
                 </button>
-                <button 
+                <button
                   onClick={() => navigate('/profile')}
                   className="bg-transparent border-2 border-white text-white px-8 py-3 rounded-lg font-bold text-lg hover:bg-white hover:text-emerald-900 transition">
                   Go to Dashboard
                 </button>
-                <button 
+                <button
                   onClick={() => signOut()}
                   className="bg-red-600 text-white px-8 py-3 rounded-lg font-bold text-lg hover:bg-red-700 transition shadow-lg">
                   Sign Out
@@ -49,13 +49,13 @@ export const HomePage = () => {
               </>
             ) : (
               <>
-                <button 
+                <button
                   onClick={() => navigate('/signup')}
                   className="bg-amber-500 text-white px-8 py-3 rounded-lg font-bold text-lg hover:bg-amber-600 transition shadow-lg">
                   Get Started
                 </button>
-                <button 
-                  onClick={() => navigate('/expenses')}
+                <button
+                  onClick={() => navigate('/calculators')}
                   className="bg-transparent border-2 border-white text-white px-8 py-3 rounded-lg font-bold text-lg hover:bg-white hover:text-emerald-900 transition">
                   Try Calculator
                 </button>

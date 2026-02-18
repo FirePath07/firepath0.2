@@ -167,7 +167,7 @@ export const RiskPage = () => {
   const profile = riskProfiles[selectedRisk];
 
   const handleNext = () => {
-    navigate('/simulation', {
+    navigate('/calculators', {
       state: {
         ...location.state,
         riskProfile: selectedRisk,
@@ -353,14 +353,14 @@ export const RiskPage = () => {
           {/* Navigation Buttons */}
           <div className="flex justify-between p-8 border-t border-gray-200">
             <button
-              onClick={() => navigate('/expenses', { state: location.state })}
+              onClick={() => navigate(-1)}
               className="px-6 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition">
               Back
             </button>
             <button
               onClick={handleNext}
               className="px-8 py-3 bg-emerald-700 text-white rounded-lg font-bold hover:bg-emerald-800 transition shadow-lg">
-              Next: FIRE Simulation
+              Next: Calculators
             </button>
           </div>
         </div>

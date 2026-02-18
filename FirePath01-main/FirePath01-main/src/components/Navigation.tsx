@@ -33,11 +33,7 @@ export const Navigation = ({ showFullNav = true }: NavigationProps) => {
                 className="text-gray-600 hover:text-emerald-700 font-medium transition">
                 Calculators
               </button>
-              <button
-                onClick={() => navigate('/articles')}
-                className="text-gray-600 hover:text-emerald-700 font-medium transition">
-                Community
-              </button>
+
               {isSignedIn ? (
                 <div className="flex items-center gap-4">
                   <button onClick={() => navigate('/user-details')} className="text-gray-700 font-medium hover:text-emerald-700 hover:underline">{user?.name}</button>

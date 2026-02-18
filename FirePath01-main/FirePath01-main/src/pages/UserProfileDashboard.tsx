@@ -16,7 +16,7 @@ const StatCard = ({ title, value, subtitle, isHighlighted = false }: { title: st
 }
 
 export const UserProfileDashboard = () => {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
@@ -58,19 +58,10 @@ export const UserProfileDashboard = () => {
         <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 className="text-4xl font-bold text-gray-900 mb-2">Your Financial Dashboard</h1>
-            <p className="text-gray-600">Welcome back, {user.name}! Here's your FIRE journey overview.</p>
+            <p className="text-gray-600">Welcome back, <button onClick={() => navigate('/user-details')} className="text-emerald-700 font-bold hover:underline">{user.name}</button>! Here's your FIRE journey overview.</p>
           </div>
           <div className="flex gap-2">
-            <button
-              onClick={() => setIsSettingsOpen(true)}
-              className="bg-white border border-gray-300 text-gray-700 px-6 py-2 rounded-lg font-bold hover:bg-gray-50 transition shadow-sm">
-              Settings
-            </button>
-            <button
-              onClick={() => { signOut(); navigate('/'); }}
-              className="bg-red-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-red-700 transition shadow-sm">
-              Sign Out
-            </button>
+            {/* Buttons removed as requested */}
           </div>
         </div>
 

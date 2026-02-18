@@ -22,7 +22,7 @@ export default defineConfig({
       ,
       // Proxy to local Express market server
       '/api/market': {
-        target: 'http://localhost:3001',
+        target: 'http://localhost:5000',
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/api\/market/, '/api/market')

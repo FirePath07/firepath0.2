@@ -14,39 +14,39 @@ export const Navigation = ({ showFullNav = true }: NavigationProps) => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
-            <button 
-              onClick={() => navigate('/')} 
+            <button
+              onClick={() => navigate('/')}
               className="text-2xl font-bold text-emerald-800 hover:opacity-80 transition">
               FIRE<span className="text-amber-500">Path</span>
             </button>
           </div>
-          
+
           {showFullNav && (
             <div className="hidden md:flex items-center space-x-8">
-              <button 
-                onClick={() => navigate('/articles')} 
+              <button
+                onClick={() => navigate('/articles')}
                 className="text-gray-600 hover:text-emerald-700 font-medium transition">
                 Articles
               </button>
-              <button 
-                onClick={() => navigate('/calculators')} 
+              <button
+                onClick={() => navigate('/calculators')}
                 className="text-gray-600 hover:text-emerald-700 font-medium transition">
                 Calculators
               </button>
-              <button 
-                onClick={() => navigate('/articles')} 
+              <button
+                onClick={() => navigate('/articles')}
                 className="text-gray-600 hover:text-emerald-700 font-medium transition">
                 Community
               </button>
               {isSignedIn ? (
                 <div className="flex items-center gap-4">
-                  <span className="text-gray-700 font-medium">{user?.name}</span>
-                  <button 
+                  <button onClick={() => navigate('/user-details')} className="text-gray-700 font-medium hover:text-emerald-700 hover:underline">{user?.name}</button>
+                  <button
                     onClick={() => navigate('/profile')}
                     className="bg-emerald-700 text-white px-4 py-2 rounded-md hover:bg-emerald-800 transition">
                     Dashboard
                   </button>
-                  <button 
+                  <button
                     onClick={() => {
                       signOut();
                       navigate('/');
@@ -56,7 +56,7 @@ export const Navigation = ({ showFullNav = true }: NavigationProps) => {
                   </button>
                 </div>
               ) : (
-                <button 
+                <button
                   onClick={() => navigate('/login')}
                   className="bg-emerald-700 text-white px-4 py-2 rounded-md hover:bg-emerald-800 transition">
                   Sign In

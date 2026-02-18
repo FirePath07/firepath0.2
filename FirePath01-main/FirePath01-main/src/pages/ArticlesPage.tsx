@@ -83,8 +83,8 @@ export const ArticlesPage = () => {
       ];
 
       try {
-        // Fetch quotes from our local server-side proxy which returns Yahoo/TwelveData data
-        const res = await fetch(`/api/market`);
+        // Fetch quotes directly from backend to avoid proxy issues
+        const res = await fetch(`http://localhost:5000/api/market`);
 
         if (res.ok) {
           const json = await res.json();
@@ -114,25 +114,9 @@ export const ArticlesPage = () => {
         console.warn('Yahoo Finance fetch error:', e);
       }
 
-      // Fallback to demo values if no live data retrieved
+      // Fallback to error state if no updates
       if (updates.length === 0) {
-        const demoData: { [key: string]: { price: number; change: number; changePercent: number } } = {
-          'Nifty 50': { price: 25973.25, change: 38.10, changePercent: 0.15 },
-          'Bank Nifty': { price: 51450.80, change: 52.30, changePercent: 0.10 },
-          'Sensex': { price: 86025.45, change: 95.65, changePercent: 0.11 }
-        };
-
-        for (const idx of indices) {
-          const demo = demoData[idx.name] || { price: 0, change: 0, changePercent: 0 };
-          updates.push({
-            symbol: idx.displaySymbol,
-            name: idx.name,
-            price: demo.price,
-            change: demo.change,
-            changePercent: demo.changePercent,
-            icon: idx.icon
-          });
-        }
+        console.warn('No market data updates received');
       }
 
       if (updates.length > 0) {
@@ -206,18 +190,18 @@ export const ArticlesPage = () => {
           {/* Market API Setup Section */}
           {showMarketSetup && (
             <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-8">
-              <h3 className="text-lg font-bold text-green-900 mb-3">📡 Groww API Setup</h3>
+              <h3 className="text-lg font-bold text-green-900 mb-3">📡 Yahoo Finance API Setup</h3>
               <p className="text-green-700 mb-4">
-                Real-time NSE market data is fetched from Groww API (https://api.groww.in/v1/live-data/quote).
+                Real-time NSE market data is fetched from Yahoo Finance via backend proxy.
               </p>
               <p className="text-sm text-green-700 mb-4">
-                API Endpoint: <code className="bg-white px-2 py-1 rounded font-mono text-xs">https://api.groww.in/v1/live-data/quote</code>
+                Backend Endpoint: <code className="bg-white px-2 py-1 rounded font-mono text-xs">http://localhost:5000/api/market</code>
               </p>
 
               <div className="bg-green-100 border border-green-300 rounded p-4 mt-4">
                 <p className="text-sm text-green-800">
                   <strong>✓ Live NSE Data Enabled</strong><br />
-                  Market data for Nifty 50, Bank Nifty, and Sensex is being fetched in real-time via Groww.
+                  Market data for Nifty 50, Bank Nifty, and Sensex is being fetched in real-time.
                 </p>
               </div>
             </div>

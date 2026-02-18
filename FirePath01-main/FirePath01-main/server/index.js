@@ -19,30 +19,49 @@ mongoose.connect(uri)
 app.use('/api/auth', authRoutes);
 
 app.get('/api/market', async (req, res) => {
-  // ... existing market data logic ...
-  // For now, keeping the existing logic or simplifying it since the focus is auth
-  // Let's keep the existing logic but wrapped in the new structure if needed
-  // Actually, I'll just keep the existing market route logic here for backward compatibility
   try {
-    const symbols = ['^NSEI', '^NSEBANK', '^BSESN'].join(',');
-    // ... (rest of the market data fetching logic could be here, but for brevity I'll return demo data if not implemented fully in this snippet)
+    const symbols = ['^NSEI', '^NSEBANK', '^BSESN'];
+    const requests = symbols.map(symbol =>
+      fetch(`https://query2.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`, {
+        headers: { 'User-Agent': 'Mozilla/5.0' }
+      }).then(r => r.json())
+    );
 
-    // Return demo data for market to ensure frontend dashboard works
+    const results = await Promise.all(requests);
+    const formattedResults = results.map((data, index) => {
+      const meta = data.chart.result[0].meta;
+      return {
+        symbol: symbols[index],
+        regularMarketPrice: meta.regularMarketPrice,
+        regularMarketChange: meta.regularMarketPrice - meta.previousClose,
+        regularMarketChangePercent: ((meta.regularMarketPrice - meta.previousClose) / meta.previousClose) * 100
+      };
+    });
+
     return res.json({
-      source: 'demo',
+      source: 'yahoo_chart',
+      data: {
+        quoteResponse: {
+          result: formattedResults
+        }
+      }
+    });
+
+  } catch (err) {
+    console.error("Market Data Error:", err);
+    // Fallback if APIs fail
+    res.json({
+      source: 'demo_fallback',
       data: {
         quoteResponse: {
           result: [
-            { symbol: '^NSEI', regularMarketPrice: 25973.25, regularMarketChange: 38.10, regularMarketChangePercent: 0.15 },
-            { symbol: '^NSEBANK', regularMarketPrice: 51450.80, regularMarketChange: 52.30, regularMarketChangePercent: 0.10 },
-            { symbol: '^BSESN', regularMarketPrice: 86025.45, regularMarketChange: 95.65, regularMarketChangePercent: 0.11 }
+            { symbol: '^NSEI', regularMarketPrice: 26150.75, regularMarketChange: 145.20, regularMarketChangePercent: 0.56 },
+            { symbol: '^NSEBANK', regularMarketPrice: 53200.40, regularMarketChange: 210.30, regularMarketChangePercent: 0.40 },
+            { symbol: '^BSESN', regularMarketPrice: 86500.25, regularMarketChange: 450.10, regularMarketChangePercent: 0.52 }
           ]
         }
       }
     });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server Error' });
   }
 });
 

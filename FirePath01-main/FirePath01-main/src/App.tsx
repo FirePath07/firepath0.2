@@ -10,6 +10,8 @@ import { RiskPage } from './pages/RiskPage';
 import { AuthProvider } from './context/AuthContext';
 import './App.css';
 
+import { UserProfilePage } from './pages/UserProfilePage';
+
 function App() {
   return (
     <AuthProvider>
@@ -20,6 +22,7 @@ function App() {
           <Route path="/signup" element={<SignUpPage />} />
           <Route path="/questionnaire" element={<QuestionnairePage />} />
           <Route path="/profile" element={<UserProfileDashboard />} />
+          <Route path="/user-details" element={<UserProfilePage />} />
           <Route path="/calculators" element={<CalculatorsPage />} />
           <Route path="/articles" element={<ArticlesPage />} />
           <Route path="/risk" element={<RiskPage />} />

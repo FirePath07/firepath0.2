@@ -1,7 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Navigation } from '../components/Navigation';
 import { useAuth } from '../context/AuthContext';
+import { getLatestNAV } from '../services/mutualFunds';
+import { calculateStepUpSIP, checkFeasibility, calculateCorpus, calculateSIP } from '../utils/simulation';
+import { X, Calculator, IndianRupee, TrendingUp } from 'lucide-react';
 
 interface MutualFund {
   name: string;
@@ -9,6 +12,8 @@ interface MutualFund {
   expense_ratio: number;
   min_investment: number;
   rating: number;
+  schemeCode?: string;
+  currentNAV?: number;
 }
 
 interface RiskProfileData {
@@ -37,7 +42,89 @@ export const RiskPage = () => {
     return 'medium';
   });
 
-  // Mock mutual fund data
+  // Simulation State
+  const [showModal, setShowModal] = useState(false);
+  const [simulationProfile, setSimulationProfile] = useState<RiskProfileData | null>(null);
+
+  // Calculate defaults
+  const userExpenses = user?.financialData?.monthlyExpenses || 0;
+  const userIncome = user?.financialData?.monthlyIncome || 0;
+  const defaultFIRENumber = userExpenses * 12 * 25; // Rule of 25
+  const currentAge = user?.financialData?.age || 25;
+  const retirementAge = user?.financialData?.targetRetirementAge || 60;
+  const defaultYears = Math.max(1, retirementAge - currentAge);
+
+  const [targetAmount, setTargetAmount] = useState<number>(defaultFIRENumber || 10000000);
+  const [years, setYears] = useState<number>(defaultYears);
+
+  // Update defaults when modal opens or user data loads
+  useEffect(() => {
+    if (user) {
+      setTargetAmount(defaultFIRENumber || 10000000);
+      setYears(defaultYears);
+    }
+  }, [user, defaultFIRENumber, defaultYears]);
+
+  const [simResult, setSimResult] = useState<{
+    monthlySIP: number;
+    flatSIP: number;
+    feasible: boolean;
+    gap: number;
+    alternateCorpus?: number; // What they can achieve with max surplus
+  } | null>(null);
+  const [fundNAVs, setFundNAVs] = useState<Record<string, number>>({});
+  const [loadingNAVs, setLoadingNAVs] = useState(false);
+
+  // Fetch NAVs when a profile is selected for simulation
+  const fetchNAVsForProfile = async (profile: RiskProfileData) => {
+    setLoadingNAVs(true);
+    const newNAVs: Record<string, number> = {};
+
+    for (const fund of profile.funds) {
+      if (fund.schemeCode) {
+        // Check if we already have it to avoid spamming API
+        if (!fundNAVs[fund.schemeCode]) {
+          const nav = await getLatestNAV(fund.schemeCode);
+          newNAVs[fund.schemeCode] = nav;
+        }
+      }
+    }
+
+    setFundNAVs(prev => ({ ...prev, ...newNAVs }));
+    setLoadingNAVs(false);
+  };
+
+  const handleSimulate = (profile: RiskProfileData) => {
+    setSimulationProfile(profile);
+    setShowModal(true);
+    fetchNAVsForProfile(profile);
+  };
+
+  useEffect(() => {
+    if (simulationProfile) {
+      const { initialMonthlyInvestment } = calculateStepUpSIP(targetAmount, years, simulationProfile.expectedReturn, 10);
+      const flatSIP = calculateSIP(targetAmount, years, simulationProfile.expectedReturn);
+
+      const monthlySurplus = (userIncome) - (userExpenses);
+      const { feasible, gap } = checkFeasibility(initialMonthlyInvestment, monthlySurplus);
+
+      let alternateCorpus;
+      if (!feasible && monthlySurplus > 0) {
+        // Calculate what they CAN achieve with their max surplus
+        alternateCorpus = calculateCorpus(monthlySurplus, years, simulationProfile.expectedReturn);
+      }
+
+      setSimResult({
+        monthlySIP: initialMonthlyInvestment,
+        flatSIP,
+        feasible,
+        gap,
+        alternateCorpus,
+      });
+    }
+  }, [targetAmount, years, simulationProfile, user, userIncome, userExpenses]);
+
+  // Mutual Fund Data with Real Scheme Codes
   const riskProfiles: Record<string, RiskProfileData> = {
     safe: {
       name: 'Safe',
@@ -50,25 +137,20 @@ export const RiskPage = () => {
       advice: 'This portfolio focuses on capital preservation using Liquid Funds and Gold. \n\nAllocation: \n- 80% Debt/Liquid Funds\n- 20% Gold\n- 0% Equity\n\nIdeal for short-term goals or emergency funds.',
       funds: [
         {
-          name: 'Nippon India Liquid Fund',
+          name: 'SBI Liquid Fund',
           category: 'Liquid Fund',
-          expense_ratio: 0.15,
+          expense_ratio: 0.19,
           min_investment: 500,
-          rating: 5
+          rating: 5,
+          schemeCode: '119800'
         },
         {
-          name: 'SBI Gold ETF',
+          name: 'SBI Gold Fund',
           category: 'Gold',
-          expense_ratio: 0.50,
-          min_investment: 1000,
-          rating: 4.5
-        },
-        {
-          name: 'HDFC Liquid Fund',
-          category: 'Liquid Fund',
           expense_ratio: 0.10,
-          min_investment: 500,
-          rating: 4.8
+          min_investment: 5000,
+          rating: 4,
+          schemeCode: '119788'
         }
       ]
     },
@@ -85,23 +167,18 @@ export const RiskPage = () => {
         {
           name: 'UTI Nifty 50 Index Fund',
           category: 'Index Fund',
-          expense_ratio: 0.20,
+          expense_ratio: 0.18,
           min_investment: 500,
-          rating: 5
+          rating: 5,
+          schemeCode: '120716'
         },
         {
-          name: 'Nippon India ETF Gold BeES',
-          category: 'Gold ETF',
-          expense_ratio: 0.80,
-          min_investment: 1000,
-          rating: 4.6
-        },
-        {
-          name: 'HDFC Index Fund - Sensex Plan',
-          category: 'Index Fund',
-          expense_ratio: 0.20,
-          min_investment: 500,
-          rating: 4.5
+          name: 'SBI Gold Fund',
+          category: 'Gold',
+          expense_ratio: 0.10,
+          min_investment: 5000,
+          rating: 4,
+          schemeCode: '119788'
         }
       ]
     },
@@ -118,23 +195,26 @@ export const RiskPage = () => {
         {
           name: 'Quant Small Cap Fund',
           category: 'Small Cap',
-          expense_ratio: 0.60,
-          min_investment: 1000,
-          rating: 5
+          expense_ratio: 0.64,
+          min_investment: 5000,
+          rating: 5,
+          schemeCode: '120828'
         },
         {
           name: 'Parag Parikh Flexi Cap Fund',
           category: 'Flexi Cap',
-          expense_ratio: 0.80,
+          expense_ratio: 0.59,
           min_investment: 1000,
-          rating: 5
+          rating: 5,
+          schemeCode: '122639'
         },
         {
-          name: 'HDFC Top 100 Fund',
+          name: 'UTI Nifty 50 Index Fund',
           category: 'Large Cap',
-          expense_ratio: 1.10,
-          min_investment: 1000,
-          rating: 4.5
+          expense_ratio: 0.18,
+          min_investment: 500,
+          rating: 5,
+          schemeCode: '120716'
         }
       ]
     }
@@ -190,9 +270,20 @@ export const RiskPage = () => {
                     <div className="text-4xl mb-3">{prof.icon}</div>
                     <h3 className="text-xl font-bold text-gray-900 mb-1">{prof.name}</h3>
                     <p className="text-sm text-gray-600 mb-3">{prof.description}</p>
-                    <div style={{ color: colorMap[prof.color as keyof typeof colorMap] }} className="text-lg font-bold">
+                    <div style={{ color: colorMap[prof.color as keyof typeof colorMap] }} className="text-lg font-bold mb-4">
                       {prof.expectedReturn}%+ Annual Return
                     </div>
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSimulate(prof);
+                      }}
+                      className="w-full py-2 px-4 bg-white border-2 border-gray-200 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-emerald-500 hover:text-emerald-700 transition flex items-center justify-center gap-2"
+                    >
+                      <Calculator size={16} />
+                      Simulate Investment
+                    </button>
                   </button>
                 );
               })}
@@ -341,6 +432,157 @@ export const RiskPage = () => {
           </div>
         </div>
       </main>
+
+      {/* Simulation Modal */}
+      {showModal && simulationProfile && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-2xl">
+              <div>
+                <h3 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                  <Calculator className="text-emerald-600" />
+                  Investment Simulation
+                </h3>
+                <p className="text-gray-600 text-sm mt-1">
+                  Plan your goal with the <span className="font-semibold text-emerald-700">{simulationProfile.name}</span> portfolio
+                </p>
+              </div>
+              <button
+                onClick={() => setShowModal(false)}
+                className="p-2 hover:bg-gray-200 rounded-full transition text-gray-500"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="p-8 space-y-8">
+              {/* Inputs */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Target Amount (₹)</label>
+                  <div className="relative">
+                    <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                    <input
+                      type="number"
+                      value={targetAmount}
+                      onChange={(e) => setTargetAmount(Number(e.target.value))}
+                      className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition font-bold text-lg"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Time Horizon (Years)</label>
+                  <div className="relative">
+                    <TrendingUp className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                    <input
+                      type="number"
+                      value={years}
+                      onChange={(e) => setYears(Number(e.target.value))}
+                      className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition font-bold text-lg"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Results */}
+              {simResult && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Strategy 1: Step-up SIP */}
+                    <div className={`p-5 rounded-xl border-2 ${simResult.feasible ? 'bg-emerald-50 border-emerald-100' : 'bg-red-50 border-red-100'} transition-colors relative overflow-hidden`}>
+                      <div className="absolute top-0 right-0 bg-emerald-600 text-white text-xs font-bold px-2 py-1 rounded-bl-lg">
+                        Recommended
+                      </div>
+                      <p className="text-sm font-bold text-gray-700 mb-1">Step-up SIP (10% Annual)</p>
+                      <h4 className={`text-2xl font-bold ${simResult.feasible ? 'text-emerald-700' : 'text-red-700'}`}>
+                        ₹{simResult.monthlySIP.toLocaleString()}
+                      </h4>
+                      <p className="text-xs text-gray-500 mt-1">Start small, increase by 10% every year.</p>
+                    </div>
+
+                    {/* Strategy 2: Flat SIP */}
+                    <div className="p-5 rounded-xl border-2 border-gray-200 bg-white">
+                      <p className="text-sm font-bold text-gray-700 mb-1">Standard SIP (Fixed)</p>
+                      <h4 className="text-2xl font-bold text-gray-800">
+                        ₹{simResult.flatSIP.toLocaleString()}
+                      </h4>
+                      <p className="text-xs text-gray-500 mt-1">Fixed monthly amount for {years} years.</p>
+                    </div>
+                  </div>
+
+                  {/* Feasibility Check */}
+                  <div className={`p-4 rounded-lg flex items-start gap-3 ${simResult.feasible ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                    <div className="text-xl">{simResult.feasible ? '✅' : '⚠️'}</div>
+                    <div>
+                      <p className="font-bold text-sm">
+                        {simResult.feasible ? 'Goal is Achievable!' : 'Goal requires more savings'}
+                      </p>
+                      {!simResult.feasible && (
+                        <p className="text-sm mt-1">
+                          Gap: <span className="font-bold">₹{simResult.gap.toLocaleString()}</span>.
+                          Try the Step-up strategy or extend your timeline.
+                        </p>
+                      )}
+                      {!simResult.feasible && simResult.alternateCorpus && (
+                        <div className="mt-2 text-sm bg-white/50 p-2 rounded border border-red-200">
+                          💡 With current surplus ({((user?.financialData?.monthlyIncome || 0) - (user?.financialData?.monthlyExpenses || 0)).toLocaleString()}), you can reach <span className="font-bold">₹{simResult.alternateCorpus.toLocaleString()}</span>.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-gray-200/50">
+                    <p className="text-xs text-gray-500">
+                      Assumption: Returns @ {simulationProfile.expectedReturn}% p.a. Step-up Strategy assumes 10% annual increase in investment.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Funds & Live NAV */}
+              <div>
+                <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                  Fund Portfolio & Live NAV
+                </h4>
+                <div className="bg-gray-50 rounded-xl border border-gray-200 overflow-hidden">
+                  {loadingNAVs ? (
+                    <div className="p-8 text-center text-gray-500">Fetching live market data...</div>
+                  ) : (
+                    <div className="divide-y divide-gray-200">
+                      {simulationProfile.funds.map((fund, idx) => (
+                        <div key={idx} className="p-4 flex justify-between items-center hover:bg-gray-100 transition">
+                          <div>
+                            <p className="font-bold text-gray-900">{fund.name}</p>
+                            <p className="text-xs text-gray-500">{fund.category}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs text-gray-500">Current NAV</p>
+                            <p className="font-mono font-bold text-emerald-700">
+                              {fund.schemeCode && fundNAVs[fund.schemeCode]
+                                ? `₹${fundNAVs[fund.schemeCode]}`
+                                : 'N/A'}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-gray-100 bg-gray-50 rounded-b-2xl flex justify-end">
+              <button
+                onClick={() => setShowModal(false)}
+                className="px-6 py-2 bg-gray-900 text-white rounded-lg font-semibold hover:bg-gray-800 transition"
+              >
+                Close Simulation
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

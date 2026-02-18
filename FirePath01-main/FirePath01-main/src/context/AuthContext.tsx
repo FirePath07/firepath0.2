@@ -9,6 +9,7 @@ export interface UserFinancialData {
   riskProfile?: 'safe' | 'medium' | 'risky';
   primaryGoal?: string;
   mostImportantMetric?: 'Savings Rate' | 'Years to FIRE' | 'Net Worth';
+  inflationRate?: number;
 }
 
 export interface User {
@@ -57,7 +58,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 monthlyExpenses: 0,
                 age: 25,
                 targetRetirementAge: 60,
-                riskProfile: 'medium'
+                riskProfile: 'medium',
+                inflationRate: 6
               };
             }
             setUser({ ...userData, id: userData._id || userData.id });

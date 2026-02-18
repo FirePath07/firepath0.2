@@ -14,7 +14,7 @@ interface MutualFund {
 interface RiskProfileData {
   name: string;
   description: string;
-  allocation: { stocks: number; bonds: number; cash: number };
+  allocation: { equity: number; debt: number; gold: number };
   expectedReturn: number;
   color: string;
   risk: string;
@@ -37,128 +37,104 @@ export const RiskPage = () => {
     return 'medium';
   });
 
-  // Mock mutual fund data - In production, this would come from an API like:
-  // - Finnhub API (finnhub.io)
-  // - Alpha Vantage (alphavantage.co)
-  // - Financial Modeling Prep API
+  // Mock mutual fund data
   const riskProfiles: Record<string, RiskProfileData> = {
     safe: {
       name: 'Safe',
-      description: 'Conservative portfolio focused on preservation',
-      allocation: { stocks: 40, bonds: 50, cash: 10 },
-      expectedReturn: 5,
+      description: 'Focuses on liquid funds and gold for stability.',
+      allocation: { equity: 0, debt: 80, gold: 20 },
+      expectedReturn: 7,
       color: 'green',
       risk: 'Low',
       icon: '🛡️',
-      advice: 'Focus on capital preservation and steady income. This portfolio is ideal for investors nearing retirement or with low risk tolerance. Emphasis on bonds and stable dividend-paying stocks. Regular rebalancing recommended.',
+      advice: 'This portfolio focuses on capital preservation using Liquid Funds and Gold. \n\nAllocation: \n- 80% Debt/Liquid Funds\n- 20% Gold\n- 0% Equity\n\nIdeal for short-term goals or emergency funds.',
       funds: [
         {
-          name: 'Vanguard Total Bond Market',
-          category: 'Bonds',
-          expense_ratio: 0.03,
+          name: 'Nippon India Liquid Fund',
+          category: 'Liquid Fund',
+          expense_ratio: 0.15,
+          min_investment: 500,
+          rating: 5
+        },
+        {
+          name: 'SBI Gold ETF',
+          category: 'Gold',
+          expense_ratio: 0.50,
           min_investment: 1000,
+          rating: 4.5
+        },
+        {
+          name: 'HDFC Liquid Fund',
+          category: 'Liquid Fund',
+          expense_ratio: 0.10,
+          min_investment: 500,
           rating: 4.8
-        },
-        {
-          name: 'Vanguard Dividend Appreciation',
-          category: 'Dividend Stocks',
-          expense_ratio: 0.06,
-          min_investment: 1000,
-          rating: 4.7
-        },
-        {
-          name: 'iShares Core U.S. Aggregate Bond',
-          category: 'Bonds',
-          expense_ratio: 0.03,
-          min_investment: 0,
-          rating: 4.7
-        },
-        {
-          name: 'Vanguard Short-Term Treasury',
-          category: 'Government Bonds',
-          expense_ratio: 0.04,
-          min_investment: 1000,
-          rating: 4.6
         }
       ]
     },
     medium: {
       name: 'Medium',
-      description: 'Balanced portfolio with moderate growth',
-      allocation: { stocks: 60, bonds: 30, cash: 10 },
-      expectedReturn: 7,
+      description: 'Focuses mainly on index funds with some gold allocation.',
+      allocation: { equity: 80, debt: 0, gold: 20 },
+      expectedReturn: 12,
       color: 'blue',
       risk: 'Moderate',
       icon: '⚖️',
-      advice: 'A balanced approach suitable for most investors. This allocation provides growth potential while maintaining stability. Mix of equity and fixed income helps weather market volatility. Recommended annual review and rebalancing.',
+      advice: 'Balanced growth using Index Funds and Gold. \n\nAllocation:\n- 80% Stocks (Index Funds)\n- 20% Gold\n\nSuitable for long-term wealth creation with moderate volatility.',
       funds: [
         {
-          name: 'Vanguard Total Stock Market',
-          category: 'US Stocks',
-          expense_ratio: 0.03,
-          min_investment: 1000,
-          rating: 4.9
+          name: 'UTI Nifty 50 Index Fund',
+          category: 'Index Fund',
+          expense_ratio: 0.20,
+          min_investment: 500,
+          rating: 5
         },
         {
-          name: 'Vanguard Total International Stock',
-          category: 'International Stocks',
-          expense_ratio: 0.08,
+          name: 'Nippon India ETF Gold BeES',
+          category: 'Gold ETF',
+          expense_ratio: 0.80,
           min_investment: 1000,
           rating: 4.6
         },
         {
-          name: 'iShares Core U.S. Aggregate Bond',
-          category: 'Bonds',
-          expense_ratio: 0.03,
-          min_investment: 0,
-          rating: 4.7
-        },
-        {
-          name: 'Vanguard FTSE Developed Markets',
-          category: 'Developed Markets',
-          expense_ratio: 0.05,
-          min_investment: 1000,
+          name: 'HDFC Index Fund - Sensex Plan',
+          category: 'Index Fund',
+          expense_ratio: 0.20,
+          min_investment: 500,
           rating: 4.5
         }
       ]
     },
     risky: {
       name: 'Risky',
-      description: 'Aggressive portfolio focused on growth',
-      allocation: { stocks: 80, bonds: 15, cash: 5 },
-      expectedReturn: 10,
+      description: 'Focuses entirely on stocks for maximum growth.',
+      allocation: { equity: 100, debt: 0, gold: 0 },
+      expectedReturn: 15,
       color: 'red',
       risk: 'High',
       icon: '🚀',
-      advice: 'For investors with long time horizon and high risk tolerance. Emphasizes growth through equity exposure including emerging markets. Higher volatility expected but potential for significant returns. Requires discipline during market downturns.',
+      advice: 'Aggressive portfolio 100% invested in Equity. \n\nSplit:\n- 40% Small Cap\n- 40% Flexi Cap\n- 20% Large Cap\n\nHigh risk, high reward. Requires a long-term horizon (7+ years).',
       funds: [
         {
-          name: 'Vanguard Total Stock Market',
-          category: 'US Stocks',
-          expense_ratio: 0.03,
+          name: 'Quant Small Cap Fund',
+          category: 'Small Cap',
+          expense_ratio: 0.60,
           min_investment: 1000,
-          rating: 4.9
+          rating: 5
         },
         {
-          name: 'Vanguard FTSE Emerging Markets',
-          category: 'Emerging Markets',
-          expense_ratio: 0.08,
+          name: 'Parag Parikh Flexi Cap Fund',
+          category: 'Flexi Cap',
+          expense_ratio: 0.80,
           min_investment: 1000,
-          rating: 4.4
+          rating: 5
         },
         {
-          name: 'iShares MSCI ACWI Growth',
-          category: 'Growth Stocks',
-          expense_ratio: 0.09,
-          min_investment: 0,
+          name: 'HDFC Top 100 Fund',
+          category: 'Large Cap',
+          expense_ratio: 1.10,
+          min_investment: 1000,
           rating: 4.5
-        },
-        {
-          name: 'Vanguard Growth ETF',
-          category: 'Growth',
-          expense_ratio: 0.04,
-          min_investment: 1000,
-          rating: 4.7
         }
       ]
     }
@@ -215,7 +191,7 @@ export const RiskPage = () => {
                     <h3 className="text-xl font-bold text-gray-900 mb-1">{prof.name}</h3>
                     <p className="text-sm text-gray-600 mb-3">{prof.description}</p>
                     <div style={{ color: colorMap[prof.color as keyof typeof colorMap] }} className="text-lg font-bold">
-                      {prof.expectedReturn}% Annual Return
+                      {prof.expectedReturn}%+ Annual Return
                     </div>
                   </button>
                 );
@@ -235,37 +211,37 @@ export const RiskPage = () => {
                     <div className="space-y-3">
                       <div>
                         <div className="flex justify-between mb-1">
-                          <span className="text-gray-700">Stocks</span>
-                          <span className="font-bold text-gray-900">{profile.allocation.stocks}%</span>
+                          <span className="text-gray-700">Equity / Stocks</span>
+                          <span className="font-bold text-gray-900">{profile.allocation.equity}%</span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2">
                           <div
                             className="bg-blue-500 h-2 rounded-full"
-                            style={{ width: `${profile.allocation.stocks}%` }}
+                            style={{ width: `${profile.allocation.equity}%` }}
                           ></div>
                         </div>
                       </div>
                       <div>
                         <div className="flex justify-between mb-1">
-                          <span className="text-gray-700">Bonds</span>
-                          <span className="font-bold text-gray-900">{profile.allocation.bonds}%</span>
+                          <span className="text-gray-700">Debt / Liquid Funds</span>
+                          <span className="font-bold text-gray-900">{profile.allocation.debt}%</span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2">
                           <div
-                            className="bg-amber-500 h-2 rounded-full"
-                            style={{ width: `${profile.allocation.bonds}%` }}
+                            className="bg-purple-500 h-2 rounded-full"
+                            style={{ width: `${profile.allocation.debt}%` }}
                           ></div>
                         </div>
                       </div>
                       <div>
                         <div className="flex justify-between mb-1">
-                          <span className="text-gray-700">Cash</span>
-                          <span className="font-bold text-gray-900">{profile.allocation.cash}%</span>
+                          <span className="text-gray-700">Gold</span>
+                          <span className="font-bold text-gray-900">{profile.allocation.gold}%</span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2">
                           <div
-                            className="bg-green-500 h-2 rounded-full"
-                            style={{ width: `${profile.allocation.cash}%` }}
+                            className="bg-amber-400 h-2 rounded-full"
+                            style={{ width: `${profile.allocation.gold}%` }}
                           ></div>
                         </div>
                       </div>
@@ -297,7 +273,7 @@ export const RiskPage = () => {
               {/* Investment Advice Section */}
               <div className="bg-blue-50 rounded-xl p-8 border border-blue-200">
                 <h3 className="text-2xl font-bold text-blue-900 mb-4">💡 Investment Advice</h3>
-                <p className="text-blue-800 text-lg leading-relaxed">{profile.advice}</p>
+                <p className="text-blue-800 text-lg leading-relaxed whitespace-pre-line">{profile.advice}</p>
               </div>
 
               {/* Recommended Mutual Funds */}

@@ -1,5 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
+import { Sun, Moon } from 'lucide-react';
 
 interface NavigationProps {
   showFullNav?: boolean;
@@ -8,15 +10,16 @@ interface NavigationProps {
 export const Navigation = ({ showFullNav = true }: NavigationProps) => {
   const navigate = useNavigate();
   const { isSignedIn, user, signOut } = useAuth();
+  const { isDarkMode, toggleDarkMode } = useTheme();
 
   return (
-    <nav className="bg-white shadow-sm sticky top-0 z-50">
+    <nav className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-50 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <button
               onClick={() => navigate('/')}
-              className="text-2xl font-bold text-emerald-800 hover:opacity-80 transition">
+              className="text-2xl font-bold text-emerald-800 dark:text-emerald-400 hover:opacity-80 transition">
               FIRE<span className="text-amber-500">Path</span>
             </button>
           </div>
@@ -25,18 +28,18 @@ export const Navigation = ({ showFullNav = true }: NavigationProps) => {
             <div className="hidden md:flex items-center space-x-8">
               <button
                 onClick={() => navigate('/articles')}
-                className="text-gray-600 hover:text-emerald-700 font-medium transition">
+                className="text-gray-600 dark:text-gray-300 hover:text-emerald-700 dark:hover:text-emerald-400 font-medium transition">
                 Articles
               </button>
               <button
                 onClick={() => navigate('/calculators')}
-                className="text-gray-600 hover:text-emerald-700 font-medium transition">
+                className="text-gray-600 dark:text-gray-300 hover:text-emerald-700 dark:hover:text-emerald-400 font-medium transition">
                 Calculators
               </button>
 
               {isSignedIn ? (
                 <div className="flex items-center gap-4">
-                  <button onClick={() => navigate('/user-details')} className="text-gray-700 font-medium hover:text-emerald-700 hover:underline">{user?.name}</button>
+                  <button onClick={() => navigate('/user-details')} className="text-gray-700 dark:text-gray-300 font-medium hover:text-emerald-700 dark:hover:text-emerald-400 hover:underline">{user?.name}</button>
                   <button
                     onClick={() => navigate('/profile')}
                     className="bg-emerald-700 text-white px-4 py-2 rounded-md hover:bg-emerald-800 transition">
@@ -47,16 +50,32 @@ export const Navigation = ({ showFullNav = true }: NavigationProps) => {
                       signOut();
                       navigate('/');
                     }}
-                    className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition">
+                    className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
                     Sign Out
+                  </button>
+                  <button
+                    onClick={toggleDarkMode}
+                    className="p-2 ml-2 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 shadow hover:bg-gray-200 dark:hover:bg-gray-600 transition"
+                    aria-label="Toggle Dark Mode"
+                  >
+                    {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
                   </button>
                 </div>
               ) : (
-                <button
-                  onClick={() => navigate('/login')}
-                  className="bg-emerald-700 text-white px-4 py-2 rounded-md hover:bg-emerald-800 transition">
-                  Sign In
-                </button>
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={() => navigate('/login')}
+                    className="bg-emerald-700 text-white px-4 py-2 rounded-md hover:bg-emerald-800 transition">
+                    Sign In
+                  </button>
+                  <button
+                    onClick={toggleDarkMode}
+                    className="p-2 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 shadow hover:bg-gray-200 dark:hover:bg-gray-600 transition"
+                    aria-label="Toggle Dark Mode"
+                  >
+                    {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+                  </button>
+                </div>
               )}
             </div>
           )}

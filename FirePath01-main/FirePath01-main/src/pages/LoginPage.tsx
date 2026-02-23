@@ -33,14 +33,14 @@ export const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
       <Navigation showFullNav={false} />
       <div className="max-w-md mx-auto py-12 px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-xl shadow-lg p-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2 text-center">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2 text-center">
             Welcome Back
           </h1>
-          <p className="text-gray-600 text-center mb-6">
+          <p className="text-gray-600 dark:text-gray-400 text-center mb-6">
             Sign in to your FIREPath account.
           </p>
 
@@ -52,7 +52,7 @@ export const LoginPage = () => {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Email
               </label>
               <input
@@ -60,13 +60,13 @@ export const LoginPage = () => {
                 id="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="mt-2 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none"
+                className="mt-2 w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none"
                 placeholder="you@example.com"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Password
               </label>
               <input
@@ -74,7 +74,7 @@ export const LoginPage = () => {
                 id="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="mt-2 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none"
+                className="mt-2 w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none"
                 placeholder="••••••••"
               />
             </div>
@@ -89,11 +89,11 @@ export const LoginPage = () => {
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-gray-600 text-sm">
+            <p className="text-gray-600 dark:text-gray-400 text-sm">
               Don't have an account?{' '}
               <button
                 onClick={() => navigate('/signup')}
-                className="text-emerald-600 font-bold hover:underline"
+                className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline"
               >
                 Sign Up
               </button>

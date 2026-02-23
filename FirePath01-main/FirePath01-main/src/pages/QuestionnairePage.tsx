@@ -76,10 +76,10 @@ export const QuestionnairePage = () => {
   const renderInputStep = () => {
     const q = INPUT_QUESTIONS[step];
     return (
-      <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 max-w-md w-full transition-colors duration-300">
         <div className="text-center mb-6">
-          <p className="text-emerald-600 font-semibold">Step {step + 1} of {INPUT_QUESTIONS.length + 2}</p>
-          <h2 className="text-2xl font-bold text-gray-800 mt-2">{q.question}</h2>
+          <p className="text-emerald-600 dark:text-emerald-400 font-semibold">Step {step + 1} of {INPUT_QUESTIONS.length + 2}</p>
+          <h2 className="text-2xl font-bold text-gray-800 dark:text-white mt-2">{q.question}</h2>
         </div>
 
         <input
@@ -87,7 +87,7 @@ export const QuestionnairePage = () => {
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleInputNext(inputValue)}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg text-lg focus:ring-2 focus:ring-emerald-500 mb-6"
+          className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg text-lg focus:ring-2 focus:ring-emerald-500 mb-6 outline-none"
           placeholder={q.placeholder}
           autoFocus
         />
@@ -120,14 +120,14 @@ export const QuestionnairePage = () => {
     const fatFire = futureAnnualExpenses * 30;
 
     return (
-      <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-2xl w-full">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 max-w-2xl w-full transition-colors duration-300">
         <div className="text-center mb-6">
-          <p className="text-emerald-600 font-semibold">Step {step + 1}</p>
-          <h2 className="text-2xl font-bold text-gray-900">Choose your FIRE Target</h2>
-          <p className="text-gray-600 mt-2">
+          <p className="text-emerald-600 dark:text-emerald-400 font-semibold">Step {step + 1}</p>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Choose your FIRE Target</h2>
+          <p className="text-gray-600 dark:text-gray-300 mt-2">
             Based on your monthly expenses of {formatIndianCurrency(Number(answers.monthlyExpenses))}
             <br />
-            <span className="text-xs text-gray-500">
+            <span className="text-xs text-gray-500 dark:text-gray-400">
               (Adjusted for 6% inflation over {yearsToInvest} years)
             </span>
           </p>
@@ -136,30 +136,30 @@ export const QuestionnairePage = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <button
             onClick={() => handleFireSelection('Lean FIRE')}
-            className="p-6 border-2 border-gray-200 rounded-xl hover:border-emerald-500 hover:bg-emerald-50 transition text-left group"
+            className="p-6 border-2 border-gray-200 dark:border-gray-700 rounded-xl hover:border-emerald-500 dark:hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition text-left group"
           >
-            <div className="text-lg font-semibold text-gray-600 mb-2">Lean FIRE</div>
-            <div className="text-xl font-bold text-emerald-700 mb-1">{formatIndianCurrency(leanFire)}</div>
-            <div className="text-sm text-gray-500">20x Future Annual Expenses</div>
+            <div className="text-lg font-semibold text-gray-600 dark:text-gray-400 mb-2">Lean FIRE</div>
+            <div className="text-xl font-bold text-emerald-700 dark:text-emerald-400 mb-1">{formatIndianCurrency(leanFire)}</div>
+            <div className="text-sm text-gray-500 dark:text-gray-500">20x Future Annual Expenses</div>
           </button>
 
           <button
             onClick={() => handleFireSelection('Traditional FIRE')}
-            className="p-6 border-2 border-emerald-500 bg-emerald-50 rounded-xl hover:bg-emerald-100 transition text-left relative"
+            className="p-6 border-2 border-emerald-500 bg-emerald-50 dark:bg-emerald-900/30 rounded-xl hover:bg-emerald-100 dark:hover:bg-emerald-800/40 transition text-left relative"
           >
             <div className="absolute top-0 right-0 bg-emerald-500 text-white text-xs px-2 py-1 rounded-bl-lg font-bold">Recommended</div>
-            <div className="text-lg font-bold text-emerald-800 mb-2">Traditional FIRE</div>
-            <div className="text-2xl font-bold text-emerald-700 mb-1">{formatIndianCurrency(tradFire)}</div>
-            <div className="text-sm text-emerald-700">25x Future Annual Expenses</div>
+            <div className="text-lg font-bold text-emerald-800 dark:text-emerald-300 mb-2">Traditional FIRE</div>
+            <div className="text-2xl font-bold text-emerald-700 dark:text-emerald-400 mb-1">{formatIndianCurrency(tradFire)}</div>
+            <div className="text-sm text-emerald-700 dark:text-emerald-500">25x Future Annual Expenses</div>
           </button>
 
           <button
             onClick={() => handleFireSelection('Fat FIRE')}
-            className="p-6 border-2 border-gray-200 rounded-xl hover:border-purple-500 hover:bg-purple-50 transition text-left group"
+            className="p-6 border-2 border-gray-200 dark:border-gray-700 rounded-xl hover:border-purple-500 dark:hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition text-left group"
           >
-            <div className="text-lg font-semibold text-gray-600 mb-2 group-hover:text-purple-700">Fat FIRE</div>
-            <div className="text-xl font-bold text-purple-700 mb-1">{formatIndianCurrency(fatFire)}</div>
-            <div className="text-sm text-gray-500">30x Future Annual Expenses</div>
+            <div className="text-lg font-semibold text-gray-600 dark:text-gray-400 mb-2 group-hover:text-purple-700 dark:group-hover:text-purple-400">Fat FIRE</div>
+            <div className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-1">{formatIndianCurrency(fatFire)}</div>
+            <div className="text-sm text-gray-500 dark:text-gray-500">30x Future Annual Expenses</div>
           </button>
         </div>
       </div>
@@ -168,10 +168,10 @@ export const QuestionnairePage = () => {
 
   const renderRiskStep = () => {
     return (
-      <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-xl w-full">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 max-w-xl w-full transition-colors duration-300">
         <div className="text-center mb-6">
-          <p className="text-emerald-600 font-semibold">Final Step</p>
-          <h2 className="text-2xl font-bold text-gray-800">What's your risk tolerance?</h2>
+          <p className="text-emerald-600 dark:text-emerald-400 font-semibold">Final Step</p>
+          <h2 className="text-2xl font-bold text-gray-800 dark:text-white">What's your risk tolerance?</h2>
         </div>
 
         <div className="space-y-3">
@@ -183,12 +183,12 @@ export const QuestionnairePage = () => {
             <button
               key={opt.id}
               onClick={() => handleRiskSelection(opt.id)}
-              className="w-full flex items-center p-4 border border-gray-200 rounded-xl hover:bg-emerald-50 hover:border-emerald-300 transition text-left"
+              className="w-full flex items-center p-4 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-900/30 hover:border-emerald-300 dark:hover:border-emerald-600 transition text-left"
             >
               <span className="text-3xl mr-4">{opt.icon}</span>
               <div>
-                <div className="font-bold text-lg text-gray-800">{opt.id}</div>
-                <div className="text-sm text-gray-500">{opt.desc}</div>
+                <div className="font-bold text-lg text-gray-800 dark:text-gray-200">{opt.id}</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">{opt.desc}</div>
               </div>
             </button>
           ))}
@@ -205,9 +205,9 @@ export const QuestionnairePage = () => {
   const progress = ((step + 1) / (INPUT_QUESTIONS.length + 2)) * 100;
 
   return (
-    <div className="min-h-screen bg-emerald-50 flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-emerald-50 dark:bg-gray-900 transition-colors duration-300 flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md mb-8">
-        <div className="bg-gray-200 rounded-full h-2">
+        <div className="bg-gray-200 dark:bg-gray-700 rounded-full h-2">
           <div
             className="bg-emerald-500 h-2 rounded-full transition-all duration-300"
             style={{ width: `${progress}%` }}

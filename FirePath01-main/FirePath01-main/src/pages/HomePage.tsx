@@ -7,11 +7,11 @@ export const HomePage = () => {
   const { isSignedIn, signOut } = useAuth();
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
       <Navigation showFullNav={true} />
 
       {/* Hero Section */}
-      <div className="relative bg-emerald-900 overflow-hidden">
+      <div className="relative bg-emerald-900 dark:bg-emerald-950 overflow-hidden">
         <div className="absolute inset-0">
           <img
             className="w-full h-full object-cover opacity-30"
@@ -73,13 +73,13 @@ export const HomePage = () => {
             { title: "Community Forums", desc: "Connect with like-minded individuals on the path to freedom.", img: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=800&q=80" },
             { title: "Investment Guides", desc: "Learn about index funds, real estate, and safe withdrawal rates.", img: "https://images.unsplash.com/photo-1579532537598-459ecdaf39cc?auto=format&fit=crop&w=800&q=80" }
           ].map((item, idx) => (
-            <div key={idx} className="group bg-white rounded-xl shadow-md hover:shadow-xl transition duration-300 overflow-hidden cursor-pointer">
+            <div key={idx} className="group bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-xl transition duration-300 overflow-hidden cursor-pointer">
               <div className="h-48 overflow-hidden">
                 <img src={item.img} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
               </div>
               <div className="p-6">
-                <h3 className="text-xl font-bold text-gray-900 mb-2">{item.title}</h3>
-                <p className="text-gray-600">{item.desc}</p>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{item.title}</h3>
+                <p className="text-gray-600 dark:text-gray-300">{item.desc}</p>
               </div>
             </div>
           ))}
@@ -87,7 +87,7 @@ export const HomePage = () => {
       </main>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-gray-400 py-12 mt-12">
+      <footer className="bg-gray-900 dark:bg-black text-gray-400 py-12 mt-12 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 text-center">
           <p>&copy; 2024 FIREPath. All rights reserved. Not financial advice.</p>
         </div>

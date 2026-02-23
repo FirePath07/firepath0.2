@@ -149,7 +149,7 @@ export const ArticlesPage = () => {
 
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
       <Navigation showFullNav={true} />
 
       {/* Hero Section */}
@@ -177,7 +177,7 @@ export const ArticlesPage = () => {
         {/* Real-Time Market Data Section */}
         <div className="mb-16">
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-3xl font-bold text-gray-900">📊 Indian Market Indices</h2>
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white">📊 Indian Market Indices</h2>
             <button
               onClick={() => setShowMarketSetup(!showMarketSetup)}
               className="text-xs px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full hover:bg-emerald-200 transition font-semibold"
@@ -185,7 +185,7 @@ export const ArticlesPage = () => {
               ⚙️ Settings
             </button>
           </div>
-          <p className="text-center text-gray-600 mb-8">Real-time data of major Indian stock market indices updated every 60 seconds</p>
+          <p className="text-center text-gray-600 dark:text-gray-400 mb-8">Real-time data of major Indian stock market indices updated every 60 seconds</p>
 
           {/* Market API Setup Section */}
           {showMarketSetup && (
@@ -219,18 +219,18 @@ export const ArticlesPage = () => {
               {marketData.map((index) => (
                 <div
                   key={index.symbol}
-                  className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl shadow-lg p-8 border-l-4 border-emerald-700 hover:shadow-xl transition duration-300"
+                  className="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/40 dark:to-emerald-800/40 rounded-xl shadow-lg p-8 border-l-4 border-emerald-700 hover:shadow-xl transition duration-300"
                 >
                   <div className="flex items-center justify-between mb-4">
                     <div>
                       <p className="text-4xl mb-2">{index.icon}</p>
-                      <h3 className="text-2xl font-bold text-gray-900">{index.name}</h3>
-                      <p className="text-sm text-gray-600 font-semibold">{index.symbol}</p>
+                      <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{index.name}</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-300 font-semibold">{index.symbol}</p>
                     </div>
                   </div>
 
-                  <div className="bg-white rounded-lg p-4 mb-4">
-                    <div className="text-3xl font-bold text-emerald-700 mb-2">
+                  <div className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-4">
+                    <div className="text-3xl font-bold text-emerald-700 dark:text-emerald-400 mb-2">
                       ₹{index.price.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                     </div>
                     <div className={`flex items-center gap-2 text-xl font-bold ${index.changePercent >= 0 ? 'text-green-600' : 'text-red-600'}`}>
@@ -240,7 +240,7 @@ export const ArticlesPage = () => {
                     </div>
                   </div>
 
-                  <div className="text-xs text-gray-600 text-center">
+                  <div className="text-xs text-gray-600 dark:text-gray-400 text-center">
                     Last updated: {new Date().toLocaleTimeString('en-IN')}
                   </div>
                 </div>
@@ -270,7 +270,7 @@ export const ArticlesPage = () => {
         {/* News Section */}
         {!loading && news.length > 0 && (
           <div className="mb-16">
-            <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">📰 Latest Financial News</h2>
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-8 text-center">📰 Latest Financial News</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {news.map((article, idx) => (
                 <a
@@ -278,7 +278,7 @@ export const ArticlesPage = () => {
                   href={article.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group bg-white rounded-xl shadow-md hover:shadow-xl transition duration-300 overflow-hidden block"
+                  className="group bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-xl transition duration-300 overflow-hidden block"
                 >
                   <div className="h-48 overflow-hidden bg-gray-200">
                     {article.urlToImage ? (
@@ -301,14 +301,14 @@ export const ArticlesPage = () => {
                       <span className="text-xs bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full font-semibold">
                         {article.source.name}
                       </span>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
                         {new Date(article.publishedAt).toLocaleDateString()}
                       </span>
                     </div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-emerald-700 transition">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 line-clamp-2 group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition">
                       {article.title}
                     </h3>
-                    <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+                    <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 line-clamp-3">
                       {article.description || 'Click to read full article'}
                     </p>
                     <span className="text-emerald-700 font-semibold text-sm group-hover:text-emerald-900">
@@ -330,8 +330,8 @@ export const ArticlesPage = () => {
 
         {/* Free Resources Section */}
         <div className="mt-20 mb-12">
-          <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Free Financial Resources</h2>
-          <p className="text-center text-gray-600 mb-8 max-w-2xl mx-auto">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-8 text-center">Free Financial Resources</h2>
+          <p className="text-center text-gray-600 dark:text-gray-400 mb-8 max-w-2xl mx-auto">
             Access these trusted, free financial education resources to expand your knowledge and make informed decisions.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -396,12 +396,12 @@ export const ArticlesPage = () => {
                 href={resource.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bg-white rounded-xl shadow-md hover:shadow-xl transition duration-300 p-6 block group"
+                className="bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-xl transition duration-300 p-6 block group"
               >
                 <div className="text-4xl mb-3">{resource.icon}</div>
-                <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-emerald-700 transition">{resource.name}</h3>
-                <p className="text-gray-600 text-sm mb-4">{resource.desc}</p>
-                <span className="text-emerald-700 font-semibold text-sm group-hover:text-emerald-900">Visit Resource →</span>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition">{resource.name}</h3>
+                <p className="text-gray-600 dark:text-gray-300 text-sm mb-4">{resource.desc}</p>
+                <span className="text-emerald-700 font-semibold text-sm group-hover:text-emerald-900 dark:group-hover:text-emerald-400">Visit Resource →</span>
               </a>
             ))}
           </div>

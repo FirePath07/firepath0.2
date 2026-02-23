@@ -233,17 +233,17 @@ export const RiskPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
       <Navigation showFullNav={true} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden border border-gray-100 dark:border-gray-700">
           {/* Header */}
-          <div className="p-6 md:p-8 bg-emerald-50 border-b border-emerald-100">
-            <h2 className="text-3xl font-bold text-emerald-900 flex items-center gap-2">
+          <div className="p-6 md:p-8 bg-emerald-50 dark:bg-emerald-900/30 border-b border-emerald-100 dark:border-emerald-800/50">
+            <h2 className="text-3xl font-bold text-emerald-900 dark:text-emerald-400 flex items-center gap-2">
               📈 Choose Your Risk Profile
             </h2>
-            <p className="text-emerald-700 mt-2">
+            <p className="text-emerald-700 dark:text-emerald-300 mt-2">
               Select the investment risk level that matches your comfort and goals.
             </p>
           </div>
@@ -268,8 +268,8 @@ export const RiskPage = () => {
                       }`}
                   >
                     <div className="text-4xl mb-3">{prof.icon}</div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-1">{prof.name}</h3>
-                    <p className="text-sm text-gray-600 mb-3">{prof.description}</p>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">{prof.name}</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">{prof.description}</p>
                     <div style={{ color: colorMap[prof.color as keyof typeof colorMap] }} className="text-lg font-bold mb-4">
                       {prof.expectedReturn}%+ Annual Return
                     </div>
@@ -292,8 +292,8 @@ export const RiskPage = () => {
             {/* Selected Profile Details & Advice */}
             <div className="space-y-6">
               {/* Asset Allocation */}
-              <div className="bg-gray-50 rounded-xl p-8 border border-gray-200">
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">{profile.name} Portfolio Details</h3>
+              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-8 border border-gray-200 dark:border-gray-600">
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">{profile.name} Portfolio Details</h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
                   {/* Allocation */}
@@ -362,16 +362,16 @@ export const RiskPage = () => {
               </div>
 
               {/* Investment Advice Section */}
-              <div className="bg-blue-50 rounded-xl p-8 border border-blue-200">
-                <h3 className="text-2xl font-bold text-blue-900 mb-4">💡 Investment Advice</h3>
-                <p className="text-blue-800 text-lg leading-relaxed whitespace-pre-line">{profile.advice}</p>
+              <div className="bg-blue-50 dark:bg-blue-900/30 rounded-xl p-8 border border-blue-200 dark:border-blue-800">
+                <h3 className="text-2xl font-bold text-blue-900 dark:text-blue-400 mb-4">💡 Investment Advice</h3>
+                <p className="text-blue-800 dark:text-blue-300 text-lg leading-relaxed whitespace-pre-line">{profile.advice}</p>
               </div>
 
               {/* Recommended Mutual Funds */}
-              <div className="rounded-xl border border-gray-200">
-                <div className="bg-gray-100 p-6 border-b border-gray-200">
-                  <h3 className="text-2xl font-bold text-gray-900">📊 Recommended Mutual Funds</h3>
-                  <p className="text-gray-600 mt-2">Top-rated funds suitable for your {profile.name} risk profile</p>
+              <div className="rounded-xl border border-gray-200 dark:border-gray-700">
+                <div className="bg-gray-100 dark:bg-gray-800/80 p-6 border-b border-gray-200 dark:border-gray-700">
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">📊 Recommended Mutual Funds</h3>
+                  <p className="text-gray-600 dark:text-gray-400 mt-2">Top-rated funds suitable for your {profile.name} risk profile</p>
                 </div>
 
                 <div className="overflow-x-auto">

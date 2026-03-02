@@ -6,7 +6,7 @@ export interface UserFinancialData {
   monthlyExpenses: number;
   age: number;
   targetRetirementAge: number;
-  riskProfile?: 'safe' | 'medium' | 'risky';
+  riskProfile?: string;
   primaryGoal?: string;
   mostImportantMetric?: 'Savings Rate' | 'Years to FIRE' | 'Net Worth';
   inflationRate?: number;

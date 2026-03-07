@@ -7,6 +7,7 @@ import { LoginPage } from './pages/LoginPage';
 import { SignUpPage } from './pages/SignUpPage';
 import { QuestionnairePage } from './pages/QuestionnairePage';
 import { RiskPage } from './pages/RiskPage';
+import { ExpensesPage } from './pages/ExpensesPage';
 import { AuthProvider } from './context/AuthContext';
 import './App.css';
 
@@ -26,6 +27,7 @@ function App() {
           <Route path="/calculators" element={<CalculatorsPage />} />
           <Route path="/articles" element={<ArticlesPage />} />
           <Route path="/risk" element={<RiskPage />} />
+          <Route path="/expenses" element={<ExpensesPage />} />
         </Routes>
       </Router>
     </AuthProvider>

@@ -161,7 +161,16 @@ export const UserProfileDashboard = () => {
             {/* Quick Actions - HIGH Z-INDEX IN TUTORIAL MODE */}
             <div className={`bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 relative transition-transform duration-300 ${isTutorialMode ? 'z-50 scale-105 ring-4 ring-emerald-400 pointer-events-auto' : ''}`}>
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Quick Actions</h2>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <button
+                  onClick={() => navigate('/expenses')}
+                  className="p-4 border border-emerald-100 dark:border-emerald-900/50 rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition text-left group"
+                >
+                  <span className="text-2xl mb-2 block">💸</span>
+                  <span className="font-bold text-gray-900 dark:text-white group-hover:text-emerald-700 dark:group-hover:text-emerald-400">Expenses</span>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Track & budget</p>
+                </button>
+
                 <button
                   onClick={() => navigate('/risk')}
                   className="p-4 border border-emerald-100 dark:border-emerald-900/50 rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition text-left group"

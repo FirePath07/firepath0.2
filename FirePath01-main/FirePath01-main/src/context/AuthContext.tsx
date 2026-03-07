@@ -10,6 +10,13 @@ export interface UserFinancialData {
   primaryGoal?: string;
   mostImportantMetric?: 'Savings Rate' | 'Years to FIRE' | 'Net Worth';
   inflationRate?: number;
+  budget?: number;
+  expensesList?: Array<{
+    id: string;
+    amount: number;
+    description: string;
+    date: string;
+  }>;
 }
 
 export interface User {

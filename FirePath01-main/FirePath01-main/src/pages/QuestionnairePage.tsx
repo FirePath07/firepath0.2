@@ -2,19 +2,21 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { formatIndianCurrency } from '../utils/currency';
+import { motion } from 'framer-motion';
+import { Clock, Shield, ArrowRight, TrendingUp, AlertTriangle } from 'lucide-react';
 
 const INPUT_QUESTIONS = [
   {
-    question: "What is your current age?",
-    type: 'select',
-    key: 'ageBracket',
-    options: [
-      { label: 'Under 25', value: 1 },
-      { label: '25–34', value: 2 },
-      { label: '35–44', value: 3 },
-      { label: '45–54', value: 4 },
-      { label: '55+', value: 5 }
-    ]
+    question: "What is your current exact age?",
+    type: 'number',
+    key: 'exactAge',
+    placeholder: 'e.g., 30'
+  },
+  {
+    question: "What is your exact monthly income (₹)?",
+    type: 'number',
+    key: 'monthlyIncome',
+    placeholder: 'e.g., 50000'
   },
   {
     question: "What age would you ideally like to retire?",
@@ -216,6 +218,19 @@ export const QuestionnairePage = () => {
   const { user, updateFinancialData } = useAuth();
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number | string>>({});
+  const [manualCategory, setManualCategory] = useState<string | null>(null);
+
+  const getFundIcon = (fundName: string) => {
+    if (fundName.toLowerCase().includes("gold")) return "https://img.icons8.com/color/48/gold-bars.png";
+    if (fundName.includes("ICICI")) return "https://logo.clearbit.com/icicipruamc.com";
+    if (fundName.includes("HDFC")) return "https://logo.clearbit.com/hdfcfund.com";
+    if (fundName.includes("Kotak")) return "https://logo.clearbit.com/kotakmf.com";
+    if (fundName.includes("SBI")) return "https://logo.clearbit.com/sbimf.com";
+    if (fundName.includes("Nippon")) return "https://logo.clearbit.com/nipponindiamf.com";
+    if (fundName.includes("UTI")) return "https://logo.clearbit.com/utimf.com";
+    if (fundName.includes("Parag Parikh")) return "https://logo.clearbit.com/amc.ppfas.com";
+    return "https://logo.clearbit.com/mutualfundssahihai.com";
+  };
 
   const handleFireSelection = (goal: string) => {
     setAnswers({ ...answers, primaryGoal: goal });
@@ -223,11 +238,11 @@ export const QuestionnairePage = () => {
   };
 
   const handleComplete = (finalStrategy: string) => {
-    const ageMap: Record<number, number> = { 1: 22, 2: 30, 3: 40, 4: 50, 5: 60 };
     const retireMap: Record<number, number> = { 1: 38, 2: 43, 3: 48, 4: 55, 5: 65 };
 
-    const currentAge = ageMap[answers.ageBracket as number] || 25;
+    const currentAge = answers.exactAge ? Number(answers.exactAge) : 25;
     const retireAge = retireMap[answers.targetRetirementAgeBracket as number] || 60;
+    const monthlyIncome = answers.monthlyIncome ? Number(answers.monthlyIncome) : undefined;
 
     const yearsToRetire = retireAge > currentAge ? retireAge - currentAge : 0;
 
@@ -249,6 +264,7 @@ export const QuestionnairePage = () => {
     const finalData = {
       ...answers,
       age: currentAge,
+      ...(monthlyIncome && { monthlyIncome }),
       targetRetirementAge: retireAge,
       timePressure,
       foundationLevel,
@@ -257,7 +273,7 @@ export const QuestionnairePage = () => {
     };
 
     updateFinancialData(finalData);
-    navigate('/profile', { state: { tutorialMode: true } });
+    navigate('/strategy-explanation');
   };
 
   const handleSelectOption = (value: number) => {
@@ -268,86 +284,224 @@ export const QuestionnairePage = () => {
   };
 
   const renderInputStep = () => {
-    const qIndex = step > INPUT_QUESTIONS.length ? step - 1 : step;
+    const isRiskPhase = step > INPUT_QUESTIONS.length;
+    const qIndex = isRiskPhase ? step - 1 : step;
     const q = ALL_QUESTIONS[qIndex];
+
+    const displayStep = isRiskPhase ? (step - INPUT_QUESTIONS.length) : (step + 1);
+    const totalPhaseSteps = isRiskPhase ? RISK_QUESTIONS.length : INPUT_QUESTIONS.length;
+    const phaseName = isRiskPhase ? "Risk Assessment" : "Financial Baseline";
+
     return (
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 max-w-md w-full transition-colors duration-300">
         <div className="text-center mb-6">
-          <p className="text-emerald-600 dark:text-emerald-400 font-semibold">Step {qIndex + 1} of {ALL_QUESTIONS.length + 3}</p>
+          <p className="text-emerald-600 dark:text-emerald-400 font-semibold">{phaseName}: Step {displayStep} of {totalPhaseSteps}</p>
           <h2 className="text-2xl font-bold text-gray-800 dark:text-white mt-2">{q.question}</h2>
         </div>
 
-        <div className="space-y-4">
-          {q.options?.map((opt) => (
-            <button
-              key={opt.value}
-              onClick={() => handleSelectOption(opt.value)}
-              className="w-full text-left px-6 py-4 bg-gray-50 dark:bg-gray-700 hover:bg-emerald-50 dark:hover:bg-emerald-900 border border-gray-200 dark:border-gray-600 hover:border-emerald-500 dark:hover:border-emerald-500 rounded-xl transition-all duration-200 text-gray-800 dark:text-white font-medium shadow-sm hover:shadow-md"
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
+        {q.type === 'select' ? (
+          <div className="space-y-4">
+            {q.options?.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => handleSelectOption(opt.value)}
+                className="w-full text-left px-6 py-4 bg-gray-50 dark:bg-gray-700 hover:bg-emerald-50 dark:hover:bg-emerald-900 border border-gray-200 dark:border-gray-600 hover:border-emerald-500 dark:hover:border-emerald-500 rounded-xl transition-all duration-200 text-gray-800 dark:text-white font-medium shadow-sm hover:shadow-md"
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <input
+              type="number"
+              className="w-full px-6 py-4 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 focus:border-emerald-500 dark:focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500 rounded-xl transition-all duration-200 text-gray-800 dark:text-white font-medium shadow-sm outline-none"
+              placeholder={(q as any).placeholder || "Enter value..."}
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && e.currentTarget.value) {
+                  handleSelectOption(Number(e.currentTarget.value));
+                }
+              }}
+            />
+            <p className="text-xs text-gray-500 text-center mt-2">Press Enter to continue</p>
+          </div>
+        )}
       </div>
     );
   };
 
   const renderStatusTemplateStep = () => {
-    const ageMap: Record<number, number> = { 1: 22, 2: 30, 3: 40, 4: 50, 5: 60 };
     const retireMap: Record<number, number> = { 1: 38, 2: 43, 3: 48, 4: 55, 5: 65 };
 
-    const currentAge = ageMap[answers.ageBracket as number] || 25;
+    const currentAge = answers.exactAge ? Number(answers.exactAge) : 25;
     const retireAge = retireMap[answers.targetRetirementAgeBracket as number] || 60;
 
     const yearsToRetire = retireAge > currentAge ? retireAge - currentAge : 0;
 
     let timePressure = "Low";
-    if (yearsToRetire <= 5) timePressure = "Extreme";
-    else if (yearsToRetire >= 6 && yearsToRetire <= 10) timePressure = "High";
-    else if (yearsToRetire >= 11 && yearsToRetire <= 20) timePressure = "Moderate";
+    let pressureColor = "text-emerald-500";
+    let pressureBg = "bg-emerald-500/10";
+    let PressureIcon = TrendingUp;
+
+    if (yearsToRetire <= 5) {
+      timePressure = "Extreme";
+      pressureColor = "text-red-500";
+      pressureBg = "bg-red-500/10";
+      PressureIcon = AlertTriangle;
+    } else if (yearsToRetire >= 6 && yearsToRetire <= 10) {
+      timePressure = "High";
+      pressureColor = "text-orange-500";
+      pressureBg = "bg-orange-500/10";
+      PressureIcon = AlertTriangle;
+    } else if (yearsToRetire >= 11 && yearsToRetire <= 20) {
+      timePressure = "Moderate";
+      pressureColor = "text-amber-500";
+      pressureBg = "bg-amber-500/10";
+      PressureIcon = Clock;
+    }
 
     const scoreSum = (Number(answers.savingsRateBracket) || 1) +
       (Number(answers.emergencyBufferBracket) || 1) +
       (Number(answers.portfolioBracket) || 1);
 
     const foundationAverage = scoreSum / 3;
-    let foundationLevel = "Weak foundation";
-    if (foundationAverage >= 2.1 && foundationAverage <= 3.0) foundationLevel = "Developing";
-    else if (foundationAverage >= 3.1 && foundationAverage <= 4.0) foundationLevel = "Strong";
-    else if (foundationAverage >= 4.1) foundationLevel = "Very Strong";
+    let foundationLevel = "Weak";
+    let foundationColor = "text-red-500";
+    let foundationBg = "bg-red-500/10";
+    const foundationProgress = foundationAverage / 5 * 100;
+
+    if (foundationAverage >= 2.1 && foundationAverage <= 3.0) {
+      foundationLevel = "Developing";
+      foundationColor = "text-amber-500";
+      foundationBg = "bg-amber-500/10";
+    } else if (foundationAverage >= 3.1 && foundationAverage <= 4.0) {
+      foundationLevel = "Strong";
+      foundationColor = "text-emerald-500";
+      foundationBg = "bg-emerald-500/10";
+    } else if (foundationAverage >= 4.1) {
+      foundationLevel = "Very Strong";
+      foundationColor = "text-blue-500";
+      foundationBg = "bg-blue-500/10";
+    }
 
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 max-w-md w-full transition-colors duration-300">
-        <div className="text-center mb-6">
-          <p className="text-emerald-600 dark:text-emerald-400 font-semibold">Status Template</p>
-          <h2 className="text-2xl font-bold text-gray-800 dark:text-white mt-2">Retirement Gap Readiness</h2>
+      <motion.div
+        initial={{ opacity: 0, y: 20, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-3xl shadow-2xl p-8 max-w-2xl w-full border border-white/20 dark:border-gray-700/50 relative overflow-hidden"
+      >
+        {/* Decorative background elements */}
+        <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-64 h-64 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
+
+        <div className="text-center mb-8 relative z-10">
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+            className="inline-flex items-center justify-center p-3 bg-emerald-100 dark:bg-emerald-900/50 rounded-2xl mb-4"
+          >
+            <Shield className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
+          </motion.div>
+          <h2 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-blue-600 dark:from-emerald-400 dark:to-blue-400">
+            Initial Analysis Complete
+          </h2>
+          <p className="text-gray-600 dark:text-gray-300 mt-3 max-w-md mx-auto">
+            Before we move on to risk assessment, here is a snapshot of your current financial baseline.
+          </p>
         </div>
 
-        <div className="space-y-6">
-          <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600">
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Time Horizon (Years to Retire)</p>
-            <p className="text-2xl font-bold text-gray-800 dark:text-white">{yearsToRetire} Years</p>
-            <p className="text-sm font-medium mt-2">
-              Time Pressure: <span className="text-emerald-600 dark:text-emerald-400">{timePressure}</span>
-            </p>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
+          {/* Time Horizon Card */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.3 }}
+            className="p-6 rounded-2xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow"
+          >
+            <div className="flex items-center space-x-3 mb-4">
+              <div className={`p-2 rounded-lg ${pressureBg}`}>
+                <PressureIcon className={`w-5 h-5 ${pressureColor}`} />
+              </div>
+              <h3 className="font-semibold text-gray-800 dark:text-gray-200">Time Horizon</h3>
+            </div>
 
-          <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600">
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Financial Foundation Score</p>
-            <p className="text-2xl font-bold text-gray-800 dark:text-white">{foundationAverage.toFixed(1)} <span className="text-base font-normal text-gray-500">/ 5.0</span></p>
-            <p className="text-sm font-medium mt-2">
-              Level: <span className="text-emerald-600 dark:text-emerald-400">{foundationLevel}</span>
-            </p>
-          </div>
+            <div className="flex items-end justify-between">
+              <div>
+                <p className="text-4xl font-bold text-gray-900 dark:text-white mb-1">
+                  {yearsToRetire} <span className="text-xl font-normal text-gray-500">Yrs</span>
+                </p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">to Target Retirement</p>
+              </div>
+            </div>
+
+            <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Time Action Pressure:</span>
+                <span className={`text-sm font-bold px-2.5 py-1 rounded-full ${pressureBg} ${pressureColor}`}>
+                  {timePressure}
+                </span>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Foundation Score Card */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.4 }}
+            className="p-6 rounded-2xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow"
+          >
+            <div className="flex items-center space-x-3 mb-4">
+              <div className={`p-2 rounded-lg ${foundationBg}`}>
+                <Shield className={`w-5 h-5 ${foundationColor}`} />
+              </div>
+              <h3 className="font-semibold text-gray-800 dark:text-gray-200">Capital Foundation</h3>
+            </div>
+
+            <div className="flex items-end justify-between">
+              <div>
+                <p className="text-4xl font-bold text-gray-900 dark:text-white mb-1">
+                  {foundationAverage.toFixed(1)} <span className="text-xl font-normal text-gray-500">/ 5.0</span>
+                </p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Health Score</p>
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <div className="h-2 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${foundationProgress}%` }}
+                  transition={{ delay: 0.8, duration: 1, ease: "easeOut" }}
+                  className={`h-full rounded-full ${foundationColor.replace('text-', 'bg-')}`}
+                />
+              </div>
+              <div className="flex justify-between mt-2">
+                <span className="text-xs text-gray-500 font-medium">Rating:</span>
+                <span className={`text-xs font-bold ${foundationColor}`}>{foundationLevel}</span>
+              </div>
+            </div>
+          </motion.div>
         </div>
 
-        <button
-          onClick={() => setStep(step + 1)}
-          className="mt-8 w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-4 rounded-xl transition duration-300"
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+          className="mt-8 flex justify-center relative z-10"
         >
-          Continue
-        </button>
-      </div>
+          <button
+            onClick={() => setStep(step + 1)}
+            className="group relative inline-flex items-center justify-center px-8 py-4 font-bold text-white transition-all duration-200 bg-gray-900 dark:bg-white dark:text-gray-900 font-pj rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900"
+          >
+            <span>Proceed to Risk Assessment</span>
+            <ArrowRight className="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1" />
+          </button>
+        </motion.div>
+      </motion.div>
     );
   };
 
@@ -355,9 +509,8 @@ export const QuestionnairePage = () => {
     const estimatedAnnualExpenses = 600000;
     const inflationRate = 0.06;
 
-    const ageMap: Record<number, number> = { 1: 22, 2: 30, 3: 40, 4: 50, 5: 60 };
     const retireMap: Record<number, number> = { 1: 38, 2: 43, 3: 48, 4: 55, 5: 65 };
-    const currentAge = ageMap[answers.ageBracket as number] || 25;
+    const currentAge = answers.exactAge ? Number(answers.exactAge) : 25;
     const retirementAge = retireMap[answers.targetRetirementAgeBracket as number] || 60;
 
     const yearsToInvest = Math.max(0, retirementAge - currentAge);
@@ -370,7 +523,7 @@ export const QuestionnairePage = () => {
     return (
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 max-w-2xl w-full transition-colors duration-300">
         <div className="text-center mb-6">
-          <p className="text-emerald-600 dark:text-emerald-400 font-semibold">Step {ALL_QUESTIONS.length + 2} of {ALL_QUESTIONS.length + 3}</p>
+          <p className="text-emerald-600 dark:text-emerald-400 font-semibold">Final Steps</p>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Choose your FIRE Target</h2>
           <p className="text-gray-600 dark:text-gray-300 mt-2">
             Based on your estimated monthly expenses of {formatIndianCurrency(estimatedAnnualExpenses / 12)}
@@ -432,15 +585,33 @@ export const QuestionnairePage = () => {
     };
 
     const riskScore = (a.returnPref + a.drawReact + a.smallcap + a.thematic + a.horizon + a.safeAlloc + a.exp + a.goal) / 8;
-    const execScore = (a.income + a.method + a.activePref + a.global + a.style) / 5;
+
+    // Calculate time pressure & foundation level for display
+    const currentAge = answers.exactAge ? Number(answers.exactAge) : 25;
+    const retireMap: Record<number, number> = { 1: 38, 2: 43, 3: 48, 4: 55, 5: 65 };
+    const retireAge = retireMap[answers.targetRetirementAgeBracket as number] || 60;
+    const yearsToRetire = retireAge > currentAge ? retireAge - currentAge : 0;
+    let timePressure = "Low";
+    if (yearsToRetire <= 5) timePressure = "Extreme";
+    else if (yearsToRetire >= 6 && yearsToRetire <= 10) timePressure = "High";
+    else if (yearsToRetire >= 11 && yearsToRetire <= 20) timePressure = "Moderate";
+
+    const scoreSum = (Number(answers.savingsRateBracket) || 1) +
+      (Number(answers.emergencyBufferBracket) || 1) +
+      (Number(answers.portfolioBracket) || 1);
+    const foundationAverage = scoreSum / 3;
+    let foundationLevel = "Weak foundation";
+    if (foundationAverage >= 2.1 && foundationAverage <= 3.0) foundationLevel = "Developing";
+    else if (foundationAverage >= 3.1 && foundationAverage <= 4.0) foundationLevel = "Strong";
+    else if (foundationAverage >= 4.1) foundationLevel = "Very Strong";
 
     let baseStrategy = "Capital Stability Strategy";
     if (riskScore > 1.7 && riskScore <= 2.4) baseStrategy = "Balanced Growth Strategy";
     else if (riskScore > 2.4) baseStrategy = "High Growth Strategy";
 
-    let isFlag1 = (riskScore >= 2.5 && a.income === 1);
-    let isFlag2 = (a.safeAlloc === 1 && a.goal === 3);
-    let isFlag3 = (a.exp === 1 && a.smallcap === 3);
+    const isFlag1 = (riskScore >= 2.5 && a.income === 1);
+    const isFlag2 = (a.safeAlloc === 1 && a.goal === 3);
+    const isFlag3 = (a.exp === 1 && a.smallcap === 3);
 
     let finalStrategy = baseStrategy;
 
@@ -461,49 +632,209 @@ export const QuestionnairePage = () => {
     else if (finalStrategy.includes("High Growth")) description = "Equity-heavy, Mid/Small cap focus, global diversification, limited debt.";
     else description = "Core Nifty/Sensex, Flexi-cap, moderate debt/gold, balanced approach.";
 
+    // Map to low/medium/high
+    let riskCategory = 'MEDIUM RISK';
+    if (finalStrategy.includes("Capital Stability")) riskCategory = 'LOW RISK';
+    else if (finalStrategy.includes("High Growth")) riskCategory = 'HIGH RISK';
+
+    const getBaskets = (category: string) => {
+      if (category === 'LOW RISK') {
+        return [
+          {
+            title: "Basket 1 (Conservative)",
+            funds: ["ICICI Prudential Corporate Bond Fund"]
+          },
+          {
+            title: "Basket 2 (Balanced)",
+            funds: ["HDFC Corporate Bond Fund"]
+          },
+          {
+            title: "Basket 3 (Growth)",
+            funds: ["Kotak Corporate Bond Fund"]
+          }
+        ];
+      } else if (category === 'HIGH RISK') {
+        return [
+          {
+            title: "Basket 1 (Aggressive Focus)",
+            funds: ["SBI Focused Equity Fund", "Nippon India Small Cap Fund", "UTI Nifty 50 Index Fund"]
+          },
+          {
+            title: "Basket 2 (Dynamic High Risk)",
+            funds: ["ICICI Prudential Focused Equity Fund", "SBI Small Cap Fund", "ICICI Prudential Nifty 50 Index Fund"]
+          },
+          {
+            title: "Basket 3 (Steady Aggressive)",
+            funds: ["HDFC Focused Fund", "Kotak Small Cap Fund", "HDFC Nifty 50 Index Fund"]
+          }
+        ];
+      } else {
+        // MEDIUM RISK
+        return [
+          {
+            title: "Basket 1 (Core Growth)",
+            funds: ["UTI Nifty 50 Index Fund", "Parag Parikh Flexi Cap Fund", "Nippon India ETF Gold BeES"]
+          },
+          {
+            title: "Basket 2 (Balanced Mix)",
+            funds: ["ICICI Prudential Nifty 50 Index Fund", "HDFC Flexi Cap Fund", "Nippon India ETF Gold BeES"]
+          },
+          {
+            title: "Basket 3 (Steady Medium)",
+            funds: ["HDFC Nifty 50 Index Fund", "Kotak Flexicap Fund", "Nippon India ETF Gold BeES"]
+          }
+        ];
+      }
+    };
+
+    const displayCategory = manualCategory || riskCategory;
+    const baskets = getBaskets(displayCategory);
+
+    // Default estimated growth rates
+    const growthRates: Record<string, string> = {
+      'LOW RISK': '7-9% p.a.',
+      'MEDIUM RISK': '10-12% p.a.',
+      'HIGH RISK': '13-16%+ p.a.'
+    };
+
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 max-w-xl w-full transition-colors duration-300">
-        <div className="text-center mb-6">
-          <p className="text-emerald-600 dark:text-emerald-400 font-semibold">Final Step</p>
-          <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Your Indian Market Strategy</h2>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="bg-[#0f172a] rounded-[2rem] shadow-[0_0_50px_-12px_rgba(16,185,129,0.3)] p-8 max-w-5xl w-full border border-gray-800 relative overflow-hidden"
+      >
+        <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-64 h-64 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
+
+        <div className="text-center mb-8 relative z-10">
+          <p className="text-emerald-400 font-bold tracking-widest uppercase text-sm mb-2 drop-shadow-sm">Final Recommendation</p>
+          <h2 className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400 drop-shadow-lg">
+            Your Investment Strategy & Baskets
+          </h2>
         </div>
 
-        <div className="space-y-4">
-          <div className="p-4 bg-emerald-50 dark:bg-emerald-900/30 rounded-xl border border-emerald-200 dark:border-emerald-700">
-            <h3 className="text-xl font-bold text-emerald-800 dark:text-emerald-300">{finalStrategy}</h3>
-            <p className="text-gray-600 dark:text-gray-300 mt-2">{description}</p>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 relative z-10">
+          <div className="space-y-6 lg:col-span-1 border-b pb-8 lg:pb-0 lg:border-b-0 lg:border-r border-gray-700/50 lg:pr-6">
+            <div className="p-6 bg-gradient-to-br from-emerald-900/60 to-gray-900 rounded-2xl border border-emerald-500/30 shadow-xl overflow-hidden relative group transition-all duration-300 hover:shadow-[0_0_30px_rgba(16,185,129,0.2)]">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl transform translate-x-10 -translate-y-10 pointer-events-none transition-transform duration-700 group-hover:scale-150" />
+              <h3 className="text-2xl font-bold text-emerald-400 mb-3 drop-shadow-sm relative z-10">{finalStrategy}</h3>
+              <p className="text-gray-300 text-sm leading-relaxed relative z-10">{description}</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-4 bg-gray-800/50 backdrop-blur-sm border border-gray-700/80 rounded-xl shadow-inner text-center md:text-left transition-colors duration-300 hover:bg-gray-800">
+                <p className="text-xs text-gray-500 uppercase tracking-widest mb-1 font-semibold">Time Pressure</p>
+                <p className="text-xl font-black text-white">{timePressure}</p>
+              </div>
+              <div className="p-4 bg-gray-800/50 backdrop-blur-sm border border-gray-700/80 rounded-xl shadow-inner text-center md:text-left transition-colors duration-300 hover:bg-gray-800">
+                <p className="text-xs text-gray-500 uppercase tracking-widest mb-1 font-semibold">Financial Band</p>
+                <p className="text-xl font-black text-white">{foundationLevel}</p>
+              </div>
+            </div>
+
+            {(isFlag1 || isFlag2 || isFlag3) && (
+              <div className="p-4 bg-amber-900/20 backdrop-blur-sm rounded-xl border border-amber-700/50 shadow-inner">
+                <p className="text-amber-400 font-bold text-sm mb-2 flex items-center gap-2">
+                  <span className="text-lg">⚠️</span> Adjustments:
+                </p>
+                <ul className="text-xs text-amber-200/80 list-disc pl-5 space-y-1.5 font-medium">
+                  {isFlag1 && <li>High growth preference with unstable income.</li>}
+                  {isFlag2 && <li>Conflicting safety and growth priorities.</li>}
+                  {isFlag3 && <li>Low experience with high volatility exposure.</li>}
+                </ul>
+              </div>
+            )}
+
+            <button
+              onClick={() => {
+                let strategyName = finalStrategy;
+                if (manualCategory === 'LOW RISK') strategyName = "Capital Stability Strategy";
+                if (manualCategory === 'HIGH RISK') strategyName = "High Growth Strategy";
+                if (manualCategory === 'MEDIUM RISK') strategyName = "Balanced Growth Strategy";
+                handleComplete(strategyName);
+              }}
+              className="mt-6 w-full bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-400 hover:to-emerald-600 text-white font-bold py-4 shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:shadow-[0_0_30px_rgba(16,185,129,0.5)] rounded-xl transition-all duration-300 transform hover:-translate-y-1 flex items-center justify-center gap-2"
+            >
+              Finish Setup <ArrowRight className="w-5 h-5" />
+            </button>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 mt-6">
-            <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <p className="text-xs text-gray-500">Risk Score</p>
-              <p className="text-lg font-bold text-gray-800 dark:text-gray-200">{riskScore.toFixed(2)} / 3.0</p>
+          <div className="lg:col-span-2 space-y-6 relative z-10">
+            <div className="flex bg-gray-800/60 p-1.5 rounded-2xl mb-2 backdrop-blur-md border border-gray-700/50 overflow-x-auto no-scrollbar">
+              {['LOW RISK', 'MEDIUM RISK', 'HIGH RISK'].map(cat => (
+                <button
+                  key={cat}
+                  onClick={() => setManualCategory(cat)}
+                  className={`flex-1 min-w-[120px] py-3 text-sm font-bold rounded-xl transition-all duration-300 ${displayCategory === cat
+                    ? 'bg-gradient-to-r from-emerald-600 to-emerald-800 text-white shadow-lg shadow-emerald-900/50 transform scale-[1.02]'
+                    : 'text-gray-500 hover:text-white hover:bg-gray-800/50'
+                    }`}
+                >
+                  {cat} {riskCategory === cat && '✨'}
+                </button>
+              ))}
             </div>
-            <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <p className="text-xs text-gray-500">Execution Capacity</p>
-              <p className="text-lg font-bold text-gray-800 dark:text-gray-200">{execScore.toFixed(2)} / 3.0</p>
+
+            <div className="mb-4">
+              <h3 className="text-xl font-bold text-white flex items-center gap-3">
+                Recommended Portfolios
+                <span className="text-xs font-black tracking-widest text-gray-400 bg-gray-800 px-3 py-1.5 rounded-full border border-gray-700 uppercase">
+                  {displayCategory}
+                </span>
+              </h3>
+              <p className="text-sm text-gray-400 mt-2 leading-relaxed">
+                {displayCategory === riskCategory
+                  ? `Based on your profile, expect an estimated growth of `
+                  : `You manually selected this category. Expect an estimated growth of `}
+                <strong className="text-emerald-400 font-bold">{growthRates[displayCategory]}</strong>. Choose a basket to start with.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {baskets.map((basket, idx) => (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 * idx, duration: 0.4 }}
+                  key={idx}
+                  className="relative group bg-gradient-to-b from-gray-800/90 to-gray-900/90 border border-gray-700 hover:border-emerald-500/50 rounded-2xl p-6 shadow-xl hover:shadow-[0_10px_40px_-10px_rgba(16,185,129,0.3)] transition-all duration-300 flex flex-col h-full overflow-hidden"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-b from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+
+                  <h4 className="font-extrabold text-emerald-400 mb-5 border-b border-gray-700/80 pb-3 text-base relative z-10 drop-shadow-sm">
+                    {basket.title}
+                  </h4>
+
+                  <ul className="flex-1 space-y-4 mb-8 relative z-10">
+                    {basket.funds.map((fund, fIdx) => (
+                      <li key={fIdx} className="text-xs text-gray-200 flex flex-col items-start gap-2 bg-gray-800/40 p-3 rounded-lg border border-gray-700/30">
+                        <div className="w-6 h-6 rounded-full bg-white flex items-center justify-center shadow-md p-0.5 shrink-0 overflow-hidden">
+                          <img src={getFundIcon(fund)} alt="amc logo" className="w-full h-full rounded-full object-contain" onError={(e) => e.currentTarget.style.display = 'none'} />
+                        </div>
+                        <span className="leading-snug font-medium line-clamp-2">{fund}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <button
+                    onClick={() => {
+                      let strategyName = finalStrategy;
+                      if (manualCategory === 'LOW RISK') strategyName = "Capital Stability Strategy";
+                      if (manualCategory === 'HIGH RISK') strategyName = "High Growth Strategy";
+                      if (manualCategory === 'MEDIUM RISK') strategyName = "Balanced Growth Strategy";
+                      handleComplete(strategyName);
+                    }}
+                    className="w-full mt-auto py-2.5 bg-gray-800/80 border border-emerald-500/30 text-emerald-400 font-bold rounded-xl hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-all duration-300 shadow-sm group-hover:shadow-emerald-500/20 relative z-10 text-sm"
+                  >
+                    Select Basket {idx + 1}
+                  </button>
+                </motion.div>
+              ))}
             </div>
           </div>
-
-          {(isFlag1 || isFlag2 || isFlag3) && (
-            <div className="p-4 bg-amber-50 dark:bg-amber-900/30 rounded-xl border border-amber-200 dark:border-amber-700 mt-4">
-              <p className="text-amber-800 dark:text-amber-300 font-semibold text-sm mb-1">Strategy Adjustments Applied:</p>
-              <ul className="text-xs text-amber-700 dark:text-amber-400 list-disc pl-4 space-y-1">
-                {isFlag1 && <li>High growth preference with unstable income.</li>}
-                {isFlag2 && <li>Conflicting safety and growth priorities.</li>}
-                {isFlag3 && <li>Low experience with high volatility exposure.</li>}
-              </ul>
-            </div>
-          )}
         </div>
-
-        <button
-          onClick={() => handleComplete(finalStrategy)}
-          className="mt-8 w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-4 rounded-xl transition duration-300 flex items-center justify-center"
-        >
-          Complete Setup
-        </button>
-      </div>
+      </motion.div>
     );
   };
 
@@ -512,7 +843,16 @@ export const QuestionnairePage = () => {
     return null;
   }
 
-  const progress = ((step + 1) / (ALL_QUESTIONS.length + 3)) * 100;
+  let progress = 0;
+  if (step < INPUT_QUESTIONS.length) {
+    progress = ((step + 1) / INPUT_QUESTIONS.length) * 100;
+  } else if (step === INPUT_QUESTIONS.length) {
+    progress = 100;
+  } else if (step > INPUT_QUESTIONS.length && step <= ALL_QUESTIONS.length) {
+    progress = ((step - INPUT_QUESTIONS.length) / RISK_QUESTIONS.length) * 100;
+  } else {
+    progress = 100;
+  }
 
   return (
     <div className="min-h-screen bg-emerald-50 dark:bg-gray-900 transition-colors duration-300 flex flex-col items-center justify-center p-4">

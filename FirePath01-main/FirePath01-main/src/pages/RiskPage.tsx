@@ -127,42 +127,47 @@ export const RiskPage = () => {
   // Mutual Fund Data with Real Scheme Codes
   const riskProfiles: Record<string, RiskProfileData> = {
     safe: {
-      name: 'Safe',
-      description: 'Focuses on liquid funds and gold for stability.',
-      allocation: { equity: 0, debt: 80, gold: 20 },
-      expectedReturn: 7,
+      name: 'Capital Stability Strategy',
+      description: 'Focuses on steady growth via corporate bonds and low risk assets.',
+      allocation: { equity: 0, debt: 100, gold: 0 },
+      expectedReturn: 8,
       color: 'green',
       risk: 'Low',
       icon: '🛡️',
-      advice: 'This portfolio focuses on capital preservation using Liquid Funds and Gold. \n\nAllocation: \n- 80% Debt/Liquid Funds\n- 20% Gold\n- 0% Equity\n\nIdeal for short-term goals or emergency funds.',
+      advice: 'This portfolio focuses on capital preservation using select Corporate Bond Funds. \n\nAllocation: \n- 100% Debt/Liquid Funds\n- 0% Gold\n- 0% Equity\n\nIdeal for short-term goals or emergency funds.',
       funds: [
         {
-          name: 'SBI Liquid Fund',
-          category: 'Liquid Fund',
-          expense_ratio: 0.19,
-          min_investment: 500,
+          name: 'ICICI Prudential Corporate Bond Fund',
+          category: 'Corporate Bond',
+          expense_ratio: 0.28,
+          min_investment: 100,
           rating: 5,
-          schemeCode: '119800'
         },
         {
-          name: 'SBI Gold Fund',
-          category: 'Gold',
-          expense_ratio: 0.10,
-          min_investment: 5000,
+          name: 'HDFC Corporate Bond Fund',
+          category: 'Corporate Bond',
+          expense_ratio: 0.32,
+          min_investment: 100,
           rating: 4,
-          schemeCode: '119788'
+        },
+        {
+          name: 'Kotak Corporate Bond Fund',
+          category: 'Corporate Bond',
+          expense_ratio: 0.30,
+          min_investment: 1000,
+          rating: 4,
         }
       ]
     },
     medium: {
-      name: 'Medium',
-      description: 'Focuses mainly on index funds with some gold allocation.',
+      name: 'Balanced Growth Strategy',
+      description: 'Focuses mainly on index funds, flexi-cap, and gold allocation.',
       allocation: { equity: 80, debt: 0, gold: 20 },
       expectedReturn: 12,
       color: 'blue',
       risk: 'Moderate',
       icon: '⚖️',
-      advice: 'Balanced growth using Index Funds and Gold. \n\nAllocation:\n- 80% Stocks (Index Funds)\n- 20% Gold\n\nSuitable for long-term wealth creation with moderate volatility.',
+      advice: 'Balanced growth using Index Funds, Flexi-cap, and Gold. \n\nAllocation:\n- 80% Stocks\n- 20% Gold\n\nSuitable for long-term wealth creation with moderate volatility.',
       funds: [
         {
           name: 'UTI Nifty 50 Index Fund',
@@ -173,40 +178,45 @@ export const RiskPage = () => {
           schemeCode: '120716'
         },
         {
-          name: 'SBI Gold Fund',
-          category: 'Gold',
-          expense_ratio: 0.10,
-          min_investment: 5000,
-          rating: 4,
-          schemeCode: '119788'
-        }
-      ]
-    },
-    risky: {
-      name: 'Risky',
-      description: 'Focuses entirely on stocks for maximum growth.',
-      allocation: { equity: 100, debt: 0, gold: 0 },
-      expectedReturn: 15,
-      color: 'red',
-      risk: 'High',
-      icon: '🚀',
-      advice: 'Aggressive portfolio 100% invested in Equity. \n\nSplit:\n- 40% Small Cap\n- 40% Flexi Cap\n- 20% Large Cap\n\nHigh risk, high reward. Requires a long-term horizon (7+ years).',
-      funds: [
-        {
-          name: 'Quant Small Cap Fund',
-          category: 'Small Cap',
-          expense_ratio: 0.64,
-          min_investment: 5000,
-          rating: 5,
-          schemeCode: '120828'
-        },
-        {
           name: 'Parag Parikh Flexi Cap Fund',
           category: 'Flexi Cap',
           expense_ratio: 0.59,
           min_investment: 1000,
           rating: 5,
           schemeCode: '122639'
+        },
+        {
+          name: 'Nippon India ETF Gold BeES',
+          category: 'Gold',
+          expense_ratio: 0.79,
+          min_investment: 500,
+          rating: 4,
+        }
+      ]
+    },
+    risky: {
+      name: 'High Growth Strategy',
+      description: 'Focuses aggressively on stocks for maximum wealth acceleration.',
+      allocation: { equity: 100, debt: 0, gold: 0 },
+      expectedReturn: 15,
+      color: 'red',
+      risk: 'High',
+      icon: '🚀',
+      advice: 'Aggressive portfolio 100% invested in Equity. \n\nSplit:\n- Focused Funds\n- Small Cap Funds\n- Core large cap\n\nHigh risk, high reward. Requires a long-term horizon (7+ years).',
+      funds: [
+        {
+          name: 'SBI Focused Equity Fund',
+          category: 'Focused Fund',
+          expense_ratio: 0.73,
+          min_investment: 500,
+          rating: 5,
+        },
+        {
+          name: 'Nippon India Small Cap Fund',
+          category: 'Small Cap',
+          expense_ratio: 0.69,
+          min_investment: 1000,
+          rating: 5,
         },
         {
           name: 'UTI Nifty 50 Index Fund',
@@ -221,6 +231,18 @@ export const RiskPage = () => {
   };
 
   const profile = riskProfiles[selectedRisk];
+
+  const getFundIcon = (fundName: string) => {
+    if (fundName.toLowerCase().includes("gold") || fundName.toLowerCase().includes("bees")) return "https://img.icons8.com/color/48/gold-bars.png";
+    if (fundName.includes("ICICI")) return "https://logo.clearbit.com/icicipruamc.com";
+    if (fundName.includes("HDFC")) return "https://logo.clearbit.com/hdfcfund.com";
+    if (fundName.includes("Kotak")) return "https://logo.clearbit.com/kotakmf.com";
+    if (fundName.includes("SBI")) return "https://logo.clearbit.com/sbimf.com";
+    if (fundName.includes("Nippon")) return "https://logo.clearbit.com/nipponindiamf.com";
+    if (fundName.includes("UTI")) return "https://logo.clearbit.com/utimf.com";
+    if (fundName.includes("Parag Parikh")) return "https://logo.clearbit.com/amc.ppfas.com";
+    return "https://logo.clearbit.com/mutualfundssahihai.com";
+  };
 
   const handleNext = () => {
     navigate('/calculators', {
@@ -253,24 +275,19 @@ export const RiskPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               {(['safe', 'medium', 'risky'] as const).map((riskLevel) => {
                 const prof = riskProfiles[riskLevel];
-                const colorMap = { green: '#10b981', blue: '#3b82f6', red: '#ef4444' };
-                const bgColorMap = { green: '#f0fdf4', blue: '#f0f9ff', red: '#fef2f2' };
                 return (
                   <button
                     key={riskLevel}
                     onClick={() => setSelectedRisk(riskLevel)}
-                    style={selectedRisk === riskLevel ? {
-                      borderColor: colorMap[prof.color as keyof typeof colorMap],
-                      backgroundColor: bgColorMap[prof.color as keyof typeof bgColorMap],
-                      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
-                    } : {}}
-                    className={`p-6 rounded-xl border-2 transition ${selectedRisk === riskLevel ? 'shadow-lg' : 'border-gray-200 bg-white hover:shadow-md'
+                    className={`p-6 rounded-2xl border-2 transition-all duration-300 text-left ${selectedRisk === riskLevel
+                      ? `border-${prof.color}-500 bg-${prof.color}-50 dark:bg-${prof.color}-900/40 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.2)] scale-[1.02]`
+                      : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:shadow-xl hover:-translate-y-1'
                       }`}
                   >
-                    <div className="text-4xl mb-3">{prof.icon}</div>
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">{prof.name}</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">{prof.description}</p>
-                    <div style={{ color: colorMap[prof.color as keyof typeof colorMap] }} className="text-lg font-bold mb-4">
+                    <div className="text-4xl mb-4 drop-shadow-sm">{prof.icon}</div>
+                    <h3 className={`text-xl font-bold mb-2 ${selectedRisk === riskLevel ? `text-${prof.color}-700 dark:text-${prof.color}-300` : 'text-gray-900 dark:text-white'}`}>{prof.name}</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 line-clamp-2">{prof.description}</p>
+                    <div className={`text-lg font-black mb-5 ${selectedRisk === riskLevel ? `text-${prof.color}-600 dark:text-${prof.color}-400` : `text-${prof.color}-500`}`}>
                       {prof.expectedReturn}%+ Annual Return
                     </div>
 
@@ -279,7 +296,10 @@ export const RiskPage = () => {
                         e.stopPropagation();
                         handleSimulate(prof);
                       }}
-                      className="w-full py-2 px-4 bg-white border-2 border-gray-200 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-emerald-500 hover:text-emerald-700 transition flex items-center justify-center gap-2"
+                      className={`w-full py-2.5 px-4 rounded-xl text-sm font-bold transition flex items-center justify-center gap-2 ${selectedRisk === riskLevel
+                        ? `bg-white dark:bg-gray-900 border border-${prof.color}-200 dark:border-${prof.color}-800 text-${prof.color}-700 dark:text-${prof.color}-400 shadow-sm hover:bg-${prof.color}-50`
+                        : 'bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300'
+                        }`}
                     >
                       <Calculator size={16} />
                       Simulate Investment
@@ -368,50 +388,57 @@ export const RiskPage = () => {
               </div>
 
               {/* Recommended Mutual Funds */}
-              <div className="rounded-xl border border-gray-200 dark:border-gray-700">
-                <div className="bg-gray-100 dark:bg-gray-800/80 p-6 border-b border-gray-200 dark:border-gray-700">
-                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">📊 Recommended Mutual Funds</h3>
-                  <p className="text-gray-600 dark:text-gray-400 mt-2">Top-rated funds suitable for your {profile.name} risk profile</p>
+              <div className="rounded-2xl border border-gray-200 dark:border-gray-700/80 bg-white dark:bg-gray-800/50 overflow-hidden shadow-lg">
+                <div className="bg-gradient-to-r from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-900 p-6 md:p-8 border-b border-gray-200 dark:border-gray-700">
+                  <h3 className="text-2xl font-black text-gray-900 dark:text-white flex items-center gap-3">
+                    <span className="text-3xl drop-shadow-sm">📊</span> Recommended Mutual Funds
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400 mt-2 font-medium">Top-rated funds curated explicitly for your {profile.name}</p>
                 </div>
 
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="bg-gray-50 border-b border-gray-200">
-                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Fund Name</th>
-                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Category</th>
-                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Expense Ratio</th>
-                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Min. Investment</th>
-                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Rating</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {profile.funds.map((fund, idx) => (
-                        <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                          <td className="px-6 py-4 text-sm text-gray-900 font-medium">{fund.name}</td>
-                          <td className="px-6 py-4 text-sm text-gray-600">
-                            <span className="inline-block bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-semibold">
-                              {fund.category}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-sm text-gray-900">{fund.expense_ratio}%</td>
-                          <td className="px-6 py-4 text-sm text-gray-900">
-                            {fund.min_investment === 0 ? 'No Minimum' : `₹${fund.min_investment.toLocaleString()}`}
-                          </td>
-                          <td className="px-6 py-4 text-sm">
-                            <div className="flex items-center gap-1">
-                              <span className="text-yellow-400">★</span>
-                              <span className="font-semibold text-gray-900">{fund.rating}</span>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div className="p-6 md:p-8 grid gap-6">
+                  {profile.funds.map((fund, idx) => (
+                    <div key={idx} className="group flex flex-col md:flex-row md:items-center justify-between p-5 rounded-2xl border border-gray-100 dark:border-gray-700/60 bg-gray-50/50 dark:bg-gray-800 hover:bg-white dark:hover:bg-gray-700/80 hover:shadow-xl hover:border-emerald-500/30 transition-all duration-300">
+
+                      <div className="flex items-center gap-5 mb-4 md:mb-0">
+                        <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-white flex items-center justify-center shadow-lg p-1.5 shrink-0 overflow-hidden border border-gray-100 dark:border-gray-600">
+                          <img src={getFundIcon(fund.name)} alt="amc logo" className="w-full h-full rounded-full object-contain" onError={(e) => e.currentTarget.style.display = 'none'} />
+                        </div>
+                        <div>
+                          <h4 className="text-lg font-bold text-gray-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors duration-300">{fund.name}</h4>
+                          <span className="inline-block mt-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 px-3 py-1 rounded-full text-xs font-bold tracking-wide border border-blue-200 dark:border-blue-800/50">
+                            {fund.category.toUpperCase()}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-6 md:gap-8 md:pl-8 border-t md:border-t-0 md:border-l border-gray-200 dark:border-gray-700 pt-4 md:pt-0">
+                        <div className="text-left">
+                          <p className="text-xs text-gray-500 dark:text-gray-400 tracking-wider mb-1 uppercase font-semibold">Expense Ratio</p>
+                          <p className="text-base font-black text-gray-900 dark:text-white">{fund.expense_ratio}%</p>
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs text-gray-500 dark:text-gray-400 tracking-wider mb-1 uppercase font-semibold">Min. Invest</p>
+                          <p className="text-base font-black text-gray-900 dark:text-white">
+                            {fund.min_investment === 0 ? 'No Min' : `₹${fund.min_investment.toLocaleString()}`}
+                          </p>
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs text-gray-500 dark:text-gray-400 tracking-wider mb-1 uppercase font-semibold">Rating</p>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-yellow-400 text-lg drop-shadow-sm">★</span>
+                            <span className="text-base font-black text-gray-900 dark:text-white">{fund.rating}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                    </div>
+                  ))}
                 </div>
 
-                <div className="bg-gray-50 p-6 border-t border-gray-200 text-sm text-gray-600">
-                  <p>💬 <strong>Note:</strong> Fund data is based on popular low-cost index funds. For real-time updates, integrate with APIs like Finnhub, Alpha Vantage, or Financial Modeling Prep API.</p>
+                <div className="bg-emerald-50 dark:bg-emerald-900/20 p-5 md:p-6 border-t border-emerald-100 dark:border-emerald-800/30 text-sm text-gray-700 dark:text-gray-300 flex items-start gap-3">
+                  <span className="text-xl">💬</span>
+                  <p className="leading-relaxed"><strong>Note:</strong> Fund data is based on popular low-cost index and active funds curated for FirePath. For real-time updates and purchases, you will integrate with Finnhub or your brokerage.</p>
                 </div>
               </div>
             </div>

@@ -12,6 +12,7 @@ import { AuthProvider } from './context/AuthContext';
 import './App.css';
 
 import { UserProfilePage } from './pages/UserProfilePage';
+import { StrategyExplanationPage } from './pages/StrategyExplanationPage';
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
           <Route path="/articles" element={<ArticlesPage />} />
           <Route path="/risk" element={<RiskPage />} />
           <Route path="/expenses" element={<ExpensesPage />} />
+          <Route path="/strategy-explanation" element={<StrategyExplanationPage />} />
         </Routes>
       </Router>
     </AuthProvider>

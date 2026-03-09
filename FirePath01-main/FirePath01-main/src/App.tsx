@@ -13,6 +13,7 @@ import './App.css';
 
 import { UserProfilePage } from './pages/UserProfilePage';
 import { StrategyExplanationPage } from './pages/StrategyExplanationPage';
+import { InvestmentProgressDashboard } from './pages/InvestmentProgressDashboard';
 
 function App() {
   return (
@@ -30,6 +31,7 @@ function App() {
           <Route path="/risk" element={<RiskPage />} />
           <Route path="/expenses" element={<ExpensesPage />} />
           <Route path="/strategy-explanation" element={<StrategyExplanationPage />} />
+          <Route path="/investment-dashboard" element={<InvestmentProgressDashboard />} />
         </Routes>
       </Router>
     </AuthProvider>

@@ -32,6 +32,39 @@ const UserSchema = new mongoose.Schema({
             default: 'Net Worth'
         },
         budget: { type: Number, default: 0 },
+        defaultMonthlySIP: { type: Number, default: 0 },
+        lastNotifiedMilestone: { type: Number, default: 0 },
+        selectedBasket: {
+            type: {
+                name: String,
+                funds: [{ name: String, split: Number, risk: String }]
+            },
+            default: null
+        },
+        portfolio: {
+            type: [{
+                fundName: String,
+                units: Number,
+                totalInvested: Number,
+                navAtPurchase: Number
+            }],
+            default: []
+        },
+        portfolioHistory: {
+            type: [{
+                date: String,
+                totalInvested: Number,
+                currentValue: Number
+            }],
+            default: []
+        },
+        monthlyContributions: {
+            type: [{
+                date: String,
+                amount: Number
+            }],
+            default: []
+        },
         expensesList: {
             type: [{
                 id: String,

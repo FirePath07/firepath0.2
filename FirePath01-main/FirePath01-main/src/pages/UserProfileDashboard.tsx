@@ -58,19 +58,23 @@ export const UserProfileDashboard = () => {
 
   const fireNumber = futureAnnualExpenses * 25;
 
+  const portfolioHistory = financialData.portfolioHistory || [];
+  const latestPortfolioValue = portfolioHistory.length > 0 ? portfolioHistory[portfolioHistory.length - 1].currentValue : 0;
+  const currentTotalWealth = financialData.currentSavings + latestPortfolioValue;
+
   let yearsToFire = 0;
-  if (financialData.currentSavings >= fireNumber) {
+  if (currentTotalWealth >= fireNumber) {
     yearsToFire = 0;
   } else if (annualSurplus > 0) {
-    yearsToFire = Math.max(0, Math.log((fireNumber * r + annualSurplus) / (financialData.currentSavings * r + annualSurplus)) / Math.log(1 + r));
-  } else if (financialData.currentSavings > 0) {
-    yearsToFire = Math.max(0, Math.log(fireNumber / financialData.currentSavings) / Math.log(1 + r));
+    yearsToFire = Math.max(0, Math.log((fireNumber * r + annualSurplus) / (currentTotalWealth * r + annualSurplus)) / Math.log(1 + r));
+  } else if (currentTotalWealth > 0) {
+    yearsToFire = Math.max(0, Math.log(fireNumber / currentTotalWealth) / Math.log(1 + r));
   } else {
     yearsToFire = Infinity;
   }
 
   const estimatedRetirementAge = financialData.age + yearsToFire;
-  const netWorth = financialData.currentSavings;
+  const netWorth = currentTotalWealth;
 
   const stats = [
     { title: 'Annual Income', value: formatIndianCurrency(annualIncome), subtitle: `${formatIndianCurrency(financialData.monthlyIncome)}/month`, metricName: 'Annual Income' },
@@ -188,7 +192,7 @@ export const UserProfileDashboard = () => {
                         {/* Animated fill */}
                         <motion.div
                           initial={{ width: 0 }}
-                          animate={{ width: `${Math.min((financialData.currentSavings / fireNumber) * 100, 100)}%` }}
+                          animate={{ width: `${Math.min((currentTotalWealth / fireNumber) * 100, 100)}%` }}
                           transition={{ duration: 1.8, ease: 'easeOut', delay: 0.3 }}
                           className="absolute top-0 left-0 h-full rounded-full"
                           style={{
@@ -211,17 +215,17 @@ export const UserProfileDashboard = () => {
                           animate={{ opacity: [0.6, 1, 0.6] }}
                           transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
                           className="absolute top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-white shadow-[0_0_12px_4px_rgba(16,185,129,0.9)]"
-                          style={{ left: `calc(${Math.min((financialData.currentSavings / fireNumber) * 100, 100)}% - 10px)` }}
+                          style={{ left: `calc(${Math.min((currentTotalWealth / fireNumber) * 100, 100)}% - 10px)` }}
                         />
                       </div>
                       <div className="flex justify-between mt-3 text-sm text-gray-600 dark:text-gray-400 font-medium">
-                        <span className="text-emerald-700 dark:text-emerald-400 font-bold">{formatIndianCurrency(financialData.currentSavings)} Saved</span>
+                        <span className="text-emerald-700 dark:text-emerald-400 font-bold">{formatIndianCurrency(currentTotalWealth)} Saved or Invested</span>
                         <motion.span
                           animate={{ color: ['#059669', '#10b981', '#059669'] }}
                           transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
                           className="font-black"
                         >
-                          {fireNumber > 0 ? Math.min(parseFloat(((financialData.currentSavings / fireNumber) * 100).toFixed(1)), 100) : 0}% Complete
+                          {fireNumber > 0 ? Math.min(parseFloat(((currentTotalWealth / fireNumber) * 100).toFixed(1)), 100) : 0}% Complete
                         </motion.span>
                       </div>
                     </div>
@@ -299,40 +303,19 @@ export const UserProfileDashboard = () => {
                   <span className="font-bold text-gray-900 dark:text-white group-hover:text-purple-700 dark:group-hover:text-purple-400">Retake</span>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Update assessment</p>
                 </button>
+
+                <button
+                  onClick={() => navigate('/investment-dashboard')}
+                  className="p-4 border-2 border-emerald-400 dark:border-emerald-500 rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition text-left group bg-emerald-50/50 dark:bg-emerald-900/10 shadow-sm"
+                >
+                  <span className="text-2xl mb-2 block">📈</span>
+                  <span className="font-bold text-emerald-800 dark:text-emerald-300 group-hover:text-emerald-900 dark:group-hover:text-emerald-200">Investments</span>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Track portfolio</p>
+                </button>
               </div>
             </div>
 
-            {/* Financial Snapshot */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Financial Snapshot</h2>
 
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
-                  <span className="text-gray-700 dark:text-gray-300 font-medium">Risk Profile</span>
-                  <span className="text-xl font-bold text-emerald-700 dark:text-emerald-400 capitalize">{financialData.riskProfile}</span>
-                </div>
-                <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
-                  <span className="text-gray-700 dark:text-gray-300 font-medium">Monthly Surplus</span>
-                  <span className="text-xl font-bold text-amber-700 dark:text-amber-400">{formatIndianCurrency(financialData.monthlyIncome - financialData.monthlyExpenses)}</span>
-                </div>
-
-                <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
-                  <span className="text-gray-700 dark:text-gray-300 font-medium">Years of Expenses Saved</span>
-                  <span className="text-xl font-bold text-purple-700 dark:text-purple-400">{annualExpenses > 0 ? (financialData.currentSavings / annualExpenses).toFixed(1) : 0} yrs</span>
-                </div>
-
-                <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
-                  <span className="text-gray-700 dark:text-gray-300 font-medium">Income Multiple</span>
-                  <span className="text-xl font-bold text-blue-700 dark:text-blue-400">{annualIncome > 0 ? (fireNumber / annualIncome).toFixed(1) : 0}x</span>
-                </div>
-              </div>
-
-              <button
-                onClick={() => setIsSettingsOpen(true)}
-                className="w-full mt-6 bg-emerald-700 text-white py-3 rounded-lg font-bold hover:bg-emerald-800 transition">
-                Update My Numbers
-              </button>
-            </div>
           </div>
         </main>
       </div>

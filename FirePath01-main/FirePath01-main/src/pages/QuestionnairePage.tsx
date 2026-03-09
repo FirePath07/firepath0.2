@@ -262,7 +262,7 @@ export const QuestionnairePage = () => {
     setStep(step + 1);
   };
 
-  const handleComplete = (finalStrategy: string) => {
+  const handleComplete = (finalStrategy: string, selectedBasketData?: any) => {
     const retireMap: Record<number, number> = { 1: 38, 2: 43, 3: 48, 4: 55, 5: 65 };
 
     const currentAge = answers.exactAge ? Number(answers.exactAge) : 25;
@@ -271,6 +271,10 @@ export const QuestionnairePage = () => {
     const monthlyExpenses = answers.monthlyExpenses ? Number(answers.monthlyExpenses) : 0;
     const currentSavings = answers.currentSavings ? Number(answers.currentSavings) : 0;
     const selectedFireAmount = answers.selectedFireAmount ? Number(answers.selectedFireAmount) : 0;
+
+    const remainingMoney = Math.max(0, monthlyIncome - monthlyExpenses);
+    const splurgeMoney = remainingMoney * 0.20;
+    const defaultMonthlySIP = Math.max(0, remainingMoney - splurgeMoney);
 
     const yearsToRetire = retireAge > currentAge ? retireAge - currentAge : 0;
     let timePressure = "Low";
@@ -306,7 +310,9 @@ export const QuestionnairePage = () => {
       timePressure,
       foundationLevel,
       riskProfile: finalStrategy,
-      mostImportantMetric: 'Years to FIRE' as const
+      mostImportantMetric: 'Years to FIRE' as const,
+      defaultMonthlySIP,
+      ...(selectedBasketData && { selectedBasket: selectedBasketData })
     };
 
     updateFinancialData(finalData);
@@ -385,11 +391,10 @@ export const QuestionnairePage = () => {
     // ── NEW: income split logic ──────────────────────────────────────
     const income = answers.monthlyIncome ? Number(answers.monthlyIncome) : 0;
     const expenses = answers.monthlyExpenses ? Number(answers.monthlyExpenses) : 0;
-    const surplus = Math.max(0, income - expenses);
-    // Minimum savings buffer recommendation: at least 10% of income or ₹2,000, whichever is bigger
-    const minSavings = Math.max(2000, income * 0.10);
-    const investable = Math.max(0, surplus - minSavings);
-    const canInvest = investable >= 1000; // need at least 1k to invest in any single fund
+    const remainingMoney = Math.max(0, income - expenses);
+    const splurgeMoney = remainingMoney * 0.20;
+    const investable = Math.max(0, remainingMoney - splurgeMoney);
+    const canInvest = investable >= 1000;
 
     const retireMap: Record<number, number> = { 1: 38, 2: 43, 3: 48, 4: 55, 5: 65 };
     const currentAge = answers.exactAge ? Number(answers.exactAge) : 25;
@@ -568,11 +573,11 @@ export const QuestionnairePage = () => {
               {/* Savings buffer bar */}
               <div>
                 <div className="flex justify-between text-xs mb-1">
-                  <span className="font-semibold text-amber-500">Savings Buffer (recommended)</span>
-                  <span className="font-bold text-amber-600">₹{minSavings.toLocaleString('en-IN')}</span>
+                  <span className="font-semibold text-amber-500">Splurge / Lifestyle (20% of remain)</span>
+                  <span className="font-bold text-amber-600">₹{splurgeMoney.toLocaleString('en-IN')}</span>
                 </div>
                 <div className="h-3 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                  <motion.div initial={{ width: 0 }} animate={{ width: `${Math.min((minSavings / income) * 100, 100)}%` }} transition={{ delay: 0.75, duration: 1 }} className="h-full bg-amber-400 rounded-full" />
+                  <motion.div initial={{ width: 0 }} animate={{ width: `${Math.min((splurgeMoney / income) * 100, 100)}%` }} transition={{ delay: 0.75, duration: 1 }} className="h-full bg-amber-400 rounded-full" />
                 </div>
               </div>
               {/* Investable bar */}
@@ -601,7 +606,7 @@ export const QuestionnairePage = () => {
               </>
             ) : (
               <>
-                ⚠️ <strong>Action needed:</strong> Your current surplus leaves less than ₹1,000 to invest. We recommend saving at least <strong>₹{(expenses + minSavings + 1000).toLocaleString('en-IN')}/month</strong> in total or reducing expenses to unlock investing capacity.
+                ⚠️ <strong>Action needed:</strong> Your current surplus leaves less than ₹1,000 to invest. We recommend saving at least <strong>₹{(expenses + splurgeMoney + 1000).toLocaleString('en-IN')}/month</strong> in total or reducing expenses to unlock investing capacity.
               </>
             )}
           </div>
@@ -621,7 +626,7 @@ export const QuestionnairePage = () => {
             <ArrowRight className="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1" />
           </button>
         </motion.div>
-      </motion.div>
+      </motion.div >
     );
   };
 
@@ -693,9 +698,9 @@ export const QuestionnairePage = () => {
     // ── Compute investable from actual income - expenses ──────────────
     const income = answers.monthlyIncome ? Number(answers.monthlyIncome) : 0;
     const expenses = answers.monthlyExpenses ? Number(answers.monthlyExpenses) : 0;
-    const surplus = Math.max(0, income - expenses);
-    const minSavings = Math.max(2000, income * 0.10);
-    const investable = Math.max(0, surplus - minSavings);
+    const remainingMoney = Math.max(0, income - expenses);
+    const splurgeMoney = remainingMoney * 0.20;
+    const investable = Math.max(0, remainingMoney - splurgeMoney);
     const MIN_FUND = 1000; // minimum ₹1,000 per fund
 
     const a = {
@@ -772,30 +777,42 @@ export const QuestionnairePage = () => {
         return [
           {
             title: "Basket 1 (Conservative)",
-            funds: ["ICICI Prudential Corporate Bond Fund"]
+            funds: [{ name: "ICICI Prudential Corporate Bond Fund", split: 100 }]
           },
           {
             title: "Basket 2 (Balanced)",
-            funds: ["HDFC Corporate Bond Fund"]
+            funds: [{ name: "HDFC Corporate Bond Fund", split: 100 }]
           },
           {
             title: "Basket 3 (Growth)",
-            funds: ["Kotak Corporate Bond Fund"]
+            funds: [{ name: "Kotak Corporate Bond Fund", split: 100 }]
           }
         ];
       } else if (category === 'HIGH RISK') {
         return [
           {
             title: "Basket 1 (Aggressive Focus)",
-            funds: ["SBI Focused Equity Fund", "Nippon India Small Cap Fund", "UTI Nifty 50 Index Fund"]
+            funds: [
+              { name: "SBI Focused Equity Fund", split: 40 },
+              { name: "Nippon India Small Cap Fund", split: 35 },
+              { name: "UTI Nifty 50 Index Fund", split: 25 }
+            ]
           },
           {
             title: "Basket 2 (Dynamic High Risk)",
-            funds: ["ICICI Prudential Focused Equity Fund", "SBI Small Cap Fund", "ICICI Prudential Nifty 50 Index Fund"]
+            funds: [
+              { name: "ICICI Prudential Focused Equity Fund", split: 40 },
+              { name: "SBI Small Cap Fund", split: 35 },
+              { name: "ICICI Prudential Nifty 50 Index Fund", split: 25 }
+            ]
           },
           {
             title: "Basket 3 (Steady Aggressive)",
-            funds: ["HDFC Focused Fund", "Kotak Small Cap Fund", "HDFC Nifty 50 Index Fund"]
+            funds: [
+              { name: "HDFC Focused Fund", split: 40 },
+              { name: "Kotak Small Cap Fund", split: 35 },
+              { name: "HDFC Nifty 50 Index Fund", split: 25 }
+            ]
           }
         ];
       } else {
@@ -803,15 +820,27 @@ export const QuestionnairePage = () => {
         return [
           {
             title: "Basket 1 (Core Growth)",
-            funds: ["UTI Nifty 50 Index Fund", "Parag Parikh Flexi Cap Fund", "Nippon India ETF Gold BeES"]
+            funds: [
+              { name: "UTI Nifty 50 Index Fund", split: 50 },
+              { name: "Parag Parikh Flexi Cap Fund", split: 30 },
+              { name: "Nippon India ETF Gold BeES", split: 20 }
+            ]
           },
           {
             title: "Basket 2 (Balanced Mix)",
-            funds: ["ICICI Prudential Nifty 50 Index Fund", "HDFC Flexi Cap Fund", "Nippon India ETF Gold BeES"]
+            funds: [
+              { name: "ICICI Prudential Nifty 50 Index Fund", split: 50 },
+              { name: "HDFC Flexi Cap Fund", split: 30 },
+              { name: "Nippon India ETF Gold BeES", split: 20 }
+            ]
           },
           {
             title: "Basket 3 (Steady Medium)",
-            funds: ["HDFC Nifty 50 Index Fund", "Kotak Flexicap Fund", "Nippon India ETF Gold BeES"]
+            funds: [
+              { name: "HDFC Nifty 50 Index Fund", split: 50 },
+              { name: "Kotak Flexicap Fund", split: 30 },
+              { name: "Nippon India ETF Gold BeES", split: 20 }
+            ]
           }
         ];
       }
@@ -848,8 +877,8 @@ export const QuestionnairePage = () => {
             : 'bg-amber-900/30 border-amber-500/40 text-amber-300'
             }`}>
             {investable >= MIN_FUND
-              ? `💰 Investable surplus: ₹${investable.toLocaleString('en-IN')}/mo · ${Math.floor(investable / MIN_FUND)} fund slots @ ₹${MIN_FUND.toLocaleString('en-IN')} min each`
-              : `⚠️ Surplus too low to invest (₹${investable.toLocaleString('en-IN')}). Aim to save ≥ ₹${(expenses + minSavings + MIN_FUND).toLocaleString('en-IN')}/mo`
+              ? `💰 Investable surplus: ₹${investable.toLocaleString('en-IN')}/mo`
+              : `⚠️ Surplus too low to invest (₹${investable.toLocaleString('en-IN')}). Aim to save ≥ ₹${(expenses + MIN_FUND).toLocaleString('en-IN')}/mo`
             }
           </div>
         </div>
@@ -892,7 +921,16 @@ export const QuestionnairePage = () => {
                 if (manualCategory === 'LOW RISK') strategyName = "Capital Stability Strategy";
                 if (manualCategory === 'HIGH RISK') strategyName = "High Growth Strategy";
                 if (manualCategory === 'MEDIUM RISK') strategyName = "Balanced Growth Strategy";
-                handleComplete(strategyName);
+
+                const defaultBasket = baskets[0];
+                const basketData = {
+                  name: defaultBasket.title,
+                  funds: defaultBasket.funds.map(f => ({
+                    name: f.name,
+                    split: f.split
+                  }))
+                };
+                handleComplete(strategyName, basketData);
               }}
               className="mt-6 w-full bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-400 hover:to-emerald-600 text-white font-bold py-4 shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:shadow-[0_0_30px_rgba(16,185,129,0.5)] rounded-xl transition-all duration-300 transform hover:-translate-y-1 flex items-center justify-center gap-2"
             >
@@ -947,9 +985,11 @@ export const QuestionnairePage = () => {
                   </h4>
 
                   <ul className="flex-1 space-y-4 mb-8 relative z-10">
-                    {basket.funds.map((fund, fIdx) => {
-                      const perFund = basket.funds.length > 0
-                        ? Math.floor(investable / basket.funds.length)
+                    {basket.funds.map((fundObj, fIdx) => {
+                      const fund = fundObj.name;
+                      const split = fundObj.split;
+                      const perFund = investable > 0
+                        ? Math.floor(investable * (split / 100))
                         : 0;
                       const isViable = perFund >= MIN_FUND;
                       return (
@@ -957,7 +997,7 @@ export const QuestionnairePage = () => {
                           <div className="w-6 h-6 rounded-full bg-white flex items-center justify-center shadow-md p-0.5 shrink-0 overflow-hidden">
                             <img src={getFundIcon(fund)} alt="amc logo" className="w-full h-full rounded-full object-contain" onError={(e) => e.currentTarget.style.display = 'none'} />
                           </div>
-                          <span className="leading-snug font-medium line-clamp-2">{fund}</span>
+                          <span className="leading-snug font-medium line-clamp-2">{fund} <span className="text-gray-400">({split}%)</span></span>
                           <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${isViable
                             ? 'bg-emerald-500/20 text-emerald-400'
                             : 'bg-amber-500/20 text-amber-400'
@@ -978,7 +1018,15 @@ export const QuestionnairePage = () => {
                       if (manualCategory === 'LOW RISK') strategyName = "Capital Stability Strategy";
                       if (manualCategory === 'HIGH RISK') strategyName = "High Growth Strategy";
                       if (manualCategory === 'MEDIUM RISK') strategyName = "Balanced Growth Strategy";
-                      handleComplete(strategyName);
+
+                      const basketData = {
+                        name: basket.title,
+                        funds: basket.funds.map(f => ({
+                          name: f.name,
+                          split: f.split
+                        }))
+                      };
+                      handleComplete(strategyName, basketData);
                     }}
                     className="w-full mt-auto py-2.5 bg-gray-800/80 border border-emerald-500/30 text-emerald-400 font-bold rounded-xl hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-all duration-300 shadow-sm group-hover:shadow-emerald-500/20 relative z-10 text-sm"
                   >

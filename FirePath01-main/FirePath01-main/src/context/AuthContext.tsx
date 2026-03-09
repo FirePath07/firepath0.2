@@ -14,6 +14,27 @@ export interface UserFinancialData {
   mostImportantMetric?: 'Savings Rate' | 'Years to FIRE' | 'Net Worth';
   inflationRate?: number;
   budget?: number;
+  defaultMonthlySIP?: number;
+  lastNotifiedMilestone?: number;
+  selectedBasket?: {
+    name: string;
+    funds: Array<{ name: string; split: number; risk?: string }>;
+  };
+  portfolio?: Array<{
+    fundName: string;
+    units: number;
+    totalInvested: number;
+    navAtPurchase: number;
+  }>;
+  portfolioHistory?: Array<{
+    date: string;
+    totalInvested: number;
+    currentValue: number;
+  }>;
+  monthlyContributions?: Array<{
+    date: string;
+    amount: number;
+  }>;
   expensesList?: Array<{
     id: string;
     amount: number;

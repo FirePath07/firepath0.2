@@ -30,6 +30,16 @@ const UserSchema = new mongoose.Schema({
             type: String,
             enum: ['Savings Rate', 'Years to FIRE', 'Net Worth'],
             default: 'Net Worth'
+        },
+        budget: { type: Number, default: 0 },
+        expensesList: {
+            type: [{
+                id: String,
+                amount: Number,
+                description: String,
+                date: String
+            }],
+            default: []
         }
     },
     createdAt: {

@@ -34,11 +34,11 @@ export const RiskPage = () => {
   const { user } = useAuth();
 
   const [selectedRisk, setSelectedRisk] = useState<'safe' | 'medium' | 'risky'>(() => {
-    // Priority: 1. State from navigation (e.g. from questionnaire)
-    //           2. User's saved profile from context
-    //           3. Default to 'medium'
-    if (location.state?.riskProfile) return location.state.riskProfile as 'safe' | 'medium' | 'risky';
-    if (user?.financialData?.riskProfile) return user.financialData.riskProfile;
+    const raw = location.state?.riskProfile || user?.financialData?.riskProfile;
+    if (typeof raw === 'string') {
+      if (raw.toLowerCase().includes('safe') || raw.includes('Capital Stability')) return 'safe';
+      if (raw.toLowerCase().includes('risky') || raw.includes('High Growth')) return 'risky';
+    }
     return 'medium';
   });
 

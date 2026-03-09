@@ -19,6 +19,12 @@ const INPUT_QUESTIONS = [
     placeholder: 'e.g., 50000'
   },
   {
+    question: "What are your total monthly expenses (₹)?",
+    type: 'number',
+    key: 'monthlyExpenses',
+    placeholder: 'e.g., 25000'
+  },
+  {
     question: "What age would you ideally like to retire?",
     type: 'select',
     key: 'targetRetirementAgeBracket',
@@ -55,16 +61,10 @@ const INPUT_QUESTIONS = [
     ]
   },
   {
-    question: "What is your current investable portfolio size?",
-    type: 'select',
-    key: 'portfolioBracket',
-    options: [
-      { label: 'Under ₹10,000', value: 1 },
-      { label: '₹10,000 – ₹50,000', value: 2 },
-      { label: '₹50,000 – ₹2,50,000', value: 3 },
-      { label: '₹2,50,000 – ₹10,00,000', value: 4 },
-      { label: '₹1 Lakh+', value: 5 }
-    ]
+    question: "What is your current investable corpus / total savings (₹)?",
+    type: 'number',
+    key: 'currentSavings',
+    placeholder: 'e.g., 200000'
   },
   {
     question: "Do you have financial dependents?",
@@ -220,20 +220,45 @@ export const QuestionnairePage = () => {
   const [answers, setAnswers] = useState<Record<string, number | string>>({});
   const [manualCategory, setManualCategory] = useState<string | null>(null);
 
-  const getFundIcon = (fundName: string) => {
-    if (fundName.toLowerCase().includes("gold")) return "https://img.icons8.com/color/48/gold-bars.png";
-    if (fundName.includes("ICICI")) return "https://logo.clearbit.com/icicipruamc.com";
-    if (fundName.includes("HDFC")) return "https://logo.clearbit.com/hdfcfund.com";
-    if (fundName.includes("Kotak")) return "https://logo.clearbit.com/kotakmf.com";
-    if (fundName.includes("SBI")) return "https://logo.clearbit.com/sbimf.com";
-    if (fundName.includes("Nippon")) return "https://logo.clearbit.com/nipponindiamf.com";
-    if (fundName.includes("UTI")) return "https://logo.clearbit.com/utimf.com";
-    if (fundName.includes("Parag Parikh")) return "https://logo.clearbit.com/amc.ppfas.com";
-    return "https://logo.clearbit.com/mutualfundssahihai.com";
+  const getFundIcon = (fundName: string): string => {
+    const name = fundName.toLowerCase();
+    // Gold funds
+    if (name.includes('gold')) return 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/Gold_symbol.svg/120px-Gold_symbol.svg.png';
+    // Overnight / Liquid / Debt
+    if (name.includes('overnight') || name.includes('liquid') || name.includes('debt') || name.includes('bond'))
+      return 'https://cdn-icons-png.flaticon.com/512/2942/2942079.png';
+    // Index / Nifty / Sensex
+    if (name.includes('index') || name.includes('nifty') || name.includes('sensex'))
+      return 'https://cdn-icons-png.flaticon.com/512/4521/4521576.png';
+    // ICICI Prudential
+    if (name.includes('icici')) return 'https://www.icicipruamc.com/images/icici-pru-amc-logo.png';
+    // HDFC MF
+    if (name.includes('hdfc')) return 'https://www.hdfcfund.com/Content/images/hdfcbank-logo.png';
+    // SBI MF
+    if (name.includes('sbi')) return 'https://www.sbimf.com/SBIMFLogo.svg';
+    // Kotak MF
+    if (name.includes('kotak')) return 'https://assetmanagement.kotak.com/images/kotak-logo.png';
+    // Nippon India
+    if (name.includes('nippon')) return 'https://mf.nipponindiaim.com/NipponIndiaLogo.png';
+    // UTI MF
+    if (name.includes('uti')) return 'https://www.utimf.com/uti-logo.png';
+    // Parag Parikh
+    if (name.includes('parag parikh') || name.includes('ppfas')) return 'https://amc.ppfas.com/images/ppfas-logo.png';
+    // Axis MF
+    if (name.includes('axis')) return 'https://www.axismf.com/images/axismflogo.png';
+    // Mirae
+    if (name.includes('mirae')) return 'https://www.miraeassetmf.co.in/images/logo.png';
+    // Quant
+    if (name.includes('quant')) return 'https://quantmutual.com/images/logo.png';
+    // Mid cap / Small cap / Flexi / Multi icon fallback
+    if (name.includes('mid cap') || name.includes('midcap')) return 'https://cdn-icons-png.flaticon.com/512/2278/2278442.png';
+    if (name.includes('small cap') || name.includes('smallcap')) return 'https://cdn-icons-png.flaticon.com/512/2278/2278393.png';
+    // Generic equity / growth fund
+    return 'https://cdn-icons-png.flaticon.com/512/4521/4521576.png';
   };
 
-  const handleFireSelection = (goal: string) => {
-    setAnswers({ ...answers, primaryGoal: goal });
+  const handleFireSelection = (goal: string, fireAmount: number) => {
+    setAnswers({ ...answers, primaryGoal: goal, selectedFireAmount: fireAmount });
     setStep(step + 1);
   };
 
@@ -242,18 +267,27 @@ export const QuestionnairePage = () => {
 
     const currentAge = answers.exactAge ? Number(answers.exactAge) : 25;
     const retireAge = retireMap[answers.targetRetirementAgeBracket as number] || 60;
-    const monthlyIncome = answers.monthlyIncome ? Number(answers.monthlyIncome) : undefined;
+    const monthlyIncome = answers.monthlyIncome ? Number(answers.monthlyIncome) : 0;
+    const monthlyExpenses = answers.monthlyExpenses ? Number(answers.monthlyExpenses) : 0;
+    const currentSavings = answers.currentSavings ? Number(answers.currentSavings) : 0;
+    const selectedFireAmount = answers.selectedFireAmount ? Number(answers.selectedFireAmount) : 0;
 
     const yearsToRetire = retireAge > currentAge ? retireAge - currentAge : 0;
-
     let timePressure = "Low";
     if (yearsToRetire <= 5) timePressure = "Extreme";
     else if (yearsToRetire >= 6 && yearsToRetire <= 10) timePressure = "High";
     else if (yearsToRetire >= 11 && yearsToRetire <= 20) timePressure = "Moderate";
 
+    // Derive portfolio score from exact savings amount
+    let portfolioScore = 1;
+    if (currentSavings >= 10000 && currentSavings < 50000) portfolioScore = 2;
+    if (currentSavings >= 50000 && currentSavings < 250000) portfolioScore = 3;
+    if (currentSavings >= 250000 && currentSavings < 1000000) portfolioScore = 4;
+    if (currentSavings >= 1000000) portfolioScore = 5;
+
     const scoreSum = (Number(answers.savingsRateBracket) || 1) +
       (Number(answers.emergencyBufferBracket) || 1) +
-      (Number(answers.portfolioBracket) || 1);
+      portfolioScore;
 
     const foundationAverage = scoreSum / 3;
     let foundationLevel = "Weak foundation";
@@ -264,7 +298,10 @@ export const QuestionnairePage = () => {
     const finalData = {
       ...answers,
       age: currentAge,
-      ...(monthlyIncome && { monthlyIncome }),
+      monthlyIncome,
+      monthlyExpenses,
+      currentSavings,
+      selectedFireAmount,
       targetRetirementAge: retireAge,
       timePressure,
       foundationLevel,
@@ -315,12 +352,25 @@ export const QuestionnairePage = () => {
           <div className="space-y-4">
             <input
               type="number"
+              min={q.key === 'exactAge' ? "18" : "0"}
               className="w-full px-6 py-4 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 focus:border-emerald-500 dark:focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500 rounded-xl transition-all duration-200 text-gray-800 dark:text-white font-medium shadow-sm outline-none"
               placeholder={(q as any).placeholder || "Enter value..."}
               autoFocus
               onKeyDown={(e) => {
+                if (e.key === '-' || e.key === 'e') {
+                  e.preventDefault();
+                }
                 if (e.key === 'Enter' && e.currentTarget.value) {
-                  handleSelectOption(Number(e.currentTarget.value));
+                  const val = Number(e.currentTarget.value);
+                  if (val < 0) {
+                    alert("Negative values are not allowed! Please enter a valid non-negative number.");
+                    return;
+                  }
+                  if (q.key === 'exactAge' && val < 18) {
+                    alert("You must be at least 18 years old to proceed.");
+                    return;
+                  }
+                  handleSelectOption(val);
                 }
               }}
             />
@@ -332,8 +382,16 @@ export const QuestionnairePage = () => {
   };
 
   const renderStatusTemplateStep = () => {
-    const retireMap: Record<number, number> = { 1: 38, 2: 43, 3: 48, 4: 55, 5: 65 };
+    // ── NEW: income split logic ──────────────────────────────────────
+    const income = answers.monthlyIncome ? Number(answers.monthlyIncome) : 0;
+    const expenses = answers.monthlyExpenses ? Number(answers.monthlyExpenses) : 0;
+    const surplus = Math.max(0, income - expenses);
+    // Minimum savings buffer recommendation: at least 10% of income or ₹2,000, whichever is bigger
+    const minSavings = Math.max(2000, income * 0.10);
+    const investable = Math.max(0, surplus - minSavings);
+    const canInvest = investable >= 1000; // need at least 1k to invest in any single fund
 
+    const retireMap: Record<number, number> = { 1: 38, 2: 43, 3: 48, 4: 55, 5: 65 };
     const currentAge = answers.exactAge ? Number(answers.exactAge) : 25;
     const retireAge = retireMap[answers.targetRetirementAgeBracket as number] || 60;
 
@@ -390,7 +448,7 @@ export const QuestionnairePage = () => {
         initial={{ opacity: 0, y: 20, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-3xl shadow-2xl p-8 max-w-2xl w-full border border-white/20 dark:border-gray-700/50 relative overflow-hidden"
+        className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-3xl shadow-2xl p-8 max-w-3xl w-full border border-white/20 dark:border-gray-700/50 relative overflow-hidden"
       >
         {/* Decorative background elements */}
         <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
@@ -487,10 +545,72 @@ export const QuestionnairePage = () => {
           </motion.div>
         </div>
 
+        {/* ── Income Split Breakdown ─────────────────── */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="mt-6 relative z-10"
+        >
+          <h3 className="text-sm font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-3">Monthly Income Breakdown</h3>
+          {income > 0 ? (
+            <div className="space-y-2">
+              {/* Expenses bar */}
+              <div>
+                <div className="flex justify-between text-xs mb-1">
+                  <span className="font-semibold text-rose-500">Expenses</span>
+                  <span className="font-bold text-rose-600">₹{expenses.toLocaleString('en-IN')}</span>
+                </div>
+                <div className="h-3 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                  <motion.div initial={{ width: 0 }} animate={{ width: `${Math.min((expenses / income) * 100, 100)}%` }} transition={{ delay: 0.6, duration: 1 }} className="h-full bg-rose-400 rounded-full" />
+                </div>
+              </div>
+              {/* Savings buffer bar */}
+              <div>
+                <div className="flex justify-between text-xs mb-1">
+                  <span className="font-semibold text-amber-500">Savings Buffer (recommended)</span>
+                  <span className="font-bold text-amber-600">₹{minSavings.toLocaleString('en-IN')}</span>
+                </div>
+                <div className="h-3 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                  <motion.div initial={{ width: 0 }} animate={{ width: `${Math.min((minSavings / income) * 100, 100)}%` }} transition={{ delay: 0.75, duration: 1 }} className="h-full bg-amber-400 rounded-full" />
+                </div>
+              </div>
+              {/* Investable bar */}
+              <div>
+                <div className="flex justify-between text-xs mb-1">
+                  <span className="font-semibold text-emerald-600">Investable Surplus</span>
+                  <span className="font-bold text-emerald-700">₹{investable.toLocaleString('en-IN')}</span>
+                </div>
+                <div className="h-3 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                  <motion.div initial={{ width: 0 }} animate={{ width: `${Math.min((investable / income) * 100, 100)}%` }} transition={{ delay: 0.9, duration: 1 }} className={`h-full rounded-full ${canInvest ? 'bg-emerald-500' : 'bg-gray-400'}`} />
+                </div>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500 italic">No income data provided.</p>
+          )}
+
+          {/* Advisory suggestion */}
+          <div className={`mt-4 p-4 rounded-xl border text-sm font-medium leading-relaxed ${canInvest
+            ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200'
+            : 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200'
+            }`}>
+            {canInvest ? (
+              <>
+                ✅ <strong>Great!</strong> You can invest <strong>₹{investable.toLocaleString('en-IN')}/month</strong> after expenses and a safety buffer. This covers at least <strong>{Math.floor(investable / 1000)}</strong> funds at the ₹1,000 minimum each.
+              </>
+            ) : (
+              <>
+                ⚠️ <strong>Action needed:</strong> Your current surplus leaves less than ₹1,000 to invest. We recommend saving at least <strong>₹{(expenses + minSavings + 1000).toLocaleString('en-IN')}/month</strong> in total or reducing expenses to unlock investing capacity.
+              </>
+            )}
+          </div>
+        </motion.div>
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
+          transition={{ delay: 0.9 }}
           className="mt-8 flex justify-center relative z-10"
         >
           <button
@@ -506,19 +626,21 @@ export const QuestionnairePage = () => {
   };
 
   const renderFireSelectionStep = () => {
-    const estimatedAnnualExpenses = 600000;
+    const income = answers.monthlyIncome ? Number(answers.monthlyIncome) : 0;
+    const expenses = answers.monthlyExpenses ? Number(answers.monthlyExpenses) : 0;
+    // Use actual expenses for FIRE calculation; fallback to a placeholder if user skipped
+    const annualExpenses = (expenses > 0 ? expenses : income * 0.50) * 12;
     const inflationRate = 0.06;
 
     const retireMap: Record<number, number> = { 1: 38, 2: 43, 3: 48, 4: 55, 5: 65 };
     const currentAge = answers.exactAge ? Number(answers.exactAge) : 25;
     const retirementAge = retireMap[answers.targetRetirementAgeBracket as number] || 60;
-
     const yearsToInvest = Math.max(0, retirementAge - currentAge);
 
-    const futureAnnualExpenses = estimatedAnnualExpenses * Math.pow(1 + inflationRate, yearsToInvest);
-    const leanFire = futureAnnualExpenses * 20;
-    const tradFire = futureAnnualExpenses * 25;
-    const fatFire = futureAnnualExpenses * 30;
+    const futureAnnualExpenses = annualExpenses * Math.pow(1 + inflationRate, yearsToInvest);
+    const leanFire = Math.round(futureAnnualExpenses * 20);
+    const tradFire = Math.round(futureAnnualExpenses * 25);
+    const fatFire = Math.round(futureAnnualExpenses * 30);
 
     return (
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 max-w-2xl w-full transition-colors duration-300">
@@ -526,39 +648,39 @@ export const QuestionnairePage = () => {
           <p className="text-emerald-600 dark:text-emerald-400 font-semibold">Final Steps</p>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Choose your FIRE Target</h2>
           <p className="text-gray-600 dark:text-gray-300 mt-2">
-            Based on your estimated monthly expenses of {formatIndianCurrency(estimatedAnnualExpenses / 12)}
+            Based on your monthly expenses of {formatIndianCurrency(expenses > 0 ? expenses : income * 0.50)}
             <br />
             <span className="text-xs text-gray-500 dark:text-gray-400">
-              (Adjusted for 6% inflation over {yearsToInvest} years)
+              (Adjusted for 6% inflation over {yearsToInvest} years to retirement)
             </span>
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <button
-            onClick={() => handleFireSelection('Lean FIRE')}
+            onClick={() => handleFireSelection('Lean FIRE', leanFire)}
             className="p-6 border-2 border-gray-200 dark:border-gray-700 rounded-xl hover:border-emerald-500 dark:hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition text-left group"
           >
-            <div className="text-lg font-semibold text-gray-600 dark:text-gray-400 mb-2">Lean FIRE</div>
+            <div className="text-lg font-semibold text-gray-600 dark:text-gray-400 mb-2">Lean FIRE 🌿</div>
             <div className="text-xl font-bold text-emerald-700 dark:text-emerald-400 mb-1">{formatIndianCurrency(leanFire)}</div>
             <div className="text-sm text-gray-500 dark:text-gray-500">20x Future Annual Expenses</div>
           </button>
 
           <button
-            onClick={() => handleFireSelection('Traditional FIRE')}
+            onClick={() => handleFireSelection('Traditional FIRE', tradFire)}
             className="p-6 border-2 border-emerald-500 bg-emerald-50 dark:bg-emerald-900/30 rounded-xl hover:bg-emerald-100 dark:hover:bg-emerald-800/40 transition text-left relative"
           >
             <div className="absolute top-0 right-0 bg-emerald-500 text-white text-xs px-2 py-1 rounded-bl-lg font-bold">Recommended</div>
-            <div className="text-lg font-bold text-emerald-800 dark:text-emerald-300 mb-2">Traditional FIRE</div>
+            <div className="text-lg font-bold text-emerald-800 dark:text-emerald-300 mb-2">Traditional FIRE 🔥</div>
             <div className="text-2xl font-bold text-emerald-700 dark:text-emerald-400 mb-1">{formatIndianCurrency(tradFire)}</div>
             <div className="text-sm text-emerald-700 dark:text-emerald-500">25x Future Annual Expenses</div>
           </button>
 
           <button
-            onClick={() => handleFireSelection('Fat FIRE')}
+            onClick={() => handleFireSelection('Fat FIRE', fatFire)}
             className="p-6 border-2 border-gray-200 dark:border-gray-700 rounded-xl hover:border-purple-500 dark:hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition text-left group"
           >
-            <div className="text-lg font-semibold text-gray-600 dark:text-gray-400 mb-2 group-hover:text-purple-700 dark:group-hover:text-purple-400">Fat FIRE</div>
+            <div className="text-lg font-semibold text-gray-600 dark:text-gray-400 mb-2 group-hover:text-purple-700 dark:group-hover:text-purple-400">Fat FIRE 💎</div>
             <div className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-1">{formatIndianCurrency(fatFire)}</div>
             <div className="text-sm text-gray-500 dark:text-gray-500">30x Future Annual Expenses</div>
           </button>
@@ -568,6 +690,14 @@ export const QuestionnairePage = () => {
   };
 
   const renderStrategyResultStep = () => {
+    // ── Compute investable from actual income - expenses ──────────────
+    const income = answers.monthlyIncome ? Number(answers.monthlyIncome) : 0;
+    const expenses = answers.monthlyExpenses ? Number(answers.monthlyExpenses) : 0;
+    const surplus = Math.max(0, income - expenses);
+    const minSavings = Math.max(2000, income * 0.10);
+    const investable = Math.max(0, surplus - minSavings);
+    const MIN_FUND = 1000; // minimum ₹1,000 per fund
+
     const a = {
       returnPref: Number(answers.returnPref) || 1,
       drawReact: Number(answers.drawReact) || 1,
@@ -712,6 +842,16 @@ export const QuestionnairePage = () => {
           <h2 className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400 drop-shadow-lg">
             Your Investment Strategy & Baskets
           </h2>
+          {/* Investable amount summary */}
+          <div className={`mt-4 inline-flex gap-2 items-center px-5 py-2.5 rounded-full text-sm font-bold border ${investable >= MIN_FUND
+            ? 'bg-emerald-900/30 border-emerald-500/40 text-emerald-300'
+            : 'bg-amber-900/30 border-amber-500/40 text-amber-300'
+            }`}>
+            {investable >= MIN_FUND
+              ? `💰 Investable surplus: ₹${investable.toLocaleString('en-IN')}/mo · ${Math.floor(investable / MIN_FUND)} fund slots @ ₹${MIN_FUND.toLocaleString('en-IN')} min each`
+              : `⚠️ Surplus too low to invest (₹${investable.toLocaleString('en-IN')}). Aim to save ≥ ₹${(expenses + minSavings + MIN_FUND).toLocaleString('en-IN')}/mo`
+            }
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 relative z-10">
@@ -807,14 +947,29 @@ export const QuestionnairePage = () => {
                   </h4>
 
                   <ul className="flex-1 space-y-4 mb-8 relative z-10">
-                    {basket.funds.map((fund, fIdx) => (
-                      <li key={fIdx} className="text-xs text-gray-200 flex flex-col items-start gap-2 bg-gray-800/40 p-3 rounded-lg border border-gray-700/30">
-                        <div className="w-6 h-6 rounded-full bg-white flex items-center justify-center shadow-md p-0.5 shrink-0 overflow-hidden">
-                          <img src={getFundIcon(fund)} alt="amc logo" className="w-full h-full rounded-full object-contain" onError={(e) => e.currentTarget.style.display = 'none'} />
-                        </div>
-                        <span className="leading-snug font-medium line-clamp-2">{fund}</span>
-                      </li>
-                    ))}
+                    {basket.funds.map((fund, fIdx) => {
+                      const perFund = basket.funds.length > 0
+                        ? Math.floor(investable / basket.funds.length)
+                        : 0;
+                      const isViable = perFund >= MIN_FUND;
+                      return (
+                        <li key={fIdx} className="text-xs text-gray-200 flex flex-col items-start gap-2 bg-gray-800/40 p-3 rounded-lg border border-gray-700/30">
+                          <div className="w-6 h-6 rounded-full bg-white flex items-center justify-center shadow-md p-0.5 shrink-0 overflow-hidden">
+                            <img src={getFundIcon(fund)} alt="amc logo" className="w-full h-full rounded-full object-contain" onError={(e) => e.currentTarget.style.display = 'none'} />
+                          </div>
+                          <span className="leading-snug font-medium line-clamp-2">{fund}</span>
+                          <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${isViable
+                            ? 'bg-emerald-500/20 text-emerald-400'
+                            : 'bg-amber-500/20 text-amber-400'
+                            }`}>
+                            {isViable
+                              ? `₹${perFund.toLocaleString('en-IN')}/mo`
+                              : `Need ≥ ₹${MIN_FUND.toLocaleString('en-IN')}/mo`
+                            }
+                          </span>
+                        </li>
+                      );
+                    })}
                   </ul>
 
                   <button

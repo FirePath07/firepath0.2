@@ -8,6 +8,9 @@ export interface UserFinancialData {
   targetRetirementAge: number;
   riskProfile?: string;
   primaryGoal?: string;
+  selectedFireAmount?: number;   // The actual FIRE number the user chose (Lean/Trad/Fat)
+  timePressure?: string;
+  foundationLevel?: string;
   mostImportantMetric?: 'Savings Rate' | 'Years to FIRE' | 'Net Worth';
   inflationRate?: number;
   budget?: number;
@@ -35,6 +38,7 @@ interface AuthContextType {
   register: (name: string, email: string, password: string) => Promise<void>;
   signOut: () => void;
   updateFinancialData: (data: Partial<UserFinancialData>) => Promise<void>;
+  hardReset: () => Promise<void>;
   loading: boolean;
 }
 
@@ -159,8 +163,41 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const hardReset = async () => {
+    if (user) {
+      const resetData: UserFinancialData = {
+        monthlyIncome: 0,
+        currentSavings: 0,
+        monthlyExpenses: 0,
+        age: 25,
+        targetRetirementAge: 60,
+        riskProfile: 'medium',
+        inflationRate: 6
+      };
+
+      const updatedUser = { ...user, financialData: resetData };
+      setUser(updatedUser);
+
+      try {
+        const token = localStorage.getItem('token');
+        if (token) {
+          await fetch(`${API_URL}/profile`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-auth-token': token
+            },
+            body: JSON.stringify({ financialData: resetData })
+          });
+        }
+      } catch (err) {
+        console.error("Hard reset backend sync failed:", err);
+      }
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, isSignedIn: !!user, signIn, login, register, signOut, updateFinancialData, loading }}>
+    <AuthContext.Provider value={{ user, isSignedIn: !!user, signIn, login, register, signOut, updateFinancialData, hardReset, loading }}>
       {children}
     </AuthContext.Provider>
   );

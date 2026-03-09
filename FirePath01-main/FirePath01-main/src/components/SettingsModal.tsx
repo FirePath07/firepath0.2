@@ -4,9 +4,10 @@ import { useAuth, type UserFinancialData } from '../context/AuthContext';
 interface SettingsModalProps {
     isOpen: boolean;
     onClose: () => void;
+    onHardResetRequest?: () => void;
 }
 
-export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
+export const SettingsModal = ({ isOpen, onClose, onHardResetRequest }: SettingsModalProps) => {
     const { user, updateFinancialData } = useAuth();
     const [formData, setFormData] = useState<Partial<UserFinancialData>>({});
 
@@ -23,7 +24,12 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
 
     const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: Number(value) }));
+        const numValue = Number(value);
+        if (numValue < 0) {
+            alert("Negative values are not allowed.");
+            return;
+        }
+        setFormData(prev => ({ ...prev, [name]: numValue }));
     };
 
     const handleSubmit = () => {
@@ -80,37 +86,9 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
 
                             <div className="space-y-6">
                                 <div>
-                                    <div className="flex justify-between items-center mb-2">
-                                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Monthly Income</label>
-                                        <div className="relative w-32">
-                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">₹</span>
-                                            <input
-                                                type="number"
-                                                name="monthlyIncome"
-                                                value={formData.monthlyIncome}
-                                                onChange={handleNumberChange}
-                                                className="w-full pl-6 pr-2 py-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-right focus:ring-emerald-500 focus:border-emerald-500 text-sm font-bold text-emerald-700 dark:text-emerald-400 outline-none"
-                                            />
-                                        </div>
-                                    </div>
-                                    <input type="range" name="monthlyIncome" min="10000" max="1000000" step="1000" value={formData.monthlyIncome} onChange={handleNumberChange} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-emerald-600" />
-                                </div>
-
-                                <div>
-                                    <div className="flex justify-between items-center mb-2">
-                                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Monthly Expenses</label>
-                                        <div className="relative w-32">
-                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">₹</span>
-                                            <input
-                                                type="number"
-                                                name="monthlyExpenses"
-                                                value={formData.monthlyExpenses}
-                                                onChange={handleNumberChange}
-                                                className="w-full pl-6 pr-2 py-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-right focus:ring-emerald-500 focus:border-emerald-500 text-sm font-bold text-emerald-700 dark:text-emerald-400 outline-none"
-                                            />
-                                        </div>
-                                    </div>
-                                    <input type="range" name="monthlyExpenses" min="5000" max="500000" step="1000" value={formData.monthlyExpenses} onChange={handleNumberChange} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-emerald-600" />
+                                    <p className="text-sm text-amber-600 dark:text-amber-400 mb-4 bg-amber-50 dark:bg-amber-900/30 p-3 rounded-lg border border-amber-200 dark:border-amber-800/50">
+                                        Core financial metrics are locked to ensure the integrity of your FIRE Number. <button type="button" onClick={() => { onClose(); onHardResetRequest?.(); }} className="font-bold underline text-amber-700 dark:text-amber-300 hover:text-amber-900 bg-transparent border-none p-0 cursor-pointer">Retake the questionnaire</button> to update these values. You can still manually update your Current Savings below.
+                                    </p>
                                 </div>
 
                                 <div>
@@ -130,33 +108,22 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
                                     <input type="range" name="currentSavings" min="0" max="50000000" step="10000" value={formData.currentSavings} onChange={handleNumberChange} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-emerald-600" />
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-6">
-                                    <div>
-                                        <div className="flex justify-between items-center mb-2">
-                                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Age</label>
-                                            <input
-                                                type="number"
-                                                name="age"
-                                                value={formData.age}
-                                                onChange={handleNumberChange}
-                                                className="w-16 py-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-center focus:ring-emerald-500 focus:border-emerald-500 text-sm font-bold text-gray-800 dark:text-gray-200 outline-none"
-                                            />
-                                        </div>
-                                        <input type="range" name="age" min="18" max="80" step="1" value={formData.age} onChange={handleNumberChange} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-emerald-600" />
+                                <div className="grid grid-cols-2 gap-4 opacity-70 cursor-not-allowed">
+                                    <div className="p-3 bg-gray-100 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">Monthly Income</p>
+                                        <p className="font-bold text-gray-800 dark:text-gray-200">₹{formData.monthlyIncome?.toLocaleString() || 0}</p>
                                     </div>
-
-                                    <div>
-                                        <div className="flex justify-between items-center mb-2">
-                                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Target Age</label>
-                                            <input
-                                                type="number"
-                                                name="targetRetirementAge"
-                                                value={formData.targetRetirementAge}
-                                                onChange={handleNumberChange}
-                                                className="w-16 py-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-center focus:ring-emerald-500 focus:border-emerald-500 text-sm font-bold text-gray-800 dark:text-gray-200 outline-none"
-                                            />
-                                        </div>
-                                        <input type="range" name="targetRetirementAge" min="30" max="90" step="1" value={formData.targetRetirementAge} onChange={handleNumberChange} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-emerald-600" />
+                                    <div className="p-3 bg-gray-100 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">Monthly Expenses</p>
+                                        <p className="font-bold text-gray-800 dark:text-gray-200">₹{formData.monthlyExpenses?.toLocaleString() || 0}</p>
+                                    </div>
+                                    <div className="p-3 bg-gray-100 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">Current Age</p>
+                                        <p className="font-bold text-gray-800 dark:text-gray-200">{formData.age}</p>
+                                    </div>
+                                    <div className="p-3 bg-gray-100 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">Target Ret. Age</p>
+                                        <p className="font-bold text-gray-800 dark:text-gray-200">{formData.targetRetirementAge}</p>
                                     </div>
                                 </div>
                             </div>

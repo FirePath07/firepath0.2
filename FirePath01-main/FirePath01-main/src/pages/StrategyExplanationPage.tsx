@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { Target, ShieldCheck, HeartPulse, Shield, Trophy, Award, CheckCircle2 } from 'lucide-react';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, AreaChart, Area, XAxis, YAxis, CartesianGrid, ReferenceLine, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
+import { Target, ShieldCheck, HeartPulse, Shield, CheckCircle2 } from 'lucide-react';
 import { formatIndianCurrency } from '../utils/currency';
 
 // Mapping strategy to its profile
@@ -96,47 +96,43 @@ export const StrategyExplanationPage = () => {
     const { financialData } = user;
     const income = financialData.monthlyIncome || 0;
 
-    // Calculate base investable surplus
+    // Current savings split: 10% goes to insurance premium corpus, rest stays invested
+    const currentSavings = financialData.currentSavings || 0;
+    const insuranceCopus = currentSavings * 0.10; // 10% of saved amount for insurance
+    const netInvestedSavings = currentSavings - insuranceCopus; // Remaining savings that compound
+
+    // Monthly investable surplus = income minus expenses (100% goes into investments)
     const monthlyExpenses = financialData.monthlyExpenses || 0;
     const monthlyInvestableSurplus = Math.max(0, income - monthlyExpenses);
 
-    // Take 10% of income strictly for Insurance automatically (as a protective layer).
-    const insuranceBudget = income * 0.10;
-    const topUpBudget = Math.max(0, monthlyInvestableSurplus - insuranceBudget);
+    // All of investor's monthly surplus flows into funds — insurance is covered from savings
+    const investmentBudget = monthlyInvestableSurplus;
+    const expensesBudget = monthlyExpenses;
 
     const stratName = financialData.riskProfile || "Balanced Growth Strategy";
     const activeStrategy = strategyData[stratName] || strategyData["Balanced Growth Strategy"];
-
-    const investmentBudget = topUpBudget;
-    const expensesBudget = Math.max(0, income - insuranceBudget - investmentBudget);
 
     const incomeBreakdown = [
         ...activeStrategy.baskets[0].funds.map((f: any) => ({
             name: f.name,
             amount: (investmentBudget * f.split) / 100,
-            percentage: ((investmentBudget * f.split) / 100 / income) * 100,
+            percentage: income > 0 ? ((investmentBudget * f.split) / 100 / income) * 100 : 0,
             isFund: true
         })),
         {
-            name: "Insurance Protection",
-            amount: insuranceBudget,
-            percentage: (insuranceBudget / income) * 100,
-            isFund: false
-        },
-        {
             name: "Monthly Expenses",
             amount: expensesBudget,
-            percentage: (expensesBudget / income) * 100,
+            percentage: income > 0 ? (expensesBudget / income) * 100 : 0,
             isFund: false
         }
     ].filter(i => i.percentage > 0);
 
     const COLORS = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ec4899', '#64748b'];
 
-    // Calculate Projection Chart
+    // Calculate Projection Chart — uses netInvestedSavings as starting base (excludes insurance corpus)
     const generateProjection = () => {
         const data = [];
-        let currentVal = financialData.currentSavings || 0;
+        let currentVal = netInvestedSavings; // Start from savings minus insurance corpus
         const monthlyRate = activeStrategy.expectedReturn / 12 / 100;
 
         for (let year = 0; year <= 25; year++) {
@@ -155,24 +151,7 @@ export const StrategyExplanationPage = () => {
     };
     const projectionData = generateProjection();
 
-    // Determine Level Output
-    let userLevel = 1;
-    let levelTitle = "Budget Awareness";
-    let progressPct = 20;
-
-    if (investmentBudget > 0) {
-        userLevel = 2; levelTitle = "Consistent Investing"; progressPct = 40;
-    }
-    if (financialData.currentSavings > income * 3) {
-        userLevel = 3; levelTitle = "Portfolio Growth"; progressPct = 60;
-    }
-    if (financialData.currentSavings > income * 12) {
-        userLevel = 4; levelTitle = "Financial Stability"; progressPct = 80;
-    }
-    if (financialData.currentSavings > (expensesBudget * 12 * 25)) {
-        userLevel = 5; levelTitle = "Financial Independence"; progressPct = 100;
-    }
-
+    // FIRE milestone based only on net invested savings (not counting insurance corpus)
     const futureFireExpenses = expensesBudget * 12 * 25;
 
     const getRiskColorClass = (risk: string) => {
@@ -380,44 +359,92 @@ export const StrategyExplanationPage = () => {
                 >
                     <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl transform translate-x-32 -translate-y-32 pointer-events-none" />
 
-                    <div className="grid md:grid-cols-2 gap-12 relative z-10 items-center">
+                    <div className="grid md:grid-cols-2 gap-12 relative z-10 items-start">
                         <div>
                             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/10 text-blue-400 text-sm font-bold uppercase tracking-widest mb-6 border border-blue-500/20 shadow-inner">
                                 <ShieldCheck className="w-4 h-4" /> The Protection Layer
                             </div>
-                            <h3 className="text-3xl font-extrabold text-white mb-6">Securing Your Wealth</h3>
-                            <p className="text-gray-300 text-lg leading-relaxed mb-6">
-                                We've automatically dedicated a portion of your income (<strong className="text-white bg-blue-900/50 px-2 py-0.5 rounded">{formatIndianCurrency(insuranceBudget)}/mo</strong>) towards high-quality health and term life insurance. This forms an impenetrable shield against life's unpredictable emergencies.
+                            <h3 className="text-3xl font-extrabold text-white mb-4">Securing Your Wealth</h3>
+                            <p className="text-gray-300 text-base leading-relaxed mb-4">
+                                We've set aside <strong className="text-white bg-blue-900/50 px-2 py-0.5 rounded">{formatIndianCurrency(insuranceCopus)}</strong> (10% of your saved capital) as a one-time insurance premium corpus — covering robust health and term life coverage. Your full monthly surplus is therefore free to compound in investments.
                             </p>
+                            <div className="bg-blue-950/50 rounded-xl p-4 border border-blue-700/40">
+                                <p className="text-xs text-blue-300 font-semibold uppercase tracking-widest mb-1">Corpus breakdown</p>
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-gray-400">Health cover (60%)</span>
+                                    <span className="text-white font-bold">{formatIndianCurrency(insuranceCopus * 0.6)}</span>
+                                </div>
+                                <div className="flex justify-between text-sm mt-1">
+                                    <span className="text-gray-400">Life cover (40%)</span>
+                                    <span className="text-white font-bold">{formatIndianCurrency(insuranceCopus * 0.4)}</span>
+                                </div>
+                            </div>
                         </div>
 
-                        <div className="space-y-6">
-                            <div className="p-6 bg-gray-900/60 rounded-2xl border border-gray-700/50 flex flex-col sm:flex-row gap-5 items-start hover:border-rose-500/30 transition duration-300 shadow-lg">
-                                <div className="p-3 bg-rose-500/20 text-rose-400 rounded-xl shrink-0 shadow-inner">
-                                    <HeartPulse className="w-8 h-8" />
+                        <div className="space-y-5">
+                            {/* Health Insurance */}
+                            <div className="p-5 bg-gray-900/60 rounded-2xl border border-rose-500/30 hover:border-rose-400/60 transition duration-300 shadow-lg">
+                                <div className="flex items-center gap-3 mb-3">
+                                    <div className="p-2.5 bg-rose-500/20 text-rose-400 rounded-xl shrink-0"><HeartPulse className="w-6 h-6" /></div>
+                                    <h4 className="text-lg font-bold text-white">Health Insurance 🏥</h4>
                                 </div>
-                                <div>
-                                    <h4 className="text-xl font-bold text-white mb-2">Health Protection (🏥)</h4>
-                                    <p className="text-sm text-gray-400 mb-4 leading-relaxed">Defends your investments against high medical bills. Priority: Fast claim settlement networks.</p>
-                                    <p className="text-xs font-bold text-rose-400 bg-rose-900/20 inline-block px-3 py-1.5 rounded-lg border border-rose-500/20">Recommended: HDFC Ergo, Niva Bupa</p>
+                                <div className="space-y-2">
+                                    {([
+                                        { name: 'HDFC Ergo Optima Secure', cover: '₹1 Cr', prem: '~₹12,000/yr', tag: 'Best Overall', color: 'emerald', url: 'https://www.hdfcergo.com/health-insurance/optima-secure.html' },
+                                        { name: 'Niva Bupa ReAssure 2.0', cover: '₹50L', prem: '~₹9,500/yr', tag: 'Unlimited Restore', color: 'blue', url: 'https://www.nivabupa.com/health-insurance-plans/reassure-2.0.html' },
+                                        { name: 'Star Health Comprehensive', cover: '₹50L', prem: '~₹8,000/yr', tag: 'Cashless Network', color: 'purple', url: 'https://www.starhealth.in/health-insurance/family-health-optima' },
+                                    ] as { name: string; cover: string; prem: string; tag: string; color: string; url: string }[]).map((plan) => (
+                                        <div key={plan.name} className="flex items-center justify-between bg-gray-800/50 rounded-xl px-4 py-3 border border-gray-700/40 hover:border-rose-500/30 transition">
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <p className="text-sm font-extrabold text-white tracking-wide">{plan.name}</p>
+                                                    <a href={plan.url} target="_blank" rel="noopener noreferrer"
+                                                        className="text-[10px] font-bold text-rose-400 hover:text-rose-300 underline underline-offset-2 transition shrink-0">
+                                                        🔗 Visit
+                                                    </a>
+                                                </div>
+                                                <p className="text-xs text-gray-400 mt-0.5">Cover: <span className="text-white font-bold">{plan.cover}</span> &nbsp;|&nbsp; Premium: <span className="text-emerald-300 font-semibold">{plan.prem}</span></p>
+                                            </div>
+                                            <span className="text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 whitespace-nowrap ml-3 shrink-0">{plan.tag}</span>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
 
-                            <div className="p-6 bg-gray-900/60 rounded-2xl border border-gray-700/50 flex flex-col sm:flex-row gap-5 items-start hover:border-indigo-500/30 transition duration-300 shadow-lg">
-                                <div className="p-3 bg-indigo-500/20 text-indigo-400 rounded-xl shrink-0 shadow-inner">
-                                    <Shield className="w-8 h-8" />
+                            {/* Life Insurance */}
+                            <div className="p-5 bg-gray-900/60 rounded-2xl border border-indigo-500/30 hover:border-indigo-400/60 transition duration-300 shadow-lg">
+                                <div className="flex items-center gap-3 mb-3">
+                                    <div className="p-2.5 bg-indigo-500/20 text-indigo-400 rounded-xl shrink-0"><Shield className="w-6 h-6" /></div>
+                                    <h4 className="text-lg font-bold text-white">Term Life Insurance 🛡️</h4>
                                 </div>
-                                <div>
-                                    <h4 className="text-xl font-bold text-white mb-2">Life Protection (🛡️)</h4>
-                                    <p className="text-sm text-gray-400 mb-4 leading-relaxed">Guarantees dependent stability. Priority: Market standing and historically high solvency ratio.</p>
-                                    <p className="text-xs font-bold text-indigo-400 bg-indigo-900/20 inline-block px-3 py-1.5 rounded-lg border border-indigo-500/20">Recommended: Max Life, ICICI Prudential</p>
+                                <div className="space-y-2">
+                                    {([
+                                        { name: 'LIC Tech Term (Online)', cover: '₹1 Cr', prem: '~₹10,200/yr', tag: 'Most Trusted', color: 'amber', url: 'https://licindia.in/Products/Insurance-Plan/LIC-Tech-Term' },
+                                        { name: 'Max Life Smart Secure Plus', cover: '₹1 Cr', prem: '~₹8,400/yr', tag: 'High Claim Ratio', color: 'blue', url: 'https://www.maxlifeinsurance.com/term-life-insurance-plans/smart-secure-plus-plan' },
+                                        { name: 'HDFC Life Click 2 Protect Super', cover: '₹1 Cr', prem: '~₹9,100/yr', tag: 'Return of Premium', color: 'purple', url: 'https://www.hdfclife.com/term-insurance-plans/click-2-protect-super' },
+                                    ] as { name: string; cover: string; prem: string; tag: string; color: string; url: string }[]).map((plan) => (
+                                        <div key={plan.name} className="flex items-center justify-between bg-gray-800/50 rounded-xl px-4 py-3 border border-gray-700/40 hover:border-indigo-500/30 transition">
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <p className="text-sm font-extrabold text-white tracking-wide">{plan.name}</p>
+                                                    <a href={plan.url} target="_blank" rel="noopener noreferrer"
+                                                        className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 underline underline-offset-2 transition shrink-0">
+                                                        🔗 Visit
+                                                    </a>
+                                                </div>
+                                                <p className="text-xs text-gray-400 mt-0.5">Cover: <span className="text-white font-bold">{plan.cover}</span> &nbsp;|&nbsp; Premium: <span className="text-indigo-300 font-semibold">{plan.prem}</span></p>
+                                            </div>
+                                            <span className="text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 whitespace-nowrap ml-3 shrink-0">{plan.tag}</span>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
                         </div>
                     </div>
                 </motion.div>
 
-                {/* STEP 6: LEVEL UP SYSTEM */}
+
+                {/* STEP 6: FINANCIAL HEALTH RADAR */}
                 <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     whileInView={{ opacity: 1, scale: 1 }}
@@ -426,55 +453,60 @@ export const StrategyExplanationPage = () => {
                 >
                     {hasMounted && <div className="absolute top-0 right-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-[100px] pointer-events-none" />}
 
-                    <div className="text-center mb-12 relative z-10">
-                        <h3 className="text-3xl font-extrabold text-white mb-4 flex justify-center items-center gap-3">
-                            Financial Engine Level <span className="text-4xl">🔥</span>
-                        </h3>
-                        <p className="text-gray-400 max-w-xl mx-auto text-lg">As you consistently invest {formatIndianCurrency(investmentBudget)} every month, your investment engine ranks up, unlocking new financial security statuses.</p>
+                    <div className="text-center mb-10 relative z-10">
+                        <h3 className="text-3xl font-extrabold text-white mb-3">📡 Financial Health Radar</h3>
+                        <p className="text-gray-400 max-w-xl mx-auto">A multidimensional scan of your financial fitness across 5 key dimensions.</p>
                     </div>
 
-                    <div className="max-w-4xl mx-auto space-y-12 relative z-10">
-                        <div className="relative pt-[20px] pb-[40px]">
-                            {/* Level labels above points */}
-                            <div className="absolute top-[-30px] left-0 right-0 flex justify-between px-2 sm:px-4 text-xs font-bold text-gray-500 z-0">
-                                <span className={userLevel >= 1 ? "text-emerald-400" : ""}>Lvl 1</span>
-                                <span className={userLevel >= 2 ? "text-emerald-400" : ""}>Lvl 2</span>
-                                <span className={userLevel >= 3 ? "text-emerald-400" : ""}>Lvl 3</span>
-                                <span className={userLevel >= 4 ? "text-emerald-400" : ""}>Lvl 4</span>
-                                <span className={userLevel >= 5 ? "text-amber-400" : ""}>Lvl 5 🏆</span>
-                            </div>
-
-                            <div className="absolute top-6 left-[24px] right-[24px] h-3 bg-gray-800 rounded-full shadow-inner overflow-hidden">
-                                <motion.div
-                                    initial={{ width: 0 }}
-                                    whileInView={{ width: `${progressPct}%` }}
-                                    transition={{ duration: 2, ease: "easeOut" }}
-                                    viewport={{ once: true }}
-                                    className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full relative"
-                                >
-                                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-6 h-6 bg-white rounded-full shadow-[0_0_15px_rgba(255,255,255,1)]" />
-                                </motion.div>
-                            </div>
-
-                            <div className="flex justify-between relative mt-2 w-full px-2 sm:px-4">
-                                {[1, 2, 3, 4, 5].map((lvl) => (
-                                    <div key={lvl} className={`flex flex-col items-center gap-2 transition duration-500 delay-100 ${userLevel >= lvl ? 'opacity-100 scale-110' : 'opacity-40 grayscale scale-90'}`}>
-                                        <div className={`w-10 h-10 sm:w-14 sm:h-14 rounded-full flex items-center justify-center font-black text-lg border-4 shadow-lg ${userLevel >= lvl ? 'bg-gray-900 text-white border-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.5)]' : 'bg-gray-800 text-gray-500 border-gray-700'}`}>
-                                            {lvl === 5 ? <Award className="w-5 h-5 sm:w-7 sm:h-7 text-amber-500" /> : lvl}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center relative z-10">
+                        <div className="h-[320px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <RadarChart data={[
+                                    { axis: 'Time\nHorizon', value: Math.min(100, Math.max(10, ((financialData.targetRetirementAge - financialData.age) / 35) * 100)) },
+                                    { axis: 'Capital\nBase', value: Math.min(100, Math.max(5, (netInvestedSavings / Math.max(income * 12, 1)) * 20)) },
+                                    { axis: 'Monthly\nSurplus', value: Math.min(100, Math.max(5, (investmentBudget / Math.max(income, 1)) * 100)) },
+                                    { axis: 'Insurance\nCover', value: insuranceCopus > 0 ? Math.min(100, (insuranceCopus / Math.max(netInvestedSavings, 1)) * 500) : 10 },
+                                    { axis: 'Risk\nAlignment', value: stratName.includes('High Growth') ? 90 : stratName.includes('Balanced') ? 60 : 35 },
+                                ]} cx="50%" cy="50%" outerRadius="80%">
+                                    <PolarGrid stroke="#374151" />
+                                    <PolarAngleAxis dataKey="axis" tick={{ fill: '#9ca3af', fontSize: 11, fontWeight: 600 }} />
+                                    <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
+                                    <Radar name="You" dataKey="value" stroke="#10b981" fill="#10b981" fillOpacity={0.25} strokeWidth={2} />
+                                    <Tooltip formatter={(v: any) => `${Math.round(v)}%`} contentStyle={{ backgroundColor: '#1f2937', borderRadius: '10px', border: '1px solid #374151', color: '#fff' }} />
+                                </RadarChart>
+                            </ResponsiveContainer>
                         </div>
 
-                        <div className="text-center bg-gray-900/70 backdrop-blur-md rounded-3xl p-8 border border-emerald-500/20 shadow-2xl transform hover:scale-[1.02] transition duration-300">
-                            <div className="inline-flex p-4 bg-emerald-500/20 text-emerald-400 rounded-full mb-6 relative overflow-hidden">
-                                <div className="absolute inset-0 bg-emerald-400/20 animate-ping rounded-full" />
-                                <Trophy className="w-10 h-10 relative z-10" />
-                            </div>
-                            <p className="text-emerald-500 font-extrabold tracking-[0.2em] text-sm mb-2 drop-shadow-sm">CURRENT MILESTONE</p>
-                            <h4 className="text-4xl font-black text-white mb-4 drop-shadow-md">Level {userLevel}: {levelTitle}</h4>
-                            <p className="text-gray-300 text-lg">Consistent investing builds your financial shield. Keep pushing!</p>
+                        <div className="space-y-4">
+                            {[
+                                { label: 'Time Horizon', score: Math.min(100, Math.max(10, ((financialData.targetRetirementAge - financialData.age) / 35) * 100)), desc: `${financialData.targetRetirementAge - financialData.age} yrs to retirement` },
+                                { label: 'Capital Base', score: Math.min(100, Math.max(5, (netInvestedSavings / Math.max(income * 12, 1)) * 20)), desc: `${formatIndianCurrency(netInvestedSavings)} net invested` },
+                                { label: 'Monthly Surplus', score: Math.min(100, Math.max(5, (investmentBudget / Math.max(income, 1)) * 100)), desc: `${formatIndianCurrency(investmentBudget)}/mo for investing` },
+                                { label: 'Insurance Cover', score: insuranceCopus > 0 ? Math.min(100, (insuranceCopus / Math.max(netInvestedSavings, 1)) * 500) : 10, desc: `${formatIndianCurrency(insuranceCopus)} corpus set aside` },
+                                { label: 'Risk Alignment', score: stratName.includes('High Growth') ? 90 : stratName.includes('Balanced') ? 60 : 35, desc: stratName },
+                            ].map((dim, i) => {
+                                const s = Math.round(dim.score);
+                                const color = s >= 70 ? '#10b981' : s >= 40 ? '#f59e0b' : '#ef4444';
+                                return (
+                                    <div key={i}>
+                                        <div className="flex justify-between items-center mb-1">
+                                            <span className="text-sm font-semibold text-gray-300">{dim.label}</span>
+                                            <span className="text-xs font-bold" style={{ color }}>{s}%</span>
+                                        </div>
+                                        <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+                                            <motion.div
+                                                initial={{ width: 0 }}
+                                                whileInView={{ width: `${s}%` }}
+                                                viewport={{ once: true }}
+                                                transition={{ duration: 1.2, delay: i * 0.1, ease: 'easeOut' }}
+                                                className="h-full rounded-full"
+                                                style={{ backgroundColor: color }}
+                                            />
+                                        </div>
+                                        <p className="text-xs text-gray-500 mt-0.5">{dim.desc}</p>
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
                 </motion.div>
@@ -486,6 +518,7 @@ export const StrategyExplanationPage = () => {
                     viewport={{ once: true }}
                     className="bg-gray-800/40 backdrop-blur-xl rounded-3xl p-8 md:p-12 border border-gray-700/50 shadow-xl"
                 >
+
                     <div className="text-center mb-10">
                         <h3 className="text-3xl font-bold text-white mb-4">The Wealth Projection 📈</h3>
                         <p className="text-gray-400 max-w-2xl mx-auto text-lg">
@@ -515,6 +548,22 @@ export const StrategyExplanationPage = () => {
                                     labelStyle={{ color: '#9ca3af' }}
                                     contentStyle={{ backgroundColor: '#1f2937', borderRadius: '16px', border: '1px solid #374151', color: '#fff', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }}
                                 />
+                                {/* FIRE number checkpoint */}
+                                {financialData.selectedFireAmount && financialData.selectedFireAmount > 0 && (
+                                    <ReferenceLine
+                                        y={financialData.selectedFireAmount}
+                                        stroke="#f59e0b"
+                                        strokeWidth={2}
+                                        strokeDasharray="6 3"
+                                        label={{
+                                            value: `🎯 ${financialData.primaryGoal || 'FIRE'}: ${formatIndianCurrency(financialData.selectedFireAmount)}`,
+                                            fill: '#f59e0b',
+                                            fontSize: 11,
+                                            fontWeight: 700,
+                                            position: 'insideTopRight',
+                                        }}
+                                    />
+                                )}
                                 <Area
                                     type="monotone"
                                     dataKey="value"
@@ -574,7 +623,7 @@ export const StrategyExplanationPage = () => {
                     <p className="mt-6 text-sm text-emerald-400/70 font-semibold tracking-wide uppercase">Your journey to FIRE officially begins now.</p>
                 </motion.div>
 
-            </div>
-        </div>
+            </div >
+        </div >
     );
 };

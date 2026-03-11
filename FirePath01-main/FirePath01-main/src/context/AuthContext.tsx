@@ -41,6 +41,15 @@ export interface UserFinancialData {
     description: string;
     date: string;
   }>;
+  goals?: Array<{
+    id: string;
+    name: string;
+    targetAmount: number;
+    currentSavings: number;
+    targetMonths: number;
+    category: string;
+    createdAt: string;
+  }>;
 }
 
 export interface User {

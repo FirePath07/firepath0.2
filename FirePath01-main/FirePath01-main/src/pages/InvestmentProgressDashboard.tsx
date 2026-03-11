@@ -164,6 +164,14 @@ export const InvestmentProgressDashboard = () => {
 
     const totalPL = currentValue - totalInvested;
 
+    const activeGoalsSIP = (financialData.goals || []).reduce((sum, goal) => {
+        const remainingAmt = Math.max(0, goal.targetAmount - goal.currentSavings);
+        const requiredSip = goal.targetMonths > 0 ? remainingAmt / goal.targetMonths : 0;
+        return sum + (requiredSip > 0 && remainingAmt > 0 ? requiredSip : 0);
+    }, 0);
+
+    const overallSIP = (financialData.defaultMonthlySIP || 0) + activeGoalsSIP;
+
     const handleUpdateSip = async () => {
         if (!basket || !basket.funds.length) return alert("Please complete risk assessment to select a basket.");
 
@@ -284,18 +292,23 @@ export const InvestmentProgressDashboard = () => {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
-                    <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-8 border border-gray-100 dark:border-gray-700 flex flex-col justify-center transition hover:shadow-xl">
-                        <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">Total Invested</p>
-                        <p className="text-4xl font-black text-gray-900 dark:text-white tracking-tight">{formatIndianCurrency(totalInvested)}</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-10">
+                    <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-6 border border-gray-100 dark:border-gray-700 flex flex-col justify-center transition hover:shadow-xl">
+                        <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">Overall Monthly SIP</p>
+                        <p className="text-3xl font-black text-blue-600 dark:text-blue-400 tracking-tight">{formatIndianCurrency(overallSIP)}</p>
+                        <p className="text-[10px] text-gray-500 mt-1 font-medium">Inv: {formatIndianCurrency(financialData.defaultMonthlySIP || 0)} | Goals: {formatIndianCurrency(activeGoalsSIP)}</p>
                     </div>
-                    <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-8 border border-gray-100 dark:border-gray-700 flex flex-col justify-center transition hover:shadow-xl">
-                        <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">Current Portfolio Value</p>
-                        <p className="text-4xl font-black text-gray-900 dark:text-white tracking-tight">{formatIndianCurrency(currentValue)}</p>
+                    <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-6 border border-gray-100 dark:border-gray-700 flex flex-col justify-center transition hover:shadow-xl">
+                        <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">Total Invested</p>
+                        <p className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">{formatIndianCurrency(totalInvested)}</p>
                     </div>
-                    <div className={`bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-8 border transition hover:shadow-xl flex flex-col justify-center ${totalPL >= 0 ? 'border-emerald-500/30 bg-emerald-50/10 dark:bg-emerald-900/10' : 'border-rose-500/30 bg-rose-50/10 dark:bg-rose-900/10'}`}>
-                        <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">Total Profit / Loss</p>
-                        <p className={`text-4xl font-black flex items-center gap-2 tracking-tight ${totalPL >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                    <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-6 border border-gray-100 dark:border-gray-700 flex flex-col justify-center transition hover:shadow-xl">
+                        <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">Current Portfolio Value</p>
+                        <p className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">{formatIndianCurrency(currentValue)}</p>
+                    </div>
+                    <div className={`bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-6 border transition hover:shadow-xl flex flex-col justify-center ${totalPL >= 0 ? 'border-emerald-500/30 bg-emerald-50/10 dark:bg-emerald-900/10' : 'border-rose-500/30 bg-rose-50/10 dark:bg-rose-900/10'}`}>
+                        <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">Total Profit / Loss</p>
+                        <p className={`text-3xl font-black flex items-center gap-2 tracking-tight ${totalPL >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                             {totalPL >= 0 ? '+' : '-'}{formatIndianCurrency(Math.abs(totalPL))}
                         </p>
                     </div>

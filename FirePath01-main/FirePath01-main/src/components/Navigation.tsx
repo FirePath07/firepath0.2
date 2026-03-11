@@ -39,6 +39,11 @@ export const Navigation = ({ showFullNav = true }: NavigationProps) => {
 
               {isSignedIn ? (
                 <div className="flex items-center gap-4">
+                  <button
+                    onClick={() => navigate('/future-goals')}
+                    className="text-gray-600 dark:text-gray-300 hover:text-emerald-700 dark:hover:text-emerald-400 font-medium transition">
+                    Future Goals
+                  </button>
                   <button onClick={() => navigate('/user-details')} className="text-gray-700 dark:text-gray-300 font-medium hover:text-emerald-700 dark:hover:text-emerald-400 hover:underline">{user?.name}</button>
                   <button
                     onClick={() => navigate('/profile')}

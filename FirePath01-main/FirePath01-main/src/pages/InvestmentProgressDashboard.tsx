@@ -5,7 +5,7 @@ import { Navigation } from '../components/Navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatIndianCurrency } from '../utils/currency';
 import {
-    LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+    AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     PieChart, Pie, Cell, Legend
 } from 'recharts';
 import { TrendingUp, Plus, Wallet, Briefcase, RefreshCcw, Landmark } from 'lucide-react';
@@ -38,6 +38,43 @@ const FUND_CODE_MAP: Record<string, string> = {
     "Nippon India Small Cap Fund": "118777",
     "SBI Small Cap Fund": "125497",
     "Kotak Small Cap Fund": "120153"
+};
+
+const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+        const invested = payload.find((p: any) => p.dataKey === 'Invested')?.value;
+        const value = payload.find((p: any) => p.dataKey === 'Value')?.value;
+        const isProfit = value >= invested;
+
+        return (
+            <div className="bg-gray-900/90 backdrop-blur-md border border-gray-700 p-5 rounded-2xl shadow-2xl min-w-[200px]">
+                <p className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-3">{label}</p>
+                <div className="space-y-3">
+                    <div className="flex justify-between items-center gap-6 text-sm">
+                        <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                            <span className="text-gray-300 font-medium">Invested</span>
+                        </div>
+                        <span className="text-white font-bold">{formatIndianCurrency(invested || 0)}</span>
+                    </div>
+                    <div className="flex justify-between items-center gap-6 text-sm">
+                        <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
+                            <span className="text-gray-300 font-medium">Value</span>
+                        </div>
+                        <span className="text-white font-bold">{formatIndianCurrency(value || 0)}</span>
+                    </div>
+                </div>
+                <div className={`mt-4 pt-3 border-t ${isProfit ? 'border-emerald-500/30' : 'border-rose-500/30'} flex justify-between items-center`}>
+                    <span className="text-xs text-gray-400 font-medium">Total Return</span>
+                    <span className={`text-sm font-black ${isProfit ? 'text-emerald-400' : 'text-rose-400'}`}>
+                        {isProfit ? '+' : '-'}{formatIndianCurrency(Math.abs((value || 0) - (invested || 0)))}
+                    </span>
+                </div>
+            </div>
+        );
+    }
+    return null;
 };
 
 export const InvestmentProgressDashboard = () => {
@@ -269,17 +306,27 @@ export const InvestmentProgressDashboard = () => {
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
                         <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-6 md:p-8 border border-gray-100 dark:border-gray-700">
                             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Portfolio Growth Over Time</h2>
-                            <div className="h-72">
+                            <div className="h-80 -mx-2 md:mx-0">
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <LineChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                                        <XAxis dataKey="name" stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
-                                        <YAxis stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `₹${val.toLocaleString('en-IN')}`} width={90} />
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" className="dark:stroke-gray-700" />
-                                        <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }} formatter={(v: any) => formatIndianCurrency(v)} />
-                                        <Legend />
-                                        <Line type="monotone" dataKey="Value" stroke="#10b981" strokeWidth={3} dot={false} />
-                                        <Line type="monotone" dataKey="Invested" stroke="#3b82f6" strokeWidth={3} dot={false} strokeDasharray="5 5" />
-                                    </LineChart>
+                                    <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                                        <defs>
+                                            <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
+                                                <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                                            </linearGradient>
+                                            <linearGradient id="colorInvested" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2} />
+                                                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                                            </linearGradient>
+                                        </defs>
+                                        <XAxis dataKey="name" stroke="#9ca3af" fontSize={11} tickLine={false} axisLine={false} tickMargin={10} minTickGap={30} />
+                                        <YAxis stroke="#9ca3af" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(val) => `₹${(val / 100000).toLocaleString('en-IN')}L`} width={60} />
+                                        <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#e5e7eb" className="dark:stroke-gray-800" />
+                                        <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#9ca3af', strokeWidth: 1, strokeDasharray: '4 4' }} />
+                                        <Legend wrapperStyle={{ paddingTop: '20px' }} iconType="circle" />
+                                        <Area type="monotone" dataKey="Invested" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#colorInvested)" activeDot={{ r: 6, strokeWidth: 0, fill: '#3b82f6' }} />
+                                        <Area type="monotone" dataKey="Value" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorValue)" activeDot={{ r: 8, stroke: '#fff', strokeWidth: 3, fill: '#10b981' }} />
+                                    </AreaChart>
                                 </ResponsiveContainer>
                             </div>
                         </div>

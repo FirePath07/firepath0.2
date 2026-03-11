@@ -113,6 +113,57 @@ router.get('/me', verifyToken, async (req, res) => {
     }
 });
 
+// @route   POST api/auth/google
+// @desc    Authenticate user or register via Google without a password
+router.post('/google', async (req, res) => {
+    const { name, email, googleId } = req.body;
+
+    try {
+        let user = await User.findOne({ email });
+        let isNewUser = false;
+        
+        if (!user) {
+            // Register the user
+            isNewUser = true;
+            const randomPassword = Math.random().toString(36).slice(-10) + Math.random().toString(36).slice(-10);
+            const salt = await bcrypt.genSalt(10);
+            const passwordHash = await bcrypt.hash(randomPassword, salt);
+
+            user = new User({
+                name,
+                email,
+                passwordHash,
+                financialData: {
+                    monthlyIncome: 100000,
+                    currentSavings: 500000,
+                    monthlyExpenses: 40000,
+                    age: 25,
+                    targetRetirementAge: 55,
+                    riskProfile: 'medium'
+                }
+            });
+
+            await user.save();
+        }
+
+        const payload = {
+            user: {
+                id: user.id
+            }
+        };
+
+        jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' }, (err, token) => {
+            if (err) throw err;
+            res.json({ token, user: { id: user.id, name: user.name, email: user.email, financialData: user.financialData }, isNewUser });
+        });
+
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server error');
+    }
+});
+
+
 // @route   PUT api/auth/profile
 // @desc    Update user financial data
 router.put('/profile', verifyToken, async (req, res) => {

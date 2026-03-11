@@ -48,7 +48,7 @@ export const UserProfileDashboard = () => {
 
   // Dynamic Expected Return based on Risk Profile
   let expectedReturnRate = 0.12; // default Medium Risk
-  if (financialData.riskProfile?.includes("Capital Stability")) expectedReturnRate = 0.10; // Low Risk
+  if (financialData.riskProfile?.includes("Capital Stability")) expectedReturnRate = 0.08; // Low Risk
   else if (financialData.riskProfile?.includes("High Growth")) expectedReturnRate = 0.16; // High Risk
 
   const r = expectedReturnRate;
@@ -76,12 +76,20 @@ export const UserProfileDashboard = () => {
   const estimatedRetirementAge = financialData.age + yearsToFire;
   const netWorth = currentTotalWealth;
 
+  const targetYearsToRetire = Math.max(0, financialData.targetRetirementAge - financialData.age);
+  const willMissTimeline = yearsToFire > targetYearsToRetire;
+  const isLowRisk = financialData.riskProfile?.includes("Capital Stability");
+
+  const subtitleMessage = willMissTimeline && isLowRisk
+    ? `Est. retirement at ${Math.round(estimatedRetirementAge)} (Past target of ${financialData.targetRetirementAge})`
+    : `Est. retirement at ${Math.round(estimatedRetirementAge)}`;
+
   const stats = [
     { title: 'Annual Income', value: formatIndianCurrency(annualIncome), subtitle: `${formatIndianCurrency(financialData.monthlyIncome)}/month`, metricName: 'Annual Income' },
     { title: 'Annual Expenses', value: formatIndianCurrency(annualExpenses), subtitle: `${formatIndianCurrency(financialData.monthlyExpenses)}/month`, metricName: 'Annual Expenses' },
     { title: 'Savings Rate', value: `${savingsRate}%`, subtitle: `Saving ${formatIndianCurrency(annualSurplus)} per year`, metricName: 'Savings Rate' },
     { title: 'Net Worth', value: formatIndianCurrency(netWorth), subtitle: 'Your current assets', metricName: 'Net Worth' },
-    { title: 'Years to FIRE', value: isFinite(yearsToFire) ? `${yearsToFire.toFixed(1)} yrs` : 'N/A', subtitle: `Est. retirement at ${Math.round(estimatedRetirementAge)}`, metricName: 'Years to FIRE' },
+    { title: 'Years to FIRE', value: isFinite(yearsToFire) ? `${yearsToFire.toFixed(1)} yrs` : 'N/A', subtitle: subtitleMessage, metricName: 'Years to FIRE' },
   ];
 
   const mostImportantStat = stats.find(s => s.metricName === financialData.mostImportantMetric) || stats[2];
@@ -240,6 +248,17 @@ export const UserProfileDashboard = () => {
                     Based on current savings and {savingsRate}% savings rate
                   </p>
                 </div>
+
+                {willMissTimeline && isLowRisk && (
+                  <div className="bg-rose-50 dark:bg-rose-900/30 rounded-lg p-4 border border-rose-200 dark:border-rose-800 mt-4">
+                    <p className="text-sm text-rose-700 dark:text-rose-400 font-bold mb-1">
+                      ⚠️ Goal at Risk
+                    </p>
+                    <p className="text-xs text-rose-600 dark:text-rose-300">
+                      With the 8% expected returns of a debt fund focus, your conservative strategy is mathematically projected to miss your target retirement age of {financialData.targetRetirementAge}. You will need to either extend your timeline, increase your monthly investments, or assume a higher risk strategy.
+                    </p>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600">

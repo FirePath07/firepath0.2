@@ -5,7 +5,7 @@ import { Navigation } from '../components/Navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatIndianCurrency } from '../utils/currency';
 import {
-    AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+    LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     PieChart, Pie, Cell, Legend
 } from 'recharts';
 import { TrendingUp, Plus, Wallet, Briefcase, RefreshCcw, Landmark } from 'lucide-react';
@@ -186,7 +186,7 @@ export const InvestmentProgressDashboard = () => {
         });
 
         const remainingMoney = Math.max(0, salary - expenses);
-        const splurge = remainingMoney * 0.20;
+        const splurge = salary * 0.15;
         const investable = Math.max(0, remainingMoney - splurge);
 
         setRecommendedSip(investable);
@@ -271,25 +271,15 @@ export const InvestmentProgressDashboard = () => {
                             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Portfolio Growth Over Time</h2>
                             <div className="h-72">
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                                        <defs>
-                                            <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                                                <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                                            </linearGradient>
-                                            <linearGradient id="colorInvested" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-                                                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                                            </linearGradient>
-                                        </defs>
+                                    <LineChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                                         <XAxis dataKey="name" stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
-                                        <YAxis stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `₹${val / 1000}k`} />
+                                        <YAxis stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `₹${val.toLocaleString('en-IN')}`} width={90} />
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" className="dark:stroke-gray-700" />
                                         <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }} formatter={(v: any) => formatIndianCurrency(v)} />
                                         <Legend />
-                                        <Area type="monotone" dataKey="Value" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorValue)" />
-                                        <Area type="monotone" dataKey="Invested" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorInvested)" />
-                                    </AreaChart>
+                                        <Line type="monotone" dataKey="Value" stroke="#10b981" strokeWidth={3} dot={false} />
+                                        <Line type="monotone" dataKey="Invested" stroke="#3b82f6" strokeWidth={3} dot={false} strokeDasharray="5 5" />
+                                    </LineChart>
                                 </ResponsiveContainer>
                             </div>
                         </div>

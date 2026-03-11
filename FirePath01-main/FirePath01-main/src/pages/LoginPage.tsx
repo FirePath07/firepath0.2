@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Navigation } from '../components/Navigation';
+import { GoogleLogin } from '@react-oauth/google';
+import { jwtDecode } from 'jwt-decode';
 
 export const LoginPage = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, googleAuth } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -49,6 +51,34 @@ export const LoginPage = () => {
               <p className="text-red-700 text-sm">{error}</p>
             </div>
           )}
+
+          <div className="mb-6 flex flex-col items-center">
+            <GoogleLogin
+              onSuccess={async (credentialResponse) => {
+                if (credentialResponse.credential) {
+                  try {
+                    setLoading(true);
+                    setError('');
+                    const decoded = jwtDecode<{ name: string; email: string; sub: string }>(credentialResponse.credential);
+                    await googleAuth(decoded.name, decoded.email, decoded.sub);
+                    navigate('/profile');
+                  } catch (err) {
+                    setError('Google Login failed. Please try again.');
+                  } finally {
+                    setLoading(false);
+                  }
+                }
+              }}
+              onError={() => {
+                setError('Google Login Failed');
+              }}
+            />
+            <div className="mt-4 flex items-center w-full">
+              <div className="flex-1 border-t border-gray-300 dark:border-gray-600"></div>
+              <span className="px-3 text-gray-500 dark:text-gray-400 text-sm">or sign in with email</span>
+              <div className="flex-1 border-t border-gray-300 dark:border-gray-600"></div>
+            </div>
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>

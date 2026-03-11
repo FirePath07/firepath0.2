@@ -7,14 +7,13 @@ import { jwtDecode } from 'jwt-decode';
 
 export const SignUpPage = () => {
   const navigate = useNavigate();
-  const { register } = useAuth();
+  const { register, googleAuth } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [isGoogleSignIn, setIsGoogleSignIn] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,41 +62,40 @@ export const SignUpPage = () => {
             </div>
           )}
 
-          {!isGoogleSignIn && (
-            <div className="mb-6 flex flex-col items-center">
-              <GoogleLogin
-                onSuccess={(credentialResponse) => {
-                  if (credentialResponse.credential) {
-                    const decoded = jwtDecode<{ name: string; email: string }>(credentialResponse.credential);
-                    setName(decoded.name);
-                    setEmail(decoded.email);
-                    setIsGoogleSignIn(true);
+          <div className="mb-6 flex flex-col items-center">
+            <GoogleLogin
+              onSuccess={async (credentialResponse) => {
+                if (credentialResponse.credential) {
+                  try {
+                    setLoading(true);
+                    setError('');
+                    const decoded = jwtDecode<{ name: string; email: string; sub: string }>(credentialResponse.credential);
+                    const { isNewUser } = await googleAuth(decoded.name, decoded.email, decoded.sub);
+                    
+                    if (isNewUser) {
+                      navigate('/questionnaire');
+                    } else {
+                      navigate('/profile');
+                    }
+                  } catch (err) {
+                    setError('Google Sign Up failed. Please try again.');
+                  } finally {
+                    setLoading(false);
                   }
-                }}
-                onError={() => {
-                  setError('Google Login Failed');
-                }}
-              />
-              <div className="mt-4 flex items-center w-full">
-                <div className="flex-1 border-t border-gray-300 dark:border-gray-600"></div>
-                <span className="px-3 text-gray-500 dark:text-gray-400 text-sm">or sign up with email</span>
-                <div className="flex-1 border-t border-gray-300 dark:border-gray-600"></div>
-              </div>
+                }
+              }}
+              onError={() => {
+                setError('Google Login Failed');
+              }}
+            />
+            <div className="mt-4 flex items-center w-full">
+              <div className="flex-1 border-t border-gray-300 dark:border-gray-600"></div>
+              <span className="px-3 text-gray-500 dark:text-gray-400 text-sm">or sign up with email</span>
+              <div className="flex-1 border-t border-gray-300 dark:border-gray-600"></div>
             </div>
-          )}
-
-          {isGoogleSignIn && (
-            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 mb-6">
-              <p className="text-emerald-700 text-sm text-center font-medium">
-                Signing up as <strong>{name}</strong> ({email})
-              </p>
-              <p className="text-emerald-600 text-xs text-center mt-1">Please provide a password to complete your registration.</p>
-            </div>
-          )}
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {!isGoogleSignIn && (
-              <>
                 <div>
                   <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                     Full Name
@@ -109,6 +107,7 @@ export const SignUpPage = () => {
                     onChange={(e) => setName(e.target.value)}
                     className="mt-2 w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none"
                     placeholder="John Doe"
+                    disabled={loading}
                   />
                 </div>
 
@@ -123,10 +122,9 @@ export const SignUpPage = () => {
                     onChange={(e) => setEmail(e.target.value)}
                     className="mt-2 w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none"
                     placeholder="you@example.com"
+                    disabled={loading}
                   />
                 </div>
-              </>
-            )}
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -139,6 +137,7 @@ export const SignUpPage = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 className="mt-2 w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none"
                 placeholder="••••••••"
+                disabled={loading}
               />
             </div>
 
@@ -153,6 +152,7 @@ export const SignUpPage = () => {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 className="mt-2 w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none"
                 placeholder="••••••••"
+                disabled={loading}
               />
             </div>
 
@@ -161,7 +161,7 @@ export const SignUpPage = () => {
               disabled={loading}
               className="w-full bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-emerald-700 transition disabled:opacity-50"
             >
-              {loading ? (isGoogleSignIn ? 'Completing Registration...' : 'Creating Account...') : (isGoogleSignIn ? 'Complete Registration' : 'Sign Up')}
+              {loading ? 'Processing...' : 'Sign Up'}
             </button>
           </form>
 

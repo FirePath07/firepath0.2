@@ -420,7 +420,7 @@ export const RiskPage = () => {
                         <div className="text-left">
                           <p className="text-xs text-gray-500 dark:text-gray-400 tracking-wider mb-1 uppercase font-semibold">Min. Invest</p>
                           <p className="text-base font-black text-gray-900 dark:text-white">
-                            {fund.min_investment === 0 ? 'No Min' : `₹${fund.min_investment.toLocaleString()}`}
+                            {fund.min_investment === 0 ? 'No Min' : `₹${fund.min_investment.toLocaleString('en-IN')}`}
                           </p>
                         </div>
                         <div className="text-left">
@@ -522,7 +522,7 @@ export const RiskPage = () => {
                       </div>
                       <p className="text-sm font-bold text-gray-700 mb-1">Step-up SIP (10% Annual)</p>
                       <h4 className={`text-2xl font-bold ${simResult.feasible ? 'text-emerald-700' : 'text-red-700'}`}>
-                        ₹{simResult.monthlySIP.toLocaleString()}
+                        ₹{simResult.monthlySIP.toLocaleString('en-IN')}
                       </h4>
                       <p className="text-xs text-gray-500 mt-1">Start small, increase by 10% every year.</p>
                     </div>
@@ -531,7 +531,7 @@ export const RiskPage = () => {
                     <div className="p-5 rounded-xl border-2 border-gray-200 bg-white">
                       <p className="text-sm font-bold text-gray-700 mb-1">Standard SIP (Fixed)</p>
                       <h4 className="text-2xl font-bold text-gray-800">
-                        ₹{simResult.flatSIP.toLocaleString()}
+                        ₹{simResult.flatSIP.toLocaleString('en-IN')}
                       </h4>
                       <p className="text-xs text-gray-500 mt-1">Fixed monthly amount for {years} years.</p>
                     </div>
@@ -546,13 +546,13 @@ export const RiskPage = () => {
                       </p>
                       {!simResult.feasible && (
                         <p className="text-sm mt-1">
-                          Gap: <span className="font-bold">₹{simResult.gap.toLocaleString()}</span>.
+                          Gap: <span className="font-bold">₹{simResult.gap.toLocaleString('en-IN')}</span>.
                           Try the Step-up strategy or extend your timeline.
                         </p>
                       )}
                       {!simResult.feasible && simResult.alternateCorpus && (
                         <div className="mt-2 text-sm bg-white/50 p-2 rounded border border-red-200">
-                          💡 With current surplus ({((user?.financialData?.monthlyIncome || 0) - (user?.financialData?.monthlyExpenses || 0)).toLocaleString()}), you can reach <span className="font-bold">₹{simResult.alternateCorpus.toLocaleString()}</span>.
+                          💡 With current surplus ({((user?.financialData?.monthlyIncome || 0) - (user?.financialData?.monthlyExpenses || 0)).toLocaleString('en-IN')}), you can reach <span className="font-bold">₹{simResult.alternateCorpus.toLocaleString('en-IN')}</span>.
                         </div>
                       )}
                     </div>

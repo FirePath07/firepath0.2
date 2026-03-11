@@ -71,8 +71,8 @@ export const SIPCalculator = () => {
                                 <LineChart data={chartData}>
                                     <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                                     <XAxis dataKey="year" label={{ value: 'Year', position: 'insideBottomRight', offset: -5 }} />
-                                    <YAxis tickFormatter={(value) => `₹${value / 100000}L`} />
-                                    <Tooltip formatter={(value) => `₹${(value as number).toLocaleString()}`} labelFormatter={(label) => `Year ${label}`} />
+                                    <YAxis tickFormatter={(value) => `₹${value.toLocaleString('en-IN')}`} width={90} />
+                                    <Tooltip formatter={(value) => `₹${(value as number).toLocaleString('en-IN')}`} labelFormatter={(label) => `Year ${label}`} />
                                     <Line type="monotone" dataKey="totalValue" stroke="#059669" strokeWidth={3} dot={false} name="Total Value" />
                                     <Line type="monotone" dataKey="totalInvestment" stroke="#d97706" strokeDasharray="5 5" strokeWidth={2} dot={false} name="Total Investment" />
                                 </LineChart>
@@ -82,15 +82,15 @@ export const SIPCalculator = () => {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
                         <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-xl border border-blue-100 dark:border-blue-800/50">
                             <p className="text-sm text-blue-800 dark:text-blue-300 font-semibold uppercase">Total Invested</p>
-                            <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">₹{totalInvestment.toLocaleString()}</p>
+                            <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">₹{totalInvestment.toLocaleString('en-IN')}</p>
                         </div>
                         <div className="bg-emerald-50 dark:bg-emerald-900/30 p-4 rounded-xl border border-emerald-100 dark:border-emerald-800/50">
                             <p className="text-sm text-emerald-800 dark:text-emerald-300 font-semibold uppercase">Wealth Gained</p>
-                            <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">₹{wealthGained.toLocaleString()}</p>
+                            <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">₹{wealthGained.toLocaleString('en-IN')}</p>
                         </div>
                         <div className="bg-purple-50 dark:bg-purple-900/30 p-4 rounded-xl border border-purple-100 dark:border-purple-800/50">
                             <p className="text-sm text-purple-800 dark:text-purple-300 font-semibold uppercase">Total Value</p>
-                            <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">₹{totalValue.toLocaleString()}</p>
+                            <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">₹{totalValue.toLocaleString('en-IN')}</p>
                         </div>
                     </div>
                 </div>

@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, AreaChart, Area, XAxis, YAxis, CartesianGrid, ReferenceLine, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
-import { Target, ShieldCheck, HeartPulse, Shield, CheckCircle2 } from 'lucide-react';
+import { Target, ShieldCheck, HeartPulse, Shield, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { formatIndianCurrency } from '../utils/currency';
 
 // Mapping strategy to its profile
@@ -96,16 +96,16 @@ export const StrategyExplanationPage = () => {
     const { financialData } = user;
     const income = financialData.monthlyIncome || 0;
 
-    // Current savings split: 10% goes to insurance premium corpus, rest stays invested
+    // Current savings stay entirely for investment growth
     const currentSavings = financialData.currentSavings || 0;
-    const insuranceCopus = currentSavings * 0.10; // 10% of saved amount for insurance
-    const netInvestedSavings = currentSavings - insuranceCopus; // Remaining savings that compound
+    const netInvestedSavings = currentSavings; // No insurance deduction
 
-    // Monthly investable surplus = income minus expenses (100% goes into investments)
+    // Monthly investable surplus = income minus expenses minus splurge money
     const monthlyExpenses = financialData.monthlyExpenses || 0;
-    const monthlyInvestableSurplus = Math.max(0, income - monthlyExpenses);
+    const splurgeMoney = income * 0.15;
+    const monthlyInvestableSurplus = Math.max(0, income - monthlyExpenses - splurgeMoney);
 
-    // All of investor's monthly surplus flows into funds — insurance is covered from savings
+    // All of investor's monthly surplus flows into funds
     const investmentBudget = monthlyInvestableSurplus;
     const expensesBudget = monthlyExpenses;
 
@@ -123,6 +123,12 @@ export const StrategyExplanationPage = () => {
             name: "Monthly Expenses",
             amount: expensesBudget,
             percentage: income > 0 ? (expensesBudget / income) * 100 : 0,
+            isFund: false
+        },
+        {
+            name: "Splurge Money",
+            amount: splurgeMoney,
+            percentage: income > 0 ? (splurgeMoney / income) * 100 : 0,
             isFund: false
         }
     ].filter(i => i.percentage > 0);
@@ -160,6 +166,41 @@ export const StrategyExplanationPage = () => {
         if (risk === 'aggressive') return 'bg-rose-500';
         return 'bg-blue-500';
     };
+
+    const yearsToRetire = Math.max(0, financialData.targetRetirementAge - financialData.age);
+    let projectedValueAtHorizon = netInvestedSavings;
+    const monthlyRate = activeStrategy.expectedReturn / 12 / 100;
+    for (let year = 1; year <= yearsToRetire; year++) {
+        for (let m = 1; m <= 12; m++) {
+            projectedValueAtHorizon = (projectedValueAtHorizon + investmentBudget) * (1 + monthlyRate);
+        }
+    }
+
+    const isLowRisk = stratName === "Capital Stability Strategy";
+    const missesFireGoal = isLowRisk && financialData.selectedFireAmount && projectedValueAtHorizon < financialData.selectedFireAmount;
+
+    // --- Insurance Recommendation Logic based on Age ---
+    const userAge = financialData.age || 25;
+    let healthPlans = [];
+    let lifePlans = [];
+
+    if (userAge <= 26) {
+        healthPlans = [
+            { name: 'LIC Jeevan Arogya (Plan 903)', cover: '₹10,00,000 (Daily Cash ₹1k-4k)', prem: '₹5,800 - ₹7,400', tag: 'Hospital Cash', color: 'amber', url: 'https://licindia.in/Products/Health-Plans/LICs-Jeevan-Arogya' },
+            { name: 'HDFC ERGO Optima Secure', cover: '₹10,00,000', prem: '₹9,200 - ₹11,500', tag: 'Comprehensive', color: 'emerald', url: 'https://www.hdfcergo.com/health-insurance/optima-secure.html' }
+        ];
+        lifePlans = [
+            { name: 'Term Life Insurance', cover: '₹1 Cr', prem: '₹7,500 - ₹9,500', tag: 'Recommended', color: 'blue', url: '#' }
+        ];
+    } else {
+        healthPlans = [
+            { name: 'LIC Jeevan Arogya (Plan 903)', cover: '₹10,00,000 (Daily Cash ₹1k-4k)', prem: '₹8,200 - ₹10,500', tag: 'Hospital Cash', color: 'amber', url: 'https://licindia.in/Products/Health-Plans/LICs-Jeevan-Arogya' },
+            { name: 'HDFC ERGO Optima Secure', cover: '₹10,00,000', prem: '₹11,800 - ₹14,900', tag: 'Comprehensive', color: 'emerald', url: 'https://www.hdfcergo.com/health-insurance/optima-secure.html' }
+        ];
+        lifePlans = [
+            { name: 'Term Life Insurance', cover: '₹1 Cr', prem: '₹10,500 - ₹13,500', tag: 'Recommended', color: 'blue', url: '#' }
+        ];
+    }
 
     return (
         <div className="min-h-screen bg-[#0f172a] text-gray-200 selection:bg-emerald-500/30 font-sans pb-24 overflow-x-hidden">
@@ -366,19 +407,8 @@ export const StrategyExplanationPage = () => {
                             </div>
                             <h3 className="text-3xl font-extrabold text-white mb-4">Securing Your Wealth</h3>
                             <p className="text-gray-300 text-base leading-relaxed mb-4">
-                                We've set aside <strong className="text-white bg-blue-900/50 px-2 py-0.5 rounded">{formatIndianCurrency(insuranceCopus)}</strong> (10% of your saved capital) as a one-time insurance premium corpus — covering robust health and term life coverage. Your full monthly surplus is therefore free to compound in investments.
+                                You may use part of your general savings to purchase this recommended insurance coverage. Proper coverage acts as a shield for your invested corpus during emergencies.
                             </p>
-                            <div className="bg-blue-950/50 rounded-xl p-4 border border-blue-700/40">
-                                <p className="text-xs text-blue-300 font-semibold uppercase tracking-widest mb-1">Corpus breakdown</p>
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-gray-400">Health cover (60%)</span>
-                                    <span className="text-white font-bold">{formatIndianCurrency(insuranceCopus * 0.6)}</span>
-                                </div>
-                                <div className="flex justify-between text-sm mt-1">
-                                    <span className="text-gray-400">Life cover (40%)</span>
-                                    <span className="text-white font-bold">{formatIndianCurrency(insuranceCopus * 0.4)}</span>
-                                </div>
-                            </div>
                         </div>
 
                         <div className="space-y-5">
@@ -389,11 +419,7 @@ export const StrategyExplanationPage = () => {
                                     <h4 className="text-lg font-bold text-white">Health Insurance 🏥</h4>
                                 </div>
                                 <div className="space-y-2">
-                                    {([
-                                        { name: 'HDFC Ergo Optima Secure', cover: '₹1 Cr', prem: '~₹12,000/yr', tag: 'Best Overall', color: 'emerald', url: 'https://www.hdfcergo.com/health-insurance/optima-secure.html' },
-                                        { name: 'Niva Bupa ReAssure 2.0', cover: '₹50L', prem: '~₹9,500/yr', tag: 'Unlimited Restore', color: 'blue', url: 'https://www.nivabupa.com/health-insurance-plans/reassure-2.0.html' },
-                                        { name: 'Star Health Comprehensive', cover: '₹50L', prem: '~₹8,000/yr', tag: 'Cashless Network', color: 'purple', url: 'https://www.starhealth.in/health-insurance/family-health-optima' },
-                                    ] as { name: string; cover: string; prem: string; tag: string; color: string; url: string }[]).map((plan) => (
+                                    {healthPlans.map((plan) => (
                                         <div key={plan.name} className="flex items-center justify-between bg-gray-800/50 rounded-xl px-4 py-3 border border-gray-700/40 hover:border-rose-500/30 transition">
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-center gap-2 flex-wrap">
@@ -418,11 +444,7 @@ export const StrategyExplanationPage = () => {
                                     <h4 className="text-lg font-bold text-white">Term Life Insurance 🛡️</h4>
                                 </div>
                                 <div className="space-y-2">
-                                    {([
-                                        { name: 'LIC Tech Term (Online)', cover: '₹1 Cr', prem: '~₹10,200/yr', tag: 'Most Trusted', color: 'amber', url: 'https://licindia.in/Products/Insurance-Plan/LIC-Tech-Term' },
-                                        { name: 'Max Life Smart Secure Plus', cover: '₹1 Cr', prem: '~₹8,400/yr', tag: 'High Claim Ratio', color: 'blue', url: 'https://www.maxlifeinsurance.com/term-life-insurance-plans/smart-secure-plus-plan' },
-                                        { name: 'HDFC Life Click 2 Protect Super', cover: '₹1 Cr', prem: '~₹9,100/yr', tag: 'Return of Premium', color: 'purple', url: 'https://www.hdfclife.com/term-insurance-plans/click-2-protect-super' },
-                                    ] as { name: string; cover: string; prem: string; tag: string; color: string; url: string }[]).map((plan) => (
+                                    {lifePlans.map((plan) => (
                                         <div key={plan.name} className="flex items-center justify-between bg-gray-800/50 rounded-xl px-4 py-3 border border-gray-700/40 hover:border-indigo-500/30 transition">
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-center gap-2 flex-wrap">
@@ -465,7 +487,7 @@ export const StrategyExplanationPage = () => {
                                     { axis: 'Time\nHorizon', value: Math.min(100, Math.max(10, ((financialData.targetRetirementAge - financialData.age) / 35) * 100)) },
                                     { axis: 'Capital\nBase', value: Math.min(100, Math.max(5, (netInvestedSavings / Math.max(income * 12, 1)) * 20)) },
                                     { axis: 'Monthly\nSurplus', value: Math.min(100, Math.max(5, (investmentBudget / Math.max(income, 1)) * 100)) },
-                                    { axis: 'Insurance\nCover', value: insuranceCopus > 0 ? Math.min(100, (insuranceCopus / Math.max(netInvestedSavings, 1)) * 500) : 10 },
+                                    { axis: 'Insurance\nCover', value: 30 },
                                     { axis: 'Risk\nAlignment', value: stratName.includes('High Growth') ? 90 : stratName.includes('Balanced') ? 60 : 35 },
                                 ]} cx="50%" cy="50%" outerRadius="80%">
                                     <PolarGrid stroke="#374151" />
@@ -482,7 +504,7 @@ export const StrategyExplanationPage = () => {
                                 { label: 'Time Horizon', score: Math.min(100, Math.max(10, ((financialData.targetRetirementAge - financialData.age) / 35) * 100)), desc: `${financialData.targetRetirementAge - financialData.age} yrs to retirement` },
                                 { label: 'Capital Base', score: Math.min(100, Math.max(5, (netInvestedSavings / Math.max(income * 12, 1)) * 20)), desc: `${formatIndianCurrency(netInvestedSavings)} net invested` },
                                 { label: 'Monthly Surplus', score: Math.min(100, Math.max(5, (investmentBudget / Math.max(income, 1)) * 100)), desc: `${formatIndianCurrency(investmentBudget)}/mo for investing` },
-                                { label: 'Insurance Cover', score: insuranceCopus > 0 ? Math.min(100, (insuranceCopus / Math.max(netInvestedSavings, 1)) * 500) : 10, desc: `${formatIndianCurrency(insuranceCopus)} corpus set aside` },
+                                { label: 'Insurance Cover', score: 30, desc: `Recommendation active` },
                                 { label: 'Risk Alignment', score: stratName.includes('High Growth') ? 90 : stratName.includes('Balanced') ? 60 : 35, desc: stratName },
                             ].map((dim, i) => {
                                 const s = Math.round(dim.score);
@@ -539,8 +561,8 @@ export const StrategyExplanationPage = () => {
                                 <YAxis
                                     stroke="#4b5563"
                                     tick={{ fill: '#9ca3af' }}
-                                    tickFormatter={(val) => `₹${(val / 100000).toFixed(0)}L`}
-                                    width={70}
+                                    tickFormatter={(val) => `₹${val.toLocaleString('en-IN')}`}
+                                    width={90}
                                 />
                                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
                                 <Tooltip
@@ -576,6 +598,15 @@ export const StrategyExplanationPage = () => {
                             </AreaChart>
                         </ResponsiveContainer>
                     </div>
+
+                    {missesFireGoal && (
+                        <div className="mb-8 p-4 bg-rose-900/40 border border-rose-500/50 rounded-xl text-center shadow-lg">
+                            <p className="text-rose-400 font-bold flex flex-col md:flex-row items-center justify-center gap-2">
+                                <AlertTriangle className="w-5 h-5 shrink-0" />
+                                <span>Based on an 8% return assumption from debt funds, the FIRE goal may not be reached within your selected timeframe of {yearsToRetire} years.</span>
+                            </p>
+                        </div>
+                    )}
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="p-6 bg-gray-900/60 rounded-2xl border border-gray-700/50 text-center shadow-inner">

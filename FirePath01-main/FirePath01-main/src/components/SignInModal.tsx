@@ -93,7 +93,7 @@ export const SignInModal = ({ isOpen, onClose }: SignInModalProps) => {
               {/* Monthly Income */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Monthly Income: <span className="text-emerald-700 font-bold">₹{monthlyIncome.toLocaleString()}</span>
+                  Monthly Income: <span className="text-emerald-700 font-bold">₹{monthlyIncome.toLocaleString('en-IN')}</span>
                 </label>
                 <input
                   type="range"
@@ -110,7 +110,7 @@ export const SignInModal = ({ isOpen, onClose }: SignInModalProps) => {
               {/* Current Savings */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Current Savings: <span className="text-emerald-700 font-bold">₹{currentSavings.toLocaleString()}</span>
+                  Current Savings: <span className="text-emerald-700 font-bold">₹{currentSavings.toLocaleString('en-IN')}</span>
                 </label>
                 <input
                   type="range"
@@ -127,7 +127,7 @@ export const SignInModal = ({ isOpen, onClose }: SignInModalProps) => {
               {/* Monthly Expenses */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Monthly Expenses: <span className="text-emerald-700 font-bold">₹{monthlyExpenses.toLocaleString()}</span>
+                  Monthly Expenses: <span className="text-emerald-700 font-bold">₹{monthlyExpenses.toLocaleString('en-IN')}</span>
                 </label>
                 <input
                   type="range"
@@ -182,11 +182,11 @@ export const SignInModal = ({ isOpen, onClose }: SignInModalProps) => {
                 <strong>Financial Summary:</strong>
               </p>
               <ul className="text-sm text-gray-600 space-y-1">
-                <li>• Annual Income: <strong className="text-blue-700">₹{(monthlyIncome * 12).toLocaleString()}</strong></li>
-                <li>• Current Savings: <strong className="text-blue-700">₹{currentSavings.toLocaleString()}</strong></li>
-                <li>• Annual Expenses: <strong className="text-blue-700">₹{(monthlyExpenses * 12).toLocaleString()}</strong></li>
+                <li>• Annual Income: <strong className="text-blue-700">₹{(monthlyIncome * 12).toLocaleString('en-IN')}</strong></li>
+                <li>• Current Savings: <strong className="text-blue-700">₹{currentSavings.toLocaleString('en-IN')}</strong></li>
+                <li>• Annual Expenses: <strong className="text-blue-700">₹{(monthlyExpenses * 12).toLocaleString('en-IN')}</strong></li>
                 <li>• Years Until Retirement: <strong className="text-blue-700">{targetRetirementAge - age}</strong></li>
-                <li>• Annual Surplus: <strong className="text-blue-700">₹{((monthlyIncome - monthlyExpenses) * 12).toLocaleString()}</strong></li>
+                <li>• Annual Surplus: <strong className="text-blue-700">₹{((monthlyIncome - monthlyExpenses) * 12).toLocaleString('en-IN')}</strong></li>
               </ul>
             </div>
 

@@ -111,11 +111,11 @@ export const SettingsModal = ({ isOpen, onClose, onHardResetRequest }: SettingsM
                                 <div className="grid grid-cols-2 gap-4 opacity-70 cursor-not-allowed">
                                     <div className="p-3 bg-gray-100 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
                                         <p className="text-xs text-gray-500 dark:text-gray-400">Monthly Income</p>
-                                        <p className="font-bold text-gray-800 dark:text-gray-200">₹{formData.monthlyIncome?.toLocaleString() || 0}</p>
+                                        <p className="font-bold text-gray-800 dark:text-gray-200">₹{formData.monthlyIncome?.toLocaleString('en-IN') || 0}</p>
                                     </div>
                                     <div className="p-3 bg-gray-100 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
                                         <p className="text-xs text-gray-500 dark:text-gray-400">Monthly Expenses</p>
-                                        <p className="font-bold text-gray-800 dark:text-gray-200">₹{formData.monthlyExpenses?.toLocaleString() || 0}</p>
+                                        <p className="font-bold text-gray-800 dark:text-gray-200">₹{formData.monthlyExpenses?.toLocaleString('en-IN') || 0}</p>
                                     </div>
                                     <div className="p-3 bg-gray-100 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
                                         <p className="text-xs text-gray-500 dark:text-gray-400">Current Age</p>

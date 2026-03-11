@@ -57,6 +57,7 @@ interface AuthContextType {
   signIn: (user: User) => void; // Deprecated, keeping for interface compatibility if needed, but logic will change
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
+  googleAuth: (name: string, email: string, googleId: string) => Promise<{ isNewUser: boolean }>;
   signOut: () => void;
   updateFinancialData: (data: Partial<UserFinancialData>) => Promise<void>;
   hardReset: () => Promise<void>;
@@ -140,6 +141,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(data.user);
   };
 
+  const googleAuth = async (name: string, email: string, googleId: string): Promise<{ isNewUser: boolean }> => {
+    const res = await fetch(`${API_URL}/google`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, googleId })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.msg || 'Google Authentication failed');
+    }
+
+    localStorage.setItem('token', data.token);
+    setUser(data.user);
+    
+    return { isNewUser: data.isNewUser };
+  };
+
   const signIn = (newUser: User) => {
     // Fallback for types or older compatibility, shouldn't be used with backend generally
     setUser(newUser);
@@ -218,7 +237,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isSignedIn: !!user, signIn, login, register, signOut, updateFinancialData, hardReset, loading }}>
+    <AuthContext.Provider value={{ user, isSignedIn: !!user, signIn, login, register, googleAuth, signOut, updateFinancialData, hardReset, loading }}>
       {children}
     </AuthContext.Provider>
   );

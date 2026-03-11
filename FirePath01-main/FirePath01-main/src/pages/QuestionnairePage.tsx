@@ -209,7 +209,10 @@ const RISK_QUESTIONS = [
       { label: 'Meaningful global diversification', value: 3 }
     ]
   }
-];
+].map(q => ({
+  ...q,
+  options: [...q.options].sort(() => Math.random() - 0.5)
+}));
 
 const ALL_QUESTIONS = [...INPUT_QUESTIONS, ...RISK_QUESTIONS];
 
@@ -257,10 +260,7 @@ export const QuestionnairePage = () => {
     return 'https://cdn-icons-png.flaticon.com/512/4521/4521576.png';
   };
 
-  const handleFireSelection = (goal: string, fireAmount: number) => {
-    setAnswers({ ...answers, primaryGoal: goal, selectedFireAmount: fireAmount });
-    setStep(step + 1);
-  };
+  // removed handleFireSelection
 
   const handleComplete = (finalStrategy: string, selectedBasketData?: any) => {
     const retireMap: Record<number, number> = { 1: 38, 2: 43, 3: 48, 4: 55, 5: 65 };
@@ -273,7 +273,7 @@ export const QuestionnairePage = () => {
     const selectedFireAmount = answers.selectedFireAmount ? Number(answers.selectedFireAmount) : 0;
 
     const remainingMoney = Math.max(0, monthlyIncome - monthlyExpenses);
-    const splurgeMoney = remainingMoney * 0.20;
+    const splurgeMoney = monthlyIncome * 0.15;
     const defaultMonthlySIP = Math.max(0, remainingMoney - splurgeMoney);
 
     const yearsToRetire = retireAge > currentAge ? retireAge - currentAge : 0;
@@ -323,7 +323,6 @@ export const QuestionnairePage = () => {
     const qIndex = step > INPUT_QUESTIONS.length ? step - 1 : step;
     const currentQ = ALL_QUESTIONS[qIndex];
     setAnswers({ ...answers, [currentQ.key]: value });
-    setStep(step + 1);
   };
 
   const renderInputStep = () => {
@@ -348,7 +347,10 @@ export const QuestionnairePage = () => {
               <button
                 key={opt.value}
                 onClick={() => handleSelectOption(opt.value)}
-                className="w-full text-left px-6 py-4 bg-gray-50 dark:bg-gray-700 hover:bg-emerald-50 dark:hover:bg-emerald-900 border border-gray-200 dark:border-gray-600 hover:border-emerald-500 dark:hover:border-emerald-500 rounded-xl transition-all duration-200 text-gray-800 dark:text-white font-medium shadow-sm hover:shadow-md"
+                className={`w-full text-left px-6 py-4 border rounded-xl transition-all duration-200 font-medium shadow-sm hover:shadow-md ${answers[q.key] === opt.value
+                  ? 'bg-emerald-100 dark:bg-emerald-800 border-emerald-500 text-emerald-900 dark:text-emerald-100 ring-2 ring-emerald-500 ring-opacity-50'
+                  : 'bg-gray-50 dark:bg-gray-700 hover:bg-emerald-50 dark:hover:bg-emerald-900 border-gray-200 dark:border-gray-600 hover:border-emerald-500 dark:hover:border-emerald-500 text-gray-800 dark:text-white'
+                  }`}
               >
                 {opt.label}
               </button>
@@ -359,6 +361,11 @@ export const QuestionnairePage = () => {
             <input
               type="number"
               min={q.key === 'exactAge' ? "18" : "0"}
+              value={answers[q.key] === undefined ? '' : answers[q.key]}
+              onChange={(e) => {
+                const val = e.target.value === '' ? '' : Number(e.target.value);
+                setAnswers({ ...answers, [q.key]: val });
+              }}
               className="w-full px-6 py-4 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 focus:border-emerald-500 dark:focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500 rounded-xl transition-all duration-200 text-gray-800 dark:text-white font-medium shadow-sm outline-none"
               placeholder={(q as any).placeholder || "Enter value..."}
               autoFocus
@@ -366,23 +373,57 @@ export const QuestionnairePage = () => {
                 if (e.key === '-' || e.key === 'e') {
                   e.preventDefault();
                 }
-                if (e.key === 'Enter' && e.currentTarget.value) {
-                  const val = Number(e.currentTarget.value);
-                  if (val < 0) {
+                if (e.key === 'Enter') {
+                  const val = answers[q.key];
+                  if (val === undefined || val === '') return;
+                  if (Number(val) < 0) {
                     alert("Negative values are not allowed! Please enter a valid non-negative number.");
                     return;
                   }
-                  if (q.key === 'exactAge' && val < 18) {
+                  if (q.key === 'exactAge' && Number(val) < 18) {
                     alert("You must be at least 18 years old to proceed.");
                     return;
                   }
-                  handleSelectOption(val);
+                  setStep(step + 1);
                 }
               }}
             />
-            <p className="text-xs text-gray-500 text-center mt-2">Press Enter to continue</p>
           </div>
         )}
+
+        <div className="mt-8 flex justify-between gap-4">
+          <button
+            onClick={() => setStep(Math.max(0, step - 1))}
+            disabled={step === 0}
+            className={`px-6 py-3 rounded-xl font-bold transition-all ${step === 0
+              ? 'opacity-50 cursor-not-allowed bg-gray-200 text-gray-400 dark:bg-gray-800 dark:text-gray-600'
+              : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600'
+              }`}
+          >
+            Previous
+          </button>
+          <button
+            onClick={() => {
+              const val = answers[q.key];
+              if (val === undefined || val === '') {
+                alert("Please provide an answer before continuing.");
+                return;
+              }
+              if (typeof val === 'number' && val < 0) {
+                alert("Negative values are not allowed!");
+                return;
+              }
+              if (q.key === 'exactAge' && Number(val) < 18) {
+                alert("You must be at least 18 years old to proceed.");
+                return;
+              }
+              setStep(step + 1);
+            }}
+            className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+          >
+            Continue <ArrowRight className="w-5 h-5" />
+          </button>
+        </div>
       </div>
     );
   };
@@ -392,7 +433,7 @@ export const QuestionnairePage = () => {
     const income = answers.monthlyIncome ? Number(answers.monthlyIncome) : 0;
     const expenses = answers.monthlyExpenses ? Number(answers.monthlyExpenses) : 0;
     const remainingMoney = Math.max(0, income - expenses);
-    const splurgeMoney = remainingMoney * 0.20;
+    const splurgeMoney = income * 0.15;
     const investable = Math.max(0, remainingMoney - splurgeMoney);
     const canInvest = investable >= 1000;
 
@@ -573,7 +614,7 @@ export const QuestionnairePage = () => {
               {/* Savings buffer bar */}
               <div>
                 <div className="flex justify-between text-xs mb-1">
-                  <span className="font-semibold text-amber-500">Splurge / Lifestyle (20% of remain)</span>
+                  <span className="font-semibold text-amber-500">Splurge / Lifestyle (15% of Income)</span>
                   <span className="font-bold text-amber-600">₹{splurgeMoney.toLocaleString('en-IN')}</span>
                 </div>
                 <div className="h-3 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
@@ -616,11 +657,17 @@ export const QuestionnairePage = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.9 }}
-          className="mt-8 flex justify-center relative z-10"
+          className="mt-8 flex gap-4 relative z-10"
         >
           <button
+            onClick={() => setStep(step - 1)}
+            className="px-6 py-4 font-bold text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 rounded-xl shadow-md hover:bg-gray-300 dark:hover:bg-gray-600 transition-all duration-200"
+          >
+            Previous
+          </button>
+          <button
             onClick={() => setStep(step + 1)}
-            className="group relative inline-flex items-center justify-center px-8 py-4 font-bold text-white transition-all duration-200 bg-gray-900 dark:bg-white dark:text-gray-900 font-pj rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900"
+            className="flex-1 group relative inline-flex items-center justify-center px-8 py-4 font-bold text-white transition-all duration-200 bg-gray-900 dark:bg-white dark:text-gray-900 font-pj rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900"
           >
             <span>Proceed to Risk Assessment</span>
             <ArrowRight className="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1" />
@@ -633,7 +680,6 @@ export const QuestionnairePage = () => {
   const renderFireSelectionStep = () => {
     const income = answers.monthlyIncome ? Number(answers.monthlyIncome) : 0;
     const expenses = answers.monthlyExpenses ? Number(answers.monthlyExpenses) : 0;
-    // Use actual expenses for FIRE calculation; fallback to a placeholder if user skipped
     const annualExpenses = (expenses > 0 ? expenses : income * 0.50) * 12;
     const inflationRate = 0.06;
 
@@ -646,6 +692,10 @@ export const QuestionnairePage = () => {
     const leanFire = Math.round(futureAnnualExpenses * 20);
     const tradFire = Math.round(futureAnnualExpenses * 25);
     const fatFire = Math.round(futureAnnualExpenses * 30);
+
+    const handleFireSelectionLocal = (goal: string, fireAmount: number) => {
+      setAnswers({ ...answers, primaryGoal: goal, selectedFireAmount: fireAmount });
+    };
 
     return (
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 max-w-2xl w-full transition-colors duration-300">
@@ -663,8 +713,11 @@ export const QuestionnairePage = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <button
-            onClick={() => handleFireSelection('Lean FIRE', leanFire)}
-            className="p-6 border-2 border-gray-200 dark:border-gray-700 rounded-xl hover:border-emerald-500 dark:hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition text-left group"
+            onClick={() => handleFireSelectionLocal('Lean FIRE', leanFire)}
+            className={`p-6 border-2 rounded-xl transition text-left group ${answers.primaryGoal === 'Lean FIRE'
+              ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/50'
+              : 'border-gray-200 dark:border-gray-700 hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30'
+              }`}
           >
             <div className="text-lg font-semibold text-gray-600 dark:text-gray-400 mb-2">Lean FIRE 🌿</div>
             <div className="text-xl font-bold text-emerald-700 dark:text-emerald-400 mb-1">{formatIndianCurrency(leanFire)}</div>
@@ -672,8 +725,11 @@ export const QuestionnairePage = () => {
           </button>
 
           <button
-            onClick={() => handleFireSelection('Traditional FIRE', tradFire)}
-            className="p-6 border-2 border-emerald-500 bg-emerald-50 dark:bg-emerald-900/30 rounded-xl hover:bg-emerald-100 dark:hover:bg-emerald-800/40 transition text-left relative"
+            onClick={() => handleFireSelectionLocal('Traditional FIRE', tradFire)}
+            className={`p-6 border-2 rounded-xl transition text-left relative ${answers.primaryGoal === 'Traditional FIRE'
+              ? 'border-emerald-500 bg-emerald-100 dark:bg-emerald-800/60'
+              : 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/30 hover:bg-emerald-100 dark:hover:bg-emerald-800/40'
+              }`}
           >
             <div className="absolute top-0 right-0 bg-emerald-500 text-white text-xs px-2 py-1 rounded-bl-lg font-bold">Recommended</div>
             <div className="text-lg font-bold text-emerald-800 dark:text-emerald-300 mb-2">Traditional FIRE 🔥</div>
@@ -682,12 +738,36 @@ export const QuestionnairePage = () => {
           </button>
 
           <button
-            onClick={() => handleFireSelection('Fat FIRE', fatFire)}
-            className="p-6 border-2 border-gray-200 dark:border-gray-700 rounded-xl hover:border-purple-500 dark:hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition text-left group"
+            onClick={() => handleFireSelectionLocal('Fat FIRE', fatFire)}
+            className={`p-6 border-2 rounded-xl transition text-left group ${answers.primaryGoal === 'Fat FIRE'
+              ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/50'
+              : 'border-gray-200 dark:border-gray-700 hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/30'
+              }`}
           >
             <div className="text-lg font-semibold text-gray-600 dark:text-gray-400 mb-2 group-hover:text-purple-700 dark:group-hover:text-purple-400">Fat FIRE 💎</div>
             <div className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-1">{formatIndianCurrency(fatFire)}</div>
             <div className="text-sm text-gray-500 dark:text-gray-500">30x Future Annual Expenses</div>
+          </button>
+        </div>
+
+        <div className="mt-8 flex justify-between gap-4">
+          <button
+            onClick={() => setStep(step - 1)}
+            className="px-6 py-3 rounded-xl font-bold bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition-all"
+          >
+            Previous
+          </button>
+          <button
+            onClick={() => {
+              if (answers.primaryGoal) {
+                setStep(step + 1);
+              } else {
+                alert("Please select a FIRE Target to continue.");
+              }
+            }}
+            className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+          >
+            Continue <ArrowRight className="w-5 h-5" />
           </button>
         </div>
       </div>
@@ -699,7 +779,7 @@ export const QuestionnairePage = () => {
     const income = answers.monthlyIncome ? Number(answers.monthlyIncome) : 0;
     const expenses = answers.monthlyExpenses ? Number(answers.monthlyExpenses) : 0;
     const remainingMoney = Math.max(0, income - expenses);
-    const splurgeMoney = remainingMoney * 0.20;
+    const splurgeMoney = income * 0.15;
     const investable = Math.max(0, remainingMoney - splurgeMoney);
     const MIN_FUND = 1000; // minimum ₹1,000 per fund
 
@@ -915,27 +995,35 @@ export const QuestionnairePage = () => {
               </div>
             )}
 
-            <button
-              onClick={() => {
-                let strategyName = finalStrategy;
-                if (manualCategory === 'LOW RISK') strategyName = "Capital Stability Strategy";
-                if (manualCategory === 'HIGH RISK') strategyName = "High Growth Strategy";
-                if (manualCategory === 'MEDIUM RISK') strategyName = "Balanced Growth Strategy";
+            <div className="flex gap-4 mt-6">
+              <button
+                onClick={() => setStep(step - 1)}
+                className="px-6 py-4 font-bold text-gray-400 bg-gray-800 rounded-xl shadow-md hover:bg-gray-700 transition-all duration-200"
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => {
+                  let strategyName = finalStrategy;
+                  if (manualCategory === 'LOW RISK') strategyName = "Capital Stability Strategy";
+                  if (manualCategory === 'HIGH RISK') strategyName = "High Growth Strategy";
+                  if (manualCategory === 'MEDIUM RISK') strategyName = "Balanced Growth Strategy";
 
-                const defaultBasket = baskets[0];
-                const basketData = {
-                  name: defaultBasket.title,
-                  funds: defaultBasket.funds.map(f => ({
-                    name: f.name,
-                    split: f.split
-                  }))
-                };
-                handleComplete(strategyName, basketData);
-              }}
-              className="mt-6 w-full bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-400 hover:to-emerald-600 text-white font-bold py-4 shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:shadow-[0_0_30px_rgba(16,185,129,0.5)] rounded-xl transition-all duration-300 transform hover:-translate-y-1 flex items-center justify-center gap-2"
-            >
-              Finish Setup <ArrowRight className="w-5 h-5" />
-            </button>
+                  const defaultBasket = baskets[0];
+                  const basketData = {
+                    name: defaultBasket.title,
+                    funds: defaultBasket.funds.map(f => ({
+                      name: f.name,
+                      split: f.split
+                    }))
+                  };
+                  handleComplete(strategyName, basketData);
+                }}
+                className="flex-1 bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-400 hover:to-emerald-600 text-white font-bold py-4 shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:shadow-[0_0_30px_rgba(16,185,129,0.5)] rounded-xl transition-all duration-300 transform hover:-translate-y-1 flex items-center justify-center gap-2"
+              >
+                Finish Setup <ArrowRight className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
           <div className="lg:col-span-2 space-y-6 relative z-10">

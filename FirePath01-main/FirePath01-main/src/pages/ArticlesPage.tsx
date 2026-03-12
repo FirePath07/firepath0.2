@@ -84,7 +84,8 @@ export const ArticlesPage = () => {
 
       try {
         // Fetch quotes directly from backend to avoid proxy issues
-        const res = await fetch(`http://localhost:5000/api/market`);
+        const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        const res = await fetch(`${baseUrl}/api/market`);
 
         if (res.ok) {
           const json = await res.json();

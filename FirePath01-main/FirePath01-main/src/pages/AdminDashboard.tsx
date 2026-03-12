@@ -50,12 +50,13 @@ export const AdminDashboard = () => {
     const fetchData = async () => {
         setLoading(true);
         const token = localStorage.getItem('token');
+        const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
         try {
             const [usersRes, suggRes] = await Promise.all([
-                fetch('http://localhost:5000/api/feedback/admin/users', {
+                fetch(`${baseUrl}/api/feedback/admin/users`, {
                     headers: { 'x-auth-token': token || '' }
                 }),
-                fetch('http://localhost:5000/api/feedback/admin/suggestions', {
+                fetch(`${baseUrl}/api/feedback/admin/suggestions`, {
                     headers: { 'x-auth-token': token || '' }
                 })
             ]);
@@ -89,8 +90,9 @@ export const AdminDashboard = () => {
     const handleDeleteUser = async (userId: string) => {
         setIsDeleting(true);
         const token = localStorage.getItem('token');
+        const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
         try {
-            const res = await fetch(`http://localhost:5000/api/feedback/admin/users/${userId}`, {
+            const res = await fetch(`${baseUrl}/api/feedback/admin/users/${userId}`, {
                 method: 'DELETE',
                 headers: { 'x-auth-token': token || '' }
             });
@@ -109,8 +111,9 @@ export const AdminDashboard = () => {
 
     const handleDeleteFeedback = async (id: string) => {
         const token = localStorage.getItem('token');
+        const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
         try {
-            const res = await fetch(`http://localhost:5000/api/feedback/admin/suggestions/${id}`, {
+            const res = await fetch(`${baseUrl}/api/feedback/admin/suggestions/${id}`, {
                 method: 'DELETE',
                 headers: { 'x-auth-token': token || '' }
             });
@@ -126,8 +129,9 @@ export const AdminDashboard = () => {
         if (!replyText.trim()) return;
         setIsSubmittingReply(true);
         const token = localStorage.getItem('token');
+        const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
         try {
-            const res = await fetch(`http://localhost:5000/api/feedback/admin/${id}/reply`, {
+            const res = await fetch(`${baseUrl}/api/feedback/admin/${id}/reply`, {
                 method: 'PUT',
                 headers: { 
                     'x-auth-token': token || '',
@@ -153,8 +157,9 @@ export const AdminDashboard = () => {
         if (feedback?.isRead) return;
 
         const token = localStorage.getItem('token');
+        const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
         try {
-            const res = await fetch(`http://localhost:5000/api/feedback/admin/${id}/read`, {
+            const res = await fetch(`${baseUrl}/api/feedback/admin/${id}/read`, {
                 method: 'PUT',
                 headers: { 'x-auth-token': token || '' }
             });

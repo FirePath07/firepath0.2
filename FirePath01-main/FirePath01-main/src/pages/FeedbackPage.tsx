@@ -25,7 +25,8 @@ export const FeedbackPage = () => {
         const token = localStorage.getItem('token');
         if (!token) return;
         try {
-            const res = await fetch('http://localhost:5000/api/feedback/me', {
+            const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+            const res = await fetch(`${baseUrl}/api/feedback/me`, {
                 headers: { 'x-auth-token': token }
             });
             if (res.ok) {
@@ -50,7 +51,8 @@ export const FeedbackPage = () => {
         setIsSubmitting(true);
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('http://localhost:5000/api/feedback', {
+            const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+            const res = await fetch(`${baseUrl}/api/feedback`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

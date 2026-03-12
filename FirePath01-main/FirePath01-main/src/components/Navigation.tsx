@@ -17,36 +17,54 @@ export const Navigation = ({ showFullNav = true }: NavigationProps) => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
-            <button
-              onClick={() => navigate('/')}
-              className="text-2xl font-bold text-emerald-800 dark:text-emerald-400 hover:opacity-80 transition">
-              FIRE<span className="text-amber-500">Path</span>
-            </button>
+            {user?.email !== 'firepathjjrp@gmail.com' && (
+              <button
+                onClick={() => navigate('/')}
+                className="text-2xl font-bold text-emerald-800 dark:text-emerald-400 hover:opacity-80 transition">
+                FIRE<span className="text-amber-500">Path</span>
+              </button>
+            )}
+            {user?.email === 'firepathjjrp@gmail.com' && (
+               <div className="text-2xl font-black text-slate-400 tracking-tighter italic">ADMIN<span className="text-emerald-500 not-italic">_MODE</span></div>
+            )}
           </div>
 
           {showFullNav && (
             <div className="hidden md:flex items-center space-x-8">
-              <button
-                onClick={() => navigate('/articles')}
-                className="text-gray-600 dark:text-gray-300 hover:text-emerald-700 dark:hover:text-emerald-400 font-medium transition">
-                Articles
-              </button>
-              <button
-                onClick={() => navigate('/calculators')}
-                className="text-gray-600 dark:text-gray-300 hover:text-emerald-700 dark:hover:text-emerald-400 font-medium transition">
-                Calculators
-              </button>
+              {user?.email !== 'firepathjjrp@gmail.com' && (
+                <>
+                  <button
+                    onClick={() => navigate('/articles')}
+                    className="text-gray-600 dark:text-gray-300 hover:text-emerald-700 dark:hover:text-emerald-400 font-medium transition">
+                    Articles
+                  </button>
+                  <button
+                    onClick={() => navigate('/calculators')}
+                    className="text-gray-600 dark:text-gray-300 hover:text-emerald-700 dark:hover:text-emerald-400 font-medium transition">
+                    Calculators
+                  </button>
+                </>
+              )}
 
               {isSignedIn ? (
                 <div className="flex items-center gap-4">
                   <button
-                    onClick={() => navigate('/future-goals')}
+                    onClick={() => navigate(user?.email === 'firepathjjrp@gmail.com' ? '/admin?tab=suggestions' : '/feedback')}
                     className="text-gray-600 dark:text-gray-300 hover:text-emerald-700 dark:hover:text-emerald-400 font-medium transition">
-                    Future Goals
+                    Feedback
                   </button>
-                  <button onClick={() => navigate('/user-details')} className="text-gray-700 dark:text-gray-300 font-medium hover:text-emerald-700 dark:hover:text-emerald-400 hover:underline">{user?.name}</button>
+                  {user?.email !== 'firepathjjrp@gmail.com' && (
+                    <button
+                      onClick={() => navigate('/future-goals')}
+                      className="text-gray-600 dark:text-gray-300 hover:text-emerald-700 dark:hover:text-emerald-400 font-medium transition">
+                      Future Goals
+                    </button>
+                  )}
+                  {user?.email !== 'firepathjjrp@gmail.com' && (
+                    <button onClick={() => navigate('/user-details')} className="text-gray-700 dark:text-gray-300 font-medium hover:text-emerald-700 dark:hover:text-emerald-400 hover:underline">{user?.name}</button>
+                  )}
                   <button
-                    onClick={() => navigate('/profile')}
+                    onClick={() => navigate(user?.email === 'firepathjjrp@gmail.com' ? '/admin' : '/profile')}
                     className="bg-emerald-700 text-white px-4 py-2 rounded-md hover:bg-emerald-800 transition">
                     Dashboard
                   </button>

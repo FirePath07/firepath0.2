@@ -17,15 +17,32 @@ export const UserProfilePage = () => {
 
     const { financialData } = user;
     const annualExpenses = financialData.monthlyExpenses * 12;
-    const fireNumber = annualExpenses * 25;
+    
+    // Use the stored selectedFireAmount if available, otherwise calculate a traditional (25x) inflated one
+    const inflationRate = (financialData.inflationRate || 6) / 100;
+    const yearsToInvest = Math.max(0, financialData.targetRetirementAge - financialData.age);
+    const futureAnnualExpenses = annualExpenses * Math.pow(1 + inflationRate, yearsToInvest);
+    
+    // If selectedFireAmount is 0 (or not set), default to 25x inflated annual expenses
+    const fireNumber = financialData.selectedFireAmount && financialData.selectedFireAmount > 0 
+        ? financialData.selectedFireAmount 
+        : futureAnnualExpenses * 25;
+
     const annualIncome = financialData.monthlyIncome * 12;
     const annualSurplus = annualIncome - annualExpenses;
 
+    // Expected return based on risk profile
+    let expectedReturnRate = 0.12; 
+    if (financialData.riskProfile?.includes("Capital Stability")) expectedReturnRate = 0.08;
+    else if (financialData.riskProfile?.includes("High Growth")) expectedReturnRate = 0.16;
+
+    const r = expectedReturnRate;
+
     // Calculate estimated years to FIRE for display
     const yearsToFire = annualSurplus > 0 && financialData.currentSavings < fireNumber
-        ? Math.log((fireNumber * 0.05 + annualSurplus) / (financialData.currentSavings * 0.05 + annualSurplus)) / Math.log(1.05)
-        : 0;
-    const estimatedRetirementAge = financialData.age + Math.max(yearsToFire, 0);
+        ? Math.log((fireNumber * r + annualSurplus) / (financialData.currentSavings * r + annualSurplus)) / Math.log(1 + r)
+        : financialData.currentSavings >= fireNumber ? 0 : Infinity;
+    const estimatedRetirementAge = financialData.age + (isFinite(yearsToFire) ? Math.max(yearsToFire, 0) : 0);
 
     const DataRow = ({ label, value, subtext }: { label: string, value: string, subtext?: string }) => (
         <div className="flex justify-between items-center py-4 border-b border-gray-100 dark:border-gray-700 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-700/50 px-2 rounded-lg transition">

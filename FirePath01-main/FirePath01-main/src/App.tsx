@@ -15,6 +15,8 @@ import { UserProfilePage } from './pages/UserProfilePage';
 import { StrategyExplanationPage } from './pages/StrategyExplanationPage';
 import { InvestmentProgressDashboard } from './pages/InvestmentProgressDashboard';
 import { FutureGoalsDashboard } from './pages/FutureGoalsDashboard';
+import { FeedbackPage } from './pages/FeedbackPage';
+import { AdminDashboard } from './pages/AdminDashboard';
 
 function App() {
   return (
@@ -34,6 +36,8 @@ function App() {
           <Route path="/strategy-explanation" element={<StrategyExplanationPage />} />
           <Route path="/investment-dashboard" element={<InvestmentProgressDashboard />} />
           <Route path="/future-goals" element={<FutureGoalsDashboard />} />
+          <Route path="/feedback" element={<FeedbackPage />} />
+          <Route path="/admin" element={<AdminDashboard />} />
         </Routes>
       </Router>
     </AuthProvider>

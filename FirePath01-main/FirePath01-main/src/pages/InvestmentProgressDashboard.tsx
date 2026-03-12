@@ -4,11 +4,12 @@ import { useNavigate } from 'react-router-dom';
 import { Navigation } from '../components/Navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatIndianCurrency } from '../utils/currency';
+import confetti from 'canvas-confetti';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     PieChart, Pie, Cell, Legend
 } from 'recharts';
-import { TrendingUp, Plus, Wallet, Briefcase, RefreshCcw, Landmark } from 'lucide-react';
+import { TrendingUp, Plus, Wallet, Briefcase, RefreshCcw, Landmark, CheckCircle2 } from 'lucide-react';
 
 const COLORS = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ec4899', '#64748b'];
 
@@ -93,6 +94,7 @@ export const InvestmentProgressDashboard = () => {
 
     const [navPrices, setNavPrices] = useState<Record<string, number>>({});
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const [achievedGoal, setAchievedGoal] = useState<any | null>(null);
 
     useEffect(() => {
         if (!user) {
@@ -176,46 +178,81 @@ export const InvestmentProgressDashboard = () => {
         if (!basket || !basket.funds.length) return alert("Please complete risk assessment to select a basket.");
 
         const defaultSip = financialData.defaultMonthlySIP || 0;
-        const amount = defaultSip + (Number(bonusAmount) || 0);
-        if (!amount || amount <= 0) return;
+        const totalBonus = Number(bonusAmount) || 0;
+        
+        // Amount logic: We invest the defaultSip + any extra bonus in the FIRE portfolio.
+        // Additionally, we process the active goal SIPs.
+        const fireInvestAmount = defaultSip + totalBonus;
+        
+        if (fireInvestAmount <= 0 && activeGoalsSIP <= 0) return;
 
+        // 1. Update Portfolio (FIRE Corpus)
         const newPortfolio = [...portfolio];
+        if (fireInvestAmount > 0) {
+            basket.funds.forEach(fund => {
+                const fundAmount = (fireInvestAmount * fund.split) / 100;
+                const nav = navPrices[fund.name] || getBaseNav(fund.name);
+                const unitsBought = fundAmount / nav;
 
-        basket.funds.forEach(fund => {
-            const fundAmount = (amount * fund.split) / 100;
-            const nav = navPrices[fund.name] || getBaseNav(fund.name);
-            const unitsBought = fundAmount / nav;
+                const existingIndex = newPortfolio.findIndex(p => p.fundName === fund.name);
+                if (existingIndex >= 0) {
+                    newPortfolio[existingIndex].units += unitsBought;
+                    newPortfolio[existingIndex].totalInvested += fundAmount;
+                } else {
+                    newPortfolio.push({
+                        fundName: fund.name,
+                        units: unitsBought,
+                        totalInvested: fundAmount,
+                        navAtPurchase: nav
+                    });
+                }
+            });
+        }
 
-            const existingIndex = newPortfolio.findIndex(p => p.fundName === fund.name);
-            if (existingIndex >= 0) {
-                newPortfolio[existingIndex].units += unitsBought;
-                newPortfolio[existingIndex].totalInvested += fundAmount;
-            } else {
-                newPortfolio.push({
-                    fundName: fund.name,
-                    units: unitsBought,
-                    totalInvested: fundAmount,
-                    navAtPurchase: nav
-                });
+        // 2. Update Future Goals Progress (Internal tracking)
+        const currentGoals = financialData.goals || [];
+        let goalReached = null;
+        const updatedGoals = currentGoals.map(goal => {
+            const remainingAmt = Math.max(0, goal.targetAmount - goal.currentSavings);
+            const reqSip = goal.targetMonths > 0 ? remainingAmt / goal.targetMonths : 0;
+            
+            if (reqSip > 0 && remainingAmt > 0) {
+                const newSavings = goal.currentSavings + reqSip;
+                if (newSavings >= goal.targetAmount && goal.currentSavings < goal.targetAmount) {
+                    goalReached = { ...goal, currentSavings: newSavings };
+                }
+                return { ...goal, currentSavings: newSavings };
             }
+            return goal;
         });
 
         const newMonthlyContribs = [...(financialData.monthlyContributions || []), {
             date: new Date().toISOString().split('T')[0],
-            amount
+            amount: fireInvestAmount + activeGoalsSIP // Total cash out
         }];
 
         const newHistory = [...(financialData.portfolioHistory || []), {
             date: new Date().toISOString().split('T')[0],
-            totalInvested: totalInvested + amount,
-            currentValue: currentValue + amount // Approximate value at time of addition
+            totalInvested: totalInvested + fireInvestAmount,
+            currentValue: currentValue + fireInvestAmount
         }];
 
         await updateFinancialData({
             portfolio: newPortfolio,
+            goals: updatedGoals,
             monthlyContributions: newMonthlyContribs,
             portfolioHistory: newHistory
         });
+
+        if (goalReached) {
+            setAchievedGoal(goalReached);
+            confetti({
+                particleCount: 150,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#10b981', '#3b82f6', '#f59e0b']
+            });
+        }
 
         setBonusAmount('');
         setIsUpdateSipOpen(false);
@@ -618,6 +655,53 @@ export const InvestmentProgressDashboard = () => {
                     </div>
                 )}
 
+                {/* Achievement Modal */}
+                {achievedGoal && (
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ scale: 0.5, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            className="bg-white dark:bg-gray-800 rounded-[3rem] p-12 max-w-md w-full shadow-[0_0_100px_rgba(16,185,129,0.2)] relative border-4 border-emerald-500 text-center"
+                        >
+                            <motion.div 
+                                animate={{ 
+                                    scale: [1, 1.2, 1],
+                                    rotate: [0, 5, -5, 0]
+                                }}
+                                transition={{ repeat: Infinity, duration: 2 }}
+                                className="absolute -top-10 left-1/2 -translate-x-1/2 w-24 h-24 bg-emerald-500 rounded-full flex items-center justify-center shadow-2xl shadow-emerald-500/50"
+                            >
+                                <CheckCircle2 className="w-12 h-12 text-white" />
+                            </motion.div>
+                            
+                            <h3 className="text-4xl font-black text-gray-900 dark:text-white mt-8 mb-4 tracking-tight">Goal Achieved!</h3>
+                            <p className="text-gray-500 dark:text-gray-400 font-bold mb-8 leading-relaxed">
+                                Amazing! Your monthly investment has fully funded <strong>{achievedGoal.name}</strong>. You can now choose to revert your SIP or keep investing.
+                            </p>
+
+                            <div className="space-y-4">
+                                <button
+                                    onClick={() => setAchievedGoal(null)}
+                                    className="w-full py-5 bg-emerald-600 text-white font-black rounded-2xl shadow-xl hover:shadow-emerald-500/30 hover:-translate-y-1 transition-all uppercase tracking-widest text-xs"
+                                >
+                                    Acknowledged
+                                </button>
+                                <button
+                                    onClick={async () => {
+                                        if (achievedGoal) {
+                                            const updatedGoals = (financialData.goals || []).filter(g => g.id !== achievedGoal.id);
+                                            await updateFinancialData({ goals: updatedGoals });
+                                            setAchievedGoal(null);
+                                        }
+                                    }}
+                                    className="w-full py-5 bg-rose-600 text-white font-black rounded-2xl shadow-xl hover:shadow-rose-500/30 hover:-translate-y-1 transition-all uppercase tracking-widest text-xs"
+                                >
+                                    Finish Goal & Revert SIP
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
             </AnimatePresence>
         </div>
     );

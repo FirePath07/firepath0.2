@@ -3,6 +3,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const authRoutes = require('./routes/auth');
+const feedbackRoutes = require('./routes/feedback');
 
 const app = express();
 app.use(cors());
@@ -17,6 +18,7 @@ mongoose.connect(uri)
   .catch(err => console.log("MongoDB connection error: ", err));
 
 app.use('/api/auth', authRoutes);
+app.use('/api/feedback', feedbackRoutes);
 
 app.get('/api/market', async (req, res) => {
   try {

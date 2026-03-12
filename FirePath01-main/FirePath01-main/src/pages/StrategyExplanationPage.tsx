@@ -157,8 +157,15 @@ export const StrategyExplanationPage = () => {
     };
     const projectionData = generateProjection();
 
-    // FIRE milestone based only on net invested savings (not counting insurance corpus)
-    const futureFireExpenses = expensesBudget * 12 * 25;
+    // FIRE milestone based on inflated expenses or user selection
+    const inflationRate = (financialData.inflationRate || 6) / 100;
+    const yearsToInvest = Math.max(0, financialData.targetRetirementAge - financialData.age);
+    const inflatedAnnualExpenses = expensesBudget * 12 * Math.pow(1 + inflationRate, yearsToInvest);
+    
+    // Use the stored selectedFireAmount if available, otherwise calculate a traditional (25x) inflated one
+    const futureFireExpenses = financialData.selectedFireAmount && financialData.selectedFireAmount > 0 
+        ? financialData.selectedFireAmount 
+        : inflatedAnnualExpenses * 25;
 
     const getRiskColorClass = (risk: string) => {
         if (risk === 'stable') return 'bg-emerald-500';
@@ -186,19 +193,19 @@ export const StrategyExplanationPage = () => {
 
     if (userAge <= 26) {
         healthPlans = [
-            { name: 'LIC Jeevan Arogya (Plan 903)', cover: '₹10,00,000 (Daily Cash ₹1k-4k)', prem: '₹5,800 - ₹7,400', tag: 'Hospital Cash', color: 'amber', url: 'https://licindia.in/Products/Health-Plans/LICs-Jeevan-Arogya' },
-            { name: 'HDFC ERGO Optima Secure', cover: '₹10,00,000', prem: '₹9,200 - ₹11,500', tag: 'Comprehensive', color: 'emerald', url: 'https://www.hdfcergo.com/health-insurance/optima-secure.html' }
+            { name: 'LIC Jeevan Arogya (Plan 903)', cover: '₹10,00,000 (Daily Cash ₹1k-4k)', prem: '₹5,800 - ₹7,400', tag: 'Hospital Cash', color: 'amber', url: 'https://licindia.in/lic-s-jeevan-arogya-plan-no.-904-uin-512n266v02-' },
+            { name: 'HDFC ERGO Optima Secure', cover: '₹10,00,000', prem: '₹9,200 - ₹11,500', tag: 'Comprehensive', color: 'emerald', url: 'https://www.hdfcergo.com/campaigns/hdfc-ergo-health-insurance-2?&utm_source=bing_search_1&utm_medium=cpc&utm_campaign=Health_Search_Brand-Neev_Phrase&utm_adgroup=Generic-Insurance&utm_campaign=420828998&utm_content=1194070400921396&adid=&utm_term=best%20hdfc%20ergo%20mediclaim&utm_network=o&utm_matchtype=p&utm_device=c&utm_location=265993&utm_sitelink={sitelink}&utm_placement=&ci=bingsearch&msclkid=02a26ebb08641201990a07096d3f7dd8' }
         ];
         lifePlans = [
-            { name: 'Term Life Insurance', cover: '₹1 Cr', prem: '₹7,500 - ₹9,500', tag: 'Recommended', color: 'blue', url: '#' }
+            { name: 'Term Life Insurance', cover: '₹1 Cr', prem: '₹7,500 - ₹9,500', tag: 'Recommended', color: 'blue', url: 'https://termlife.policybazaar.com/?utm_source=bing&utm_medium=cpc&utm_term=term%20life%20insurance&utm_campaign=Core00Term_Life_Insurance&msclkid=b854f23b498013d813739b892f7b0195' }
         ];
     } else {
         healthPlans = [
-            { name: 'LIC Jeevan Arogya (Plan 903)', cover: '₹10,00,000 (Daily Cash ₹1k-4k)', prem: '₹8,200 - ₹10,500', tag: 'Hospital Cash', color: 'amber', url: 'https://licindia.in/Products/Health-Plans/LICs-Jeevan-Arogya' },
-            { name: 'HDFC ERGO Optima Secure', cover: '₹10,00,000', prem: '₹11,800 - ₹14,900', tag: 'Comprehensive', color: 'emerald', url: 'https://www.hdfcergo.com/health-insurance/optima-secure.html' }
+            { name: 'LIC Jeevan Arogya (Plan 903)', cover: '₹10,00,000 (Daily Cash ₹1k-4k)', prem: '₹8,200 - ₹10,500', tag: 'Hospital Cash', color: 'amber', url: 'https://licindia.in/lic-s-jeevan-arogya-plan-no.-904-uin-512n266v02-' },
+            { name: 'HDFC ERGO Optima Secure', cover: '₹10,00,000', prem: '₹11,800 - ₹14,900', tag: 'Comprehensive', color: 'emerald', url: 'https://www.hdfcergo.com/campaigns/hdfc-ergo-health-insurance-2?&utm_source=bing_search_1&utm_medium=cpc&utm_campaign=Health_Search_Brand-Neev_Phrase&utm_adgroup=Generic-Insurance&utm_campaign=420828998&utm_content=1194070400921396&adid=&utm_term=best%20hdfc%20ergo%20mediclaim&utm_network=o&utm_matchtype=p&utm_device=c&utm_location=265993&utm_sitelink={sitelink}&utm_placement=&ci=bingsearch&msclkid=02a26ebb08641201990a07096d3f7dd8' }
         ];
         lifePlans = [
-            { name: 'Term Life Insurance', cover: '₹1 Cr', prem: '₹10,500 - ₹13,500', tag: 'Recommended', color: 'blue', url: '#' }
+            { name: 'Term Life Insurance', cover: '₹1 Cr', prem: '₹10,500 - ₹13,500', tag: 'Recommended', color: 'blue', url: 'https://termlife.policybazaar.com/?utm_source=bing&utm_medium=cpc&utm_term=term%20life%20insurance&utm_campaign=Core00Term_Life_Insurance&msclkid=b854f23b498013d813739b892f7b0195' }
         ];
     }
 

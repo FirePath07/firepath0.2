@@ -46,13 +46,20 @@ export const RiskPage = () => {
   const [showModal, setShowModal] = useState(false);
   const [simulationProfile, setSimulationProfile] = useState<RiskProfileData | null>(null);
 
-  // Calculate defaults
+  // Calculate defaults accurately
   const userExpenses = user?.financialData?.monthlyExpenses || 0;
   const userIncome = user?.financialData?.monthlyIncome || 0;
-  const defaultFIRENumber = userExpenses * 12 * 25; // Rule of 25
   const currentAge = user?.financialData?.age || 25;
   const retirementAge = user?.financialData?.targetRetirementAge || 60;
+  const inflationRate = (user?.financialData?.inflationRate || 6) / 100;
   const defaultYears = Math.max(1, retirementAge - currentAge);
+
+  const futureAnnualExpenses = (userExpenses * 12) * Math.pow(1 + inflationRate, defaultYears);
+  
+  // Use selectedFireAmount if available, otherwise calculate traditional inflated 25x
+  const defaultFIRENumber = user?.financialData?.selectedFireAmount && user?.financialData?.selectedFireAmount > 0 
+      ? user.financialData.selectedFireAmount 
+      : futureAnnualExpenses * 25;
 
   const [targetAmount, setTargetAmount] = useState<number>(defaultFIRENumber || 10000000);
   const [years, setYears] = useState<number>(defaultYears);

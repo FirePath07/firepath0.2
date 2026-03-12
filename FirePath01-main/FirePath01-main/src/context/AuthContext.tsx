@@ -40,6 +40,9 @@ export interface UserFinancialData {
     amount: number;
     description: string;
     date: string;
+    category?: string;
+    notes?: string;
+    taggedGoalId?: string;
   }>;
   goals?: Array<{
     id: string;

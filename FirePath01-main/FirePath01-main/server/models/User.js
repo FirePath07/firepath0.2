@@ -20,17 +20,17 @@ const UserSchema = new mongoose.Schema({
         monthlyExpenses: { type: Number, default: 0 },
         age: { type: Number, default: 25 },
         targetRetirementAge: { type: Number, default: 60 },
-        riskProfile: {
-            type: String,
-            enum: ['safe', 'medium', 'risky'],
-            default: 'medium'
-        },
+        riskProfile: { type: String, default: 'medium' },
         primaryGoal: { type: String, default: '' },
+        selectedFireAmount: { type: Number, default: 0 },
+        timePressure: { type: String, default: 'Low' },
+        foundationLevel: { type: String, default: 'Weak' },
         mostImportantMetric: {
             type: String,
             enum: ['Savings Rate', 'Years to FIRE', 'Net Worth'],
             default: 'Net Worth'
         },
+        inflationRate: { type: Number, default: 6 },
         budget: { type: Number, default: 0 },
         defaultMonthlySIP: { type: Number, default: 0 },
         lastNotifiedMilestone: { type: Number, default: 0 },
@@ -71,6 +71,18 @@ const UserSchema = new mongoose.Schema({
                 amount: Number,
                 description: String,
                 date: String
+            }],
+            default: []
+        },
+        goals: {
+            type: [{
+                id: String,
+                name: String,
+                targetAmount: Number,
+                currentSavings: Number,
+                targetMonths: Number,
+                category: String,
+                createdAt: String
             }],
             default: []
         }

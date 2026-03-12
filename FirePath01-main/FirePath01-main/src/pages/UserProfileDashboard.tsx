@@ -30,7 +30,11 @@ export const UserProfileDashboard = () => {
       setIsTutorialMode(true);
       window.history.replaceState({}, document.title);
     }
-  }, [location]);
+    // Redirect admin to specialized dashboard
+    if (user?.email === 'firepathjjrp@gmail.com') {
+      navigate('/admin');
+    }
+  }, [location, user, navigate]);
 
   if (!user) {
     navigate('/');
@@ -56,7 +60,10 @@ export const UserProfileDashboard = () => {
   const yearsToInvest = Math.max(0, financialData.targetRetirementAge - financialData.age);
   const futureAnnualExpenses = annualExpenses * Math.pow(1 + inflationRate, yearsToInvest);
 
-  const fireNumber = futureAnnualExpenses * 25;
+  // Use the stored selectedFireAmount if available, otherwise calculate a traditional (25x) inflated one
+  const fireNumber = financialData.selectedFireAmount && financialData.selectedFireAmount > 0 
+      ? financialData.selectedFireAmount 
+      : futureAnnualExpenses * 25;
 
   const portfolioHistory = financialData.portfolioHistory || [];
   const latestPortfolioValue = portfolioHistory.length > 0 ? portfolioHistory[portfolioHistory.length - 1].currentValue : 0;

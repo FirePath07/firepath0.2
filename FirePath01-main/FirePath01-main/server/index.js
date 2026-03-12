@@ -13,9 +13,15 @@ const PORT = process.env.PORT || 5000; // Default to 5000 as per plan
 
 // Connect to MongoDB
 const uri = process.env.ATLAS_URI || process.env.MONGODB_URI;
+if (!uri) {
+  console.error("No MongoDB URI found in environment variables!");
+}
 mongoose.connect(uri)
   .then(() => console.log("MongoDB database connection established successfully"))
-  .catch(err => console.log("MongoDB connection error: ", err));
+  .catch(err => {
+    console.error("MongoDB connection error: ", err);
+    // Don't exit process in serverless environment
+  });
 
 app.use('/api/auth', authRoutes);
 app.use('/api/feedback', feedbackRoutes);
@@ -67,6 +73,10 @@ app.get('/api/market', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Market proxy running on http://localhost:${PORT}`);
-});
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`Market proxy running on http://localhost:${PORT}`);
+  });
+}
+
+module.exports = app;

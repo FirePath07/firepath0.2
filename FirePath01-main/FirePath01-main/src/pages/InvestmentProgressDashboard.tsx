@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Navigation } from '../components/Navigation';
+import { FundIcon } from '../components/FundIcon';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatIndianCurrency } from '../utils/currency';
 import confetti from 'canvas-confetti';
@@ -9,7 +10,8 @@ import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     PieChart, Pie, Cell, Legend
 } from 'recharts';
-import { TrendingUp, Plus, Wallet, Briefcase, RefreshCcw, Landmark, CheckCircle2 } from 'lucide-react';
+import { TrendingUp, Plus, Wallet, Briefcase, RefreshCcw, Landmark, CheckCircle2, Award } from 'lucide-react';
+import { calculateFIREMetrics } from '../utils/finance';
 
 const COLORS = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ec4899', '#64748b'];
 
@@ -95,6 +97,7 @@ export const InvestmentProgressDashboard = () => {
     const [navPrices, setNavPrices] = useState<Record<string, number>>({});
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [achievedGoal, setAchievedGoal] = useState<any | null>(null);
+    const [showFireCelebration, setShowFireCelebration] = useState(false);
 
     useEffect(() => {
         if (!user) {
@@ -141,6 +144,23 @@ export const InvestmentProgressDashboard = () => {
     const { financialData } = user;
     const portfolio = financialData.portfolio || [];
     const basket = financialData.selectedBasket;
+
+    const { currentTotalWealth, fireNumber } = calculateFIREMetrics(financialData);
+    const isFireAchieved = currentTotalWealth >= fireNumber && fireNumber > 0;
+
+    useEffect(() => {
+        if (isFireAchieved && !financialData.fireCelebrated) {
+            setShowFireCelebration(true);
+            confetti({
+                particleCount: 200,
+                spread: 100,
+                origin: { y: 0.5 },
+                colors: ['#10b981', '#fbbf24', '#ffffff', '#34d399']
+            });
+            // Mark as celebrated on the server/context
+            updateFinancialData({ fireCelebrated: true });
+        }
+    }, [isFireAchieved, financialData.fireCelebrated]);
 
     // Compute Summary
     let totalInvested = 0;
@@ -467,8 +487,16 @@ export const InvestmentProgressDashboard = () => {
                                             className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition"
                                         >
                                             <td className="p-4 md:px-8 md:py-6 whitespace-nowrap">
-                                                <p className="font-bold text-gray-900 dark:text-white text-[15px]">{fund.fundName}</p>
-                                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5 font-medium">NAV: ₹{fund.currentNav.toFixed(2)}</p>
+                                                <div className="flex items-center gap-4">
+                                                    <FundIcon 
+                                                        fundName={fund.fundName} 
+                                                        className="w-10 h-10 shadow-sm shrink-0" 
+                                                    />
+                                                    <div>
+                                                        <p className="font-bold text-gray-900 dark:text-white text-[15px]">{fund.fundName}</p>
+                                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5 font-medium">NAV: ₹{fund.currentNav.toFixed(2)}</p>
+                                                    </div>
+                                                </div>
                                             </td>
                                             <td className="p-4 md:px-8 md:py-5">
                                                 <p className="text-gray-900 dark:text-gray-200 font-medium">{fund.units.toFixed(2)}</p>
@@ -721,6 +749,55 @@ export const InvestmentProgressDashboard = () => {
                                     className="w-full py-5 bg-rose-600 text-white font-black rounded-2xl shadow-xl hover:shadow-rose-500/30 hover:-translate-y-1 transition-all uppercase tracking-widest text-xs"
                                 >
                                     Finish Goal & Record Expense
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+                {/* FIRE Achievement Celebration Modal */}
+                {showFireCelebration && (
+                    <div className="fixed inset-0 bg-emerald-950/95 backdrop-blur-xl z-[200] flex items-center justify-center p-6 text-center">
+                        <motion.div
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            className="max-w-xl w-full"
+                        >
+                            <motion.div 
+                                animate={{ 
+                                    scale: [1, 1.1, 1],
+                                    rotate: [0, 10, -10, 0]
+                                }}
+                                transition={{ repeat: Infinity, duration: 3 }}
+                                className="w-32 h-32 bg-emerald-500 rounded-full mx-auto mb-8 flex items-center justify-center shadow-[0_0_50px_rgba(16,185,129,0.5)] border-4 border-white"
+                            >
+                                <Award className="w-16 h-16 text-white" />
+                            </motion.div>
+
+                            <h2 className="text-5xl md:text-6xl font-black text-white mb-6 tracking-tighter">
+                                MISSION ACCOMPLISHED! 🔥
+                            </h2>
+                            <p className="text-emerald-200 text-xl md:text-2xl font-bold mb-10 leading-relaxed">
+                                Congratulations, <span className="text-white underline decoration-white/30">{user.name}</span>! 
+                                Your portfolio has reached <span className="text-white font-black">{formatIndianCurrency(currentTotalWealth)}</span>, 
+                                officially meeting your FIRE target.
+                            </p>
+                            
+                            <div className="space-y-4">
+                                <motion.div 
+                                    initial={{ y: 20, opacity: 0 }}
+                                    animate={{ y: 0, opacity: 1 }}
+                                    transition={{ delay: 0.5 }}
+                                    className="bg-white/10 border border-white/20 p-6 rounded-3xl"
+                                >
+                                    <p className="text-sm font-bold text-emerald-300 uppercase tracking-widest mb-1">Status</p>
+                                    <p className="text-2xl font-black text-white">FINANCIALLY INDEPENDENT</p>
+                                </motion.div>
+                                
+                                <button
+                                    onClick={() => setShowFireCelebration(false)}
+                                    className="w-full py-5 bg-white text-emerald-900 font-black rounded-2xl shadow-2xl hover:bg-emerald-50 transition-all uppercase tracking-widest text-sm mt-4 hover:scale-[1.02]"
+                                >
+                                    Enter Freedom Mode
                                 </button>
                             </div>
                         </motion.div>

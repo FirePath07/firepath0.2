@@ -4,31 +4,31 @@ import { LearnModal } from './LearnModal';
 
 export const SIPCalculator = () => {
     const [isLearnModalOpen, setIsLearnModalOpen] = useState(false);
-    const [monthlyInvestment, setMonthlyInvestment] = useState(10000);
-    const [expectedReturn, setExpectedReturn] = useState(12);
-    const [duration, setDuration] = useState(10); // in years
+    const [monthlyInvestment, setMonthlyInvestment] = useState<number | ''>(10000);
+    const [expectedReturn, setExpectedReturn] = useState<number | ''>(12);
+    const [duration, setDuration] = useState<number | ''>(10); // in years
 
     const [chartData, setChartData] = useState<Array<{ year: number; totalInvestment: number; totalValue: number }>>([]);
 
     useEffect(() => {
         const data: Array<{ year: number; totalInvestment: number; totalValue: number }> = [];
         let totalValue = 0;
-        const monthlyReturnRate = expectedReturn / 12 / 100;
+        const monthlyReturnRate = (Number(expectedReturn) || 0) / 12 / 100;
 
-        for (let year = 1; year <= duration; year++) {
+        for (let year = 1; year <= (Number(duration) || 0); year++) {
             for (let month = 1; month <= 12; month++) {
-                totalValue = (totalValue + monthlyInvestment) * (1 + monthlyReturnRate);
+                totalValue = (totalValue + (Number(monthlyInvestment) || 0)) * (1 + monthlyReturnRate);
             }
             data.push({
                 year: year,
-                totalInvestment: monthlyInvestment * 12 * year,
+                totalInvestment: (Number(monthlyInvestment) || 0) * 12 * year,
                 totalValue: Math.round(totalValue),
             });
         }
         setChartData(data);
     }, [monthlyInvestment, expectedReturn, duration]);
 
-    const totalInvestment = monthlyInvestment * 12 * duration;
+    const totalInvestment = (Number(monthlyInvestment) || 0) * 12 * (Number(duration) || 0);
     const totalValue = chartData.length > 0 ? chartData[chartData.length - 1].totalValue : 0;
     const wealthGained = totalValue - totalInvestment;
 
@@ -50,15 +50,15 @@ export const SIPCalculator = () => {
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Monthly Investment (₹)</label>
-                        <input type="number" value={monthlyInvestment} onChange={(e) => setMonthlyInvestment(Number(e.target.value))} className="w-full p-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 transition" />
+                        <input type="number" value={monthlyInvestment} onChange={(e) => setMonthlyInvestment(e.target.value === '' ? '' : Number(e.target.value))} className="w-full p-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 transition" />
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Expected Annual Return (%)</label>
-                        <input type="number" value={expectedReturn} onChange={(e) => setExpectedReturn(Number(e.target.value))} className="w-full p-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 transition" />
+                        <input type="number" value={expectedReturn} onChange={(e) => setExpectedReturn(e.target.value === '' ? '' : Number(e.target.value))} className="w-full p-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 transition" />
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Investment Duration (Years)</label>
-                        <input type="number" value={duration} onChange={(e) => setDuration(Number(e.target.value))} className="w-full p-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 transition" />
+                        <input type="number" value={duration} onChange={(e) => setDuration(e.target.value === '' ? '' : Number(e.target.value))} className="w-full p-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 transition" />
                     </div>
                 </div>
 

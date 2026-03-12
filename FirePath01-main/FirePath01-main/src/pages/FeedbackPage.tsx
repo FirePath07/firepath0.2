@@ -133,7 +133,7 @@ export const FeedbackPage = () => {
                                     disabled={isSubmitting || !content.trim()}
                                     className="w-full py-5 bg-emerald-500 text-white font-black rounded-2xl shadow-xl shadow-emerald-500/20 hover:bg-emerald-600 transition-all disabled:opacity-50 flex items-center justify-center gap-3 text-lg tracking-widest uppercase"
                                 >
-                                    {isSubmitting ? 'Transmitting...' : <>Submit Intelligence <Send size={20} /></>}
+                                    {isSubmitting ? 'Transmitting...' : <>Submit Feedback <Send size={20} /></>}
                                 </button>
                             </form>
 
@@ -149,7 +149,7 @@ export const FeedbackPage = () => {
                                             <CheckCircle className="w-10 h-10 text-white" />
                                         </div>
                                         <h3 className="text-3xl font-black text-gray-900 dark:text-white mb-2">Received</h3>
-                                        <p className="font-bold text-gray-500 dark:text-gray-400">Your intelligence has been logged into the system.</p>
+                                        <p className="font-bold text-gray-500 dark:text-gray-400">Your feedback has been received.</p>
                                         <button 
                                             onClick={() => setSubmitted(false)}
                                             className="mt-8 px-10 py-3 bg-emerald-500 text-white font-black rounded-xl hover:bg-emerald-600 transition shadow-lg"
@@ -170,7 +170,7 @@ export const FeedbackPage = () => {
                         className="space-y-8"
                     >
                         <div className="flex items-center justify-between">
-                            <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight uppercase italic">Intelligence <span className="text-emerald-500 not-italic">Stream</span></h2>
+                            <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight uppercase italic">Feedback <span className="text-emerald-500 not-italic">Responses</span></h2>
                             <span className="px-3 py-1 bg-slate-200 dark:bg-slate-800 text-slate-500 text-[10px] font-black rounded-full uppercase tracking-widest">
                                 {myFeedback.length} ENTRIES
                             </span>
@@ -216,7 +216,7 @@ export const FeedbackPage = () => {
                             ) : (
                                 <div className="text-center py-20 bg-white dark:bg-slate-800/20 rounded-[2.5rem] border-2 border-dashed border-gray-200 dark:border-slate-800">
                                     <MessageSquare size={48} className="mx-auto text-gray-200 dark:text-slate-800 mb-4" />
-                                    <p className="text-gray-400 font-bold">No intelligence entries logged yet.</p>
+                                    <p className="text-gray-400 font-bold">No feedback entries yet.</p>
                                 </div>
                             )}
                         </div>

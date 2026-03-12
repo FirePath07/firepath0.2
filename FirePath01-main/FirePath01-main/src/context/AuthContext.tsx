@@ -16,6 +16,7 @@ export interface UserFinancialData {
   budget?: number;
   defaultMonthlySIP?: number;
   lastNotifiedMilestone?: number;
+  fireCelebrated?: boolean;
   selectedBasket?: {
     name: string;
     funds: Array<{ name: string; split: number; risk?: string }>;

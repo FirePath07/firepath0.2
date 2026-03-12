@@ -8,21 +8,21 @@ export const FIRECalculator = () => {
   const [isLearnModalOpen, setIsLearnModalOpen] = useState(false);
 
   // 1. User Inputs (State) - Only what is needed for TARGETS
-  const [monthlyExpenses, setMonthlyExpenses] = useState(user?.financialData.monthlyExpenses || 50000);
-  const [currentAge, setCurrentAge] = useState(user?.financialData.age || 25);
-  const [retirementAge, setRetirementAge] = useState(user?.financialData.targetRetirementAge || 55);
-  const [inflationRate, setInflationRate] = useState(6);
-  const [coastFireAge, setCoastFireAge] = useState(45);
+  const [monthlyExpenses, setMonthlyExpenses] = useState<number | ''>(user?.financialData.monthlyExpenses || 50000);
+  const [currentAge, setCurrentAge] = useState<number | ''>(user?.financialData.age || 25);
+  const [retirementAge, setRetirementAge] = useState<number | ''>(user?.financialData.targetRetirementAge || 55);
+  const [inflationRate, setInflationRate] = useState<number | ''>(6);
+  const [coastFireAge, setCoastFireAge] = useState<number | ''>(45);
 
   // Constants from user script
   const investmentReturn = 10; // 10% fixed for Coast FIRE calculation
 
   // 2. Calculations
-  const annualExpensesToday = monthlyExpenses * 12;
-  const yearsToRetirement = Math.max(0, retirementAge - currentAge);
+  const annualExpensesToday = (Number(monthlyExpenses) || 0) * 12;
+  const yearsToRetirement = Math.max(0, (Number(retirementAge) || 0) - (Number(currentAge) || 0));
 
   // Future Value of Expenses (Expense at Retirement)
-  const expenseAtRetirement = annualExpensesToday * Math.pow(1 + (inflationRate / 100), yearsToRetirement);
+  const expenseAtRetirement = annualExpensesToday * Math.pow(1 + ((Number(inflationRate) || 0) / 100), yearsToRetirement);
 
   // FIRE Targets
   const standardFireTarget = expenseAtRetirement * 25;
@@ -31,7 +31,7 @@ export const FIRECalculator = () => {
 
   // Coast FIRE Calculation
   // Target needed at 'coastFireAge' to grow to 'standardFireTarget' by 'retirementAge'
-  const yearsToGrowCoast = Math.max(0, retirementAge - coastFireAge);
+  const yearsToGrowCoast = Math.max(0, (Number(retirementAge) || 0) - (Number(coastFireAge) || 0));
   const coastFireTarget = standardFireTarget / Math.pow(1 + (investmentReturn / 100), yearsToGrowCoast);
 
   return (
@@ -62,11 +62,11 @@ export const FIRECalculator = () => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Current Age</label>
-                <input type="number" value={currentAge} onChange={(e) => setCurrentAge(Number(e.target.value))} className="w-full p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition" />
+                <input type="number" value={currentAge} onChange={(e) => setCurrentAge(e.target.value === '' ? '' : Number(e.target.value))} className="w-full p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Retirement Age</label>
-                <input type="number" value={retirementAge} onChange={(e) => setRetirementAge(Number(e.target.value))} className="w-full p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition" />
+                <input type="number" value={retirementAge} onChange={(e) => setRetirementAge(e.target.value === '' ? '' : Number(e.target.value))} className="w-full p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition" />
               </div>
             </div>
 
@@ -74,7 +74,7 @@ export const FIRECalculator = () => {
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Monthly Expenses (Today)</label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">₹</span>
-                <input type="number" value={monthlyExpenses} onChange={(e) => setMonthlyExpenses(Number(e.target.value))} className="w-full pl-8 p-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition" />
+                <input type="number" value={monthlyExpenses} onChange={(e) => setMonthlyExpenses(e.target.value === '' ? '' : Number(e.target.value))} className="w-full pl-8 p-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition" />
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Annual: {formatIndianCurrency(annualExpensesToday)}</p>
             </div>
@@ -82,7 +82,7 @@ export const FIRECalculator = () => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Inflation Rate (%)</label>
-                <input type="number" value={inflationRate} onChange={(e) => setInflationRate(Number(e.target.value))} className="w-full p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition" />
+                <input type="number" value={inflationRate} onChange={(e) => setInflationRate(e.target.value === '' ? '' : Number(e.target.value))} className="w-full p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition" />
               </div>
               <div className="relative group">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-1">
@@ -94,7 +94,7 @@ export const FIRECalculator = () => {
                     </div>
                   </div>
                 </label>
-                <input type="number" value={coastFireAge} onChange={(e) => setCoastFireAge(Number(e.target.value))} className="w-full p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition" />
+                <input type="number" value={coastFireAge} onChange={(e) => setCoastFireAge(e.target.value === '' ? '' : Number(e.target.value))} className="w-full p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition" />
               </div>
             </div>
 

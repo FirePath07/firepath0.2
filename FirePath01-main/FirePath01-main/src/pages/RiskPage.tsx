@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Navigation } from '../components/Navigation';
 import { useAuth } from '../context/AuthContext';
+import { FundIcon } from '../components/FundIcon';
 import { getLatestNAV } from '../services/mutualFunds';
 import { calculateStepUpSIP, checkFeasibility, calculateCorpus, calculateSIP } from '../utils/simulation';
 import { X, Calculator, IndianRupee, TrendingUp } from 'lucide-react';
@@ -137,11 +138,11 @@ export const RiskPage = () => {
       name: 'Capital Stability Strategy',
       description: 'Focuses on steady growth via corporate bonds and low risk assets.',
       allocation: { equity: 0, debt: 100, gold: 0 },
-      expectedReturn: 10,
-      color: 'green',
+      expectedReturn: 8.5,
+      color: 'emerald',
       risk: 'Low',
       icon: '🛡️',
-      advice: 'This portfolio focuses on capital preservation using select Corporate Bond Funds. \n\nAllocation: \n- 100% Debt/Liquid Funds\n- 0% Gold\n- 0% Equity\n\nIdeal for short-term goals or emergency funds.',
+      advice: 'This portfolio focuses on capital preservation using select Corporate Bond Funds. \n\nAllocation: \n- 100% Debt/Liquid Funds\n- 0% Gold\n- 0% Equity\n\nExpected annual return around 8.5% based on a conservative portfolio focused on debt instruments and gold.',
       funds: [
         {
           name: 'ICICI Prudential Corporate Bond Fund',
@@ -239,17 +240,6 @@ export const RiskPage = () => {
 
   const profile = riskProfiles[selectedRisk];
 
-  const getFundIcon = (fundName: string) => {
-    if (fundName.toLowerCase().includes("gold") || fundName.toLowerCase().includes("bees")) return "https://img.icons8.com/color/48/gold-bars.png";
-    if (fundName.includes("ICICI")) return "https://logo.clearbit.com/icicipruamc.com";
-    if (fundName.includes("HDFC")) return "https://logo.clearbit.com/hdfcfund.com";
-    if (fundName.includes("Kotak")) return "https://logo.clearbit.com/kotakmf.com";
-    if (fundName.includes("SBI")) return "https://logo.clearbit.com/sbimf.com";
-    if (fundName.includes("Nippon")) return "https://logo.clearbit.com/nipponindiamf.com";
-    if (fundName.includes("UTI")) return "https://logo.clearbit.com/utimf.com";
-    if (fundName.includes("Parag Parikh")) return "https://logo.clearbit.com/amc.ppfas.com";
-    return "https://logo.clearbit.com/mutualfundssahihai.com";
-  };
 
   const handleNext = () => {
     navigate('/calculators', {
@@ -286,16 +276,35 @@ export const RiskPage = () => {
                   <button
                     key={riskLevel}
                     onClick={() => setSelectedRisk(riskLevel)}
-                    className={`p-6 rounded-2xl border-2 transition-all duration-300 text-left ${selectedRisk === riskLevel
-                      ? `border-${prof.color}-500 bg-${prof.color}-50 dark:bg-${prof.color}-900/40 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.2)] scale-[1.02]`
-                      : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:shadow-xl hover:-translate-y-1'
-                      }`}
+                    className={`p-6 rounded-2xl border-2 transition-all duration-300 text-left ${
+                      selectedRisk === riskLevel
+                        ? riskLevel === 'safe' ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/40 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.2)] scale-[1.02]' :
+                          riskLevel === 'medium' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/40 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.2)] scale-[1.02]' :
+                          'border-red-500 bg-red-50 dark:bg-red-900/40 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.2)] scale-[1.02]'
+                        : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:shadow-xl hover:-translate-y-1'
+                    }`}
                   >
                     <div className="text-4xl mb-4 drop-shadow-sm">{prof.icon}</div>
-                    <h3 className={`text-xl font-bold mb-2 ${selectedRisk === riskLevel ? `text-${prof.color}-700 dark:text-${prof.color}-300` : 'text-gray-900 dark:text-white'}`}>{prof.name}</h3>
+                    <h3 className={`text-xl font-bold mb-2 ${
+                      selectedRisk === riskLevel 
+                        ? riskLevel === 'safe' ? 'text-emerald-700 dark:text-emerald-300' :
+                          riskLevel === 'medium' ? 'text-blue-700 dark:text-blue-300' :
+                          'text-red-700 dark:text-red-300'
+                        : 'text-gray-900 dark:text-white'
+                    }`}>
+                      {prof.name}
+                    </h3>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 line-clamp-2">{prof.description}</p>
-                    <div className={`text-lg font-black mb-5 ${selectedRisk === riskLevel ? `text-${prof.color}-600 dark:text-${prof.color}-400` : `text-${prof.color}-500`}`}>
-                      {prof.expectedReturn}%+ Annual Return
+                    <div className={`text-lg font-black mb-5 ${
+                      selectedRisk === riskLevel 
+                        ? riskLevel === 'safe' ? 'text-emerald-600 dark:text-emerald-400' :
+                          riskLevel === 'medium' ? 'text-blue-600 dark:text-blue-400' :
+                          'text-red-600 dark:text-red-400'
+                        : riskLevel === 'safe' ? 'text-emerald-500 dark:text-emerald-400' :
+                          riskLevel === 'medium' ? 'text-blue-500 dark:text-blue-400' :
+                          'text-red-500 dark:text-red-400'
+                    }`}>
+                      {prof.expectedReturn}%{riskLevel === 'risky' ? '+' : ''} Annual Return
                     </div>
 
                     <button
@@ -303,10 +312,13 @@ export const RiskPage = () => {
                         e.stopPropagation();
                         handleSimulate(prof);
                       }}
-                      className={`w-full py-2.5 px-4 rounded-xl text-sm font-bold transition flex items-center justify-center gap-2 ${selectedRisk === riskLevel
-                        ? `bg-white dark:bg-gray-900 border border-${prof.color}-200 dark:border-${prof.color}-800 text-${prof.color}-700 dark:text-${prof.color}-400 shadow-sm hover:bg-${prof.color}-50`
-                        : 'bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300'
-                        }`}
+                      className={`w-full py-2.5 px-4 rounded-xl text-sm font-bold transition flex items-center justify-center gap-2 ${
+                        selectedRisk === riskLevel
+                          ? riskLevel === 'safe' ? 'bg-white dark:bg-gray-900 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 shadow-sm hover:bg-emerald-50' :
+                            riskLevel === 'medium' ? 'bg-white dark:bg-gray-900 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400 shadow-sm hover:bg-blue-50' :
+                            'bg-white dark:bg-gray-900 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 shadow-sm hover:bg-red-50'
+                          : 'bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300'
+                      }`}
                     >
                       <Calculator size={16} />
                       Simulate Investment
@@ -325,12 +337,12 @@ export const RiskPage = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
                   {/* Allocation */}
                   <div>
-                    <h4 className="font-bold text-gray-900 mb-4">Asset Allocation</h4>
+                    <h4 className="font-bold text-gray-900 dark:text-white mb-4">Asset Allocation</h4>
                     <div className="space-y-3">
                       <div>
                         <div className="flex justify-between mb-1">
-                          <span className="text-gray-700">Equity / Stocks</span>
-                          <span className="font-bold text-gray-900">{profile.allocation.equity}%</span>
+                          <span className="text-gray-700 dark:text-gray-300">Equity / Stocks</span>
+                          <span className="font-bold text-gray-900 dark:text-gray-100">{profile.allocation.equity}%</span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2">
                           <div
@@ -341,8 +353,8 @@ export const RiskPage = () => {
                       </div>
                       <div>
                         <div className="flex justify-between mb-1">
-                          <span className="text-gray-700">Debt / Liquid Funds</span>
-                          <span className="font-bold text-gray-900">{profile.allocation.debt}%</span>
+                          <span className="text-gray-700 dark:text-gray-300">Debt / Liquid Funds</span>
+                          <span className="font-bold text-gray-900 dark:text-gray-100">{profile.allocation.debt}%</span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2">
                           <div
@@ -353,8 +365,8 @@ export const RiskPage = () => {
                       </div>
                       <div>
                         <div className="flex justify-between mb-1">
-                          <span className="text-gray-700">Gold</span>
-                          <span className="font-bold text-gray-900">{profile.allocation.gold}%</span>
+                          <span className="text-gray-700 dark:text-gray-300">Gold Allocation</span>
+                          <span className="font-bold text-gray-900 dark:text-gray-100">{profile.allocation.gold}%</span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2">
                           <div
@@ -367,18 +379,18 @@ export const RiskPage = () => {
                   </div>
 
                   {/* Details */}
-                  <div className="space-y-4">
-                    <div className="bg-white p-4 rounded-lg border border-gray-200">
-                      <p className="text-sm text-gray-600">Risk Level</p>
-                      <p className="text-xl font-bold text-gray-900">{profile.risk}</p>
+                   <div className="space-y-4">
+                    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Risk Level</p>
+                      <p className="text-xl font-bold text-gray-900 dark:text-gray-100">{profile.risk}</p>
                     </div>
-                    <div className="bg-white p-4 rounded-lg border border-gray-200">
-                      <p className="text-sm text-gray-600">Expected Annual Return</p>
-                      <p className="text-xl font-bold text-gray-900">{profile.expectedReturn}%</p>
+                    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Expected Annual Return</p>
+                      <p className="text-xl font-bold text-gray-900 dark:text-gray-100">{profile.expectedReturn}%</p>
                     </div>
-                    <div className="bg-white p-4 rounded-lg border border-gray-200">
-                      <p className="text-sm text-gray-600">Best For</p>
-                      <p className="text-xl font-bold text-gray-900">
+                    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Best For</p>
+                      <p className="text-xl font-bold text-gray-900 dark:text-gray-100">
                         {selectedRisk === 'safe' && 'Near Retirees'}
                         {selectedRisk === 'medium' && 'Most Investors'}
                         {selectedRisk === 'risky' && 'Young Investors'}
@@ -408,9 +420,11 @@ export const RiskPage = () => {
                     <div key={idx} className="group flex flex-col md:flex-row md:items-center justify-between p-5 rounded-2xl border border-gray-100 dark:border-gray-700/60 bg-gray-50/50 dark:bg-gray-800 hover:bg-white dark:hover:bg-gray-700/80 hover:shadow-xl hover:border-emerald-500/30 transition-all duration-300">
 
                       <div className="flex items-center gap-5 mb-4 md:mb-0">
-                        <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-white flex items-center justify-center shadow-lg p-1.5 shrink-0 overflow-hidden border border-gray-100 dark:border-gray-600">
-                          <img src={getFundIcon(fund.name)} alt="amc logo" className="w-full h-full rounded-full object-contain" onError={(e) => e.currentTarget.style.display = 'none'} />
-                        </div>
+                        <FundIcon 
+                          fundName={fund.name} 
+                          category={fund.category} 
+                          className="w-14 h-14 md:w-16 md:h-16 shadow-lg border border-gray-100 dark:border-gray-600 shrink-0" 
+                        />
                         <div>
                           <h4 className="text-lg font-bold text-gray-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors duration-300">{fund.name}</h4>
                           <span className="inline-block mt-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 px-3 py-1 rounded-full text-xs font-bold tracking-wide border border-blue-200 dark:border-blue-800/50">

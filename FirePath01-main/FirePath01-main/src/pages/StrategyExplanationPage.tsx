@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, AreaChart, Area, XAxis, YAxis, CartesianGrid, ReferenceLine, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
 import { Target, ShieldCheck, HeartPulse, Shield, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { formatIndianCurrency } from '../utils/currency';
+import { FundIcon } from '../components/FundIcon';
 
 // Mapping strategy to its profile
 const strategyData: Record<string, any> = {
@@ -68,17 +69,6 @@ const strategyData: Record<string, any> = {
     }
 };
 
-const getFundIconUrl = (fundName: string) => {
-    if (fundName.toLowerCase().includes("gold") || fundName.toLowerCase().includes("bees")) return "https://img.icons8.com/color/48/gold-bars.png";
-    if (fundName.includes("ICICI")) return "https://logo.clearbit.com/icicipruamc.com";
-    if (fundName.includes("HDFC")) return "https://logo.clearbit.com/hdfcfund.com";
-    if (fundName.includes("Kotak")) return "https://logo.clearbit.com/kotakmf.com";
-    if (fundName.includes("SBI")) return "https://logo.clearbit.com/sbimf.com";
-    if (fundName.includes("Nippon")) return "https://logo.clearbit.com/nipponindiamf.com";
-    if (fundName.includes("UTI")) return "https://logo.clearbit.com/utimf.com";
-    if (fundName.includes("Parag Parikh")) return "https://logo.clearbit.com/amc.ppfas.com";
-    return "https://logo.clearbit.com/mutualfundssahihai.com";
-};
 
 export const StrategyExplanationPage = () => {
     const { user } = useAuth();
@@ -367,7 +357,11 @@ export const StrategyExplanationPage = () => {
                                             <div key={fIdx} className="bg-gray-800/80 border border-gray-700/50 rounded-2xl p-5 hover:bg-gray-800 transition duration-300">
                                                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
                                                     <div className="flex items-center gap-4">
-                                                        <img src={getFundIconUrl(fund.name)} alt="logo" className="w-10 h-10 rounded-full bg-white p-1 object-contain shadow-md" onError={(e) => e.currentTarget.style.display = 'none'} />
+                                                        <FundIcon 
+                                                          fundName={fund.name} 
+                                                          category={fund.risk} 
+                                                          className="w-10 h-10 shadow-md p-1" 
+                                                        />
                                                         <span className="font-bold text-gray-100 text-lg">{fund.name}</span>
                                                     </div>
                                                     <div className="text-right">

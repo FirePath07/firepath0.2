@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { formatIndianCurrency } from '../utils/currency';
 import { motion } from 'framer-motion';
 import { Clock, Shield, ArrowRight, TrendingUp, AlertTriangle } from 'lucide-react';
+import { FundIcon } from '../components/FundIcon';
 
 const INPUT_QUESTIONS = [
   {
@@ -223,42 +224,6 @@ export const QuestionnairePage = () => {
   const [answers, setAnswers] = useState<Record<string, number | string>>({});
   const [manualCategory, setManualCategory] = useState<string | null>(null);
 
-  const getFundIcon = (fundName: string): string => {
-    const name = fundName.toLowerCase();
-    // Gold funds
-    if (name.includes('gold')) return 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/Gold_symbol.svg/120px-Gold_symbol.svg.png';
-    // Overnight / Liquid / Debt
-    if (name.includes('overnight') || name.includes('liquid') || name.includes('debt') || name.includes('bond'))
-      return 'https://cdn-icons-png.flaticon.com/512/2942/2942079.png';
-    // Index / Nifty / Sensex
-    if (name.includes('index') || name.includes('nifty') || name.includes('sensex'))
-      return 'https://cdn-icons-png.flaticon.com/512/4521/4521576.png';
-    // ICICI Prudential
-    if (name.includes('icici')) return 'https://www.icicipruamc.com/images/icici-pru-amc-logo.png';
-    // HDFC MF
-    if (name.includes('hdfc')) return 'https://www.hdfcfund.com/Content/images/hdfcbank-logo.png';
-    // SBI MF
-    if (name.includes('sbi')) return 'https://www.sbimf.com/SBIMFLogo.svg';
-    // Kotak MF
-    if (name.includes('kotak')) return 'https://assetmanagement.kotak.com/images/kotak-logo.png';
-    // Nippon India
-    if (name.includes('nippon')) return 'https://mf.nipponindiaim.com/NipponIndiaLogo.png';
-    // UTI MF
-    if (name.includes('uti')) return 'https://www.utimf.com/uti-logo.png';
-    // Parag Parikh
-    if (name.includes('parag parikh') || name.includes('ppfas')) return 'https://amc.ppfas.com/images/ppfas-logo.png';
-    // Axis MF
-    if (name.includes('axis')) return 'https://www.axismf.com/images/axismflogo.png';
-    // Mirae
-    if (name.includes('mirae')) return 'https://www.miraeassetmf.co.in/images/logo.png';
-    // Quant
-    if (name.includes('quant')) return 'https://quantmutual.com/images/logo.png';
-    // Mid cap / Small cap / Flexi / Multi icon fallback
-    if (name.includes('mid cap') || name.includes('midcap')) return 'https://cdn-icons-png.flaticon.com/512/2278/2278442.png';
-    if (name.includes('small cap') || name.includes('smallcap')) return 'https://cdn-icons-png.flaticon.com/512/2278/2278393.png';
-    // Generic equity / growth fund
-    return 'https://cdn-icons-png.flaticon.com/512/4521/4521576.png';
-  };
 
   // removed handleFireSelection
 
@@ -436,6 +401,7 @@ export const QuestionnairePage = () => {
     const splurgeMoney = income * 0.15;
     const investable = Math.max(0, remainingMoney - splurgeMoney);
     const canInvest = investable >= 1000;
+    const isDeficit = expenses > income;
 
     const retireMap: Record<number, number> = { 1: 38, 2: 43, 3: 48, 4: 55, 5: 65 };
     const currentAge = answers.exactAge ? Number(answers.exactAge) : 25;
@@ -592,66 +558,90 @@ export const QuestionnairePage = () => {
         </div>
 
         {/* ── Income Split Breakdown ─────────────────── */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="mt-6 relative z-10"
-        >
-          <h3 className="text-sm font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-3">Monthly Income Breakdown</h3>
-          {income > 0 ? (
-            <div className="space-y-2">
-              {/* Expenses bar */}
-              <div>
-                <div className="flex justify-between text-xs mb-1">
-                  <span className="font-semibold text-rose-500">Expenses</span>
-                  <span className="font-bold text-rose-600">₹{expenses.toLocaleString('en-IN')}</span>
-                </div>
-                <div className="h-3 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                  <motion.div initial={{ width: 0 }} animate={{ width: `${Math.min((expenses / income) * 100, 100)}%` }} transition={{ delay: 0.6, duration: 1 }} className="h-full bg-rose-400 rounded-full" />
-                </div>
-              </div>
-              {/* Savings buffer bar */}
-              <div>
-                <div className="flex justify-between text-xs mb-1">
-                  <span className="font-semibold text-amber-500">Splurge / Lifestyle (15% of Income)</span>
-                  <span className="font-bold text-amber-600">₹{splurgeMoney.toLocaleString('en-IN')}</span>
-                </div>
-                <div className="h-3 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                  <motion.div initial={{ width: 0 }} animate={{ width: `${Math.min((splurgeMoney / income) * 100, 100)}%` }} transition={{ delay: 0.75, duration: 1 }} className="h-full bg-amber-400 rounded-full" />
-                </div>
-              </div>
-              {/* Investable bar */}
-              <div>
-                <div className="flex justify-between text-xs mb-1">
-                  <span className="font-semibold text-emerald-600">Investable Surplus</span>
-                  <span className="font-bold text-emerald-700">₹{investable.toLocaleString('en-IN')}</span>
-                </div>
-                <div className="h-3 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                  <motion.div initial={{ width: 0 }} animate={{ width: `${Math.min((investable / income) * 100, 100)}%` }} transition={{ delay: 0.9, duration: 1 }} className={`h-full rounded-full ${canInvest ? 'bg-emerald-500' : 'bg-gray-400'}`} />
-                </div>
-              </div>
+        {isDeficit ? (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="mt-6 p-8 bg-rose-50 dark:bg-rose-900/30 border-2 border-rose-500 rounded-2xl text-center relative z-10"
+          >
+            <div className="w-16 h-16 bg-rose-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-rose-500/20">
+              <AlertTriangle className="w-8 h-8 text-white animate-pulse" />
             </div>
-          ) : (
-            <p className="text-sm text-gray-500 italic">No income data provided.</p>
-          )}
-
-          {/* Advisory suggestion */}
-          <div className={`mt-4 p-4 rounded-xl border text-sm font-medium leading-relaxed ${canInvest
-            ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200'
-            : 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200'
-            }`}>
-            {canInvest ? (
-              <>
-                ✅ <strong>Great!</strong> You can invest <strong>₹{investable.toLocaleString('en-IN')}/month</strong> after expenses and a safety buffer. This covers at least <strong>{Math.floor(investable / 1000)}</strong> funds at the ₹1,000 minimum each.
-              </>
+            <h3 className="text-xl font-black text-rose-700 dark:text-rose-400 mb-2 uppercase tracking-tight">Financial Reality Check</h3>
+            <p className="text-rose-600 dark:text-rose-300 font-bold leading-relaxed mb-4">
+              Your monthly expenses (₹{expenses.toLocaleString('en-IN')}) exceed your monthly income (₹{income.toLocaleString('en-IN')}).
+              <br />
+              Please adjust your inputs before continuing to risk profiling.
+            </p>
+            <button
+              onClick={() => setStep(1)}
+              className="px-8 py-3 bg-rose-600 text-white font-black rounded-xl hover:bg-rose-700 transition shadow-lg shadow-rose-500/30 uppercase tracking-widest text-xs"
+            >
+              Adjust Financial Details
+            </button>
+          </motion.div>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="mt-6 relative z-10"
+          >
+            <h3 className="text-sm font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-3">Monthly Income Breakdown</h3>
+            {income > 0 ? (
+              <div className="space-y-2">
+                {/* Expenses bar */}
+                <div>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="font-semibold text-rose-500">Expenses</span>
+                    <span className="font-bold text-rose-600">₹{expenses.toLocaleString('en-IN')}</span>
+                  </div>
+                  <div className="h-3 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <motion.div initial={{ width: 0 }} animate={{ width: `${Math.min((expenses / income) * 100, 100)}%` }} transition={{ delay: 0.6, duration: 1 }} className="h-full bg-rose-400 rounded-full" />
+                  </div>
+                </div>
+                {/* Savings buffer bar */}
+                <div>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="font-semibold text-amber-500">Splurge / Lifestyle (15% of Income)</span>
+                    <span className="font-bold text-amber-600">₹{splurgeMoney.toLocaleString('en-IN')}</span>
+                  </div>
+                  <div className="h-3 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <motion.div initial={{ width: 0 }} animate={{ width: `${Math.min((splurgeMoney / income) * 100, 100)}%` }} transition={{ delay: 0.75, duration: 1 }} className="h-full bg-amber-400 rounded-full" />
+                  </div>
+                </div>
+                {/* Investable bar */}
+                <div>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="font-semibold text-emerald-600">Investable Surplus</span>
+                    <span className="font-bold text-emerald-700">₹{investable.toLocaleString('en-IN')}</span>
+                  </div>
+                  <div className="h-3 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <motion.div initial={{ width: 0 }} animate={{ width: `${Math.min((investable / income) * 100, 100)}%` }} transition={{ delay: 0.9, duration: 1 }} className={`h-full rounded-full ${canInvest ? 'bg-emerald-500' : 'bg-gray-400'}`} />
+                  </div>
+                </div>
+              </div>
             ) : (
-              <>
-                ⚠️ <strong>Action needed:</strong> Your current surplus leaves less than ₹1,000 to invest. We recommend saving at least <strong>₹{(expenses + splurgeMoney + 1000).toLocaleString('en-IN')}/month</strong> in total or reducing expenses to unlock investing capacity.
-              </>
+              <p className="text-sm text-gray-500 italic">No income data provided.</p>
             )}
-          </div>
-        </motion.div>
+
+            {/* Advisory suggestion */}
+            <div className={`mt-4 p-4 rounded-xl border text-sm font-medium leading-relaxed ${canInvest
+              ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200'
+              : 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200'
+              }`}>
+              {canInvest ? (
+                <>
+                  ✅ <strong>Great!</strong> You can invest <strong>₹{investable.toLocaleString('en-IN')}/month</strong> after expenses and a safety buffer. This covers at least <strong>{Math.floor(investable / 1000)}</strong> funds at the ₹1,000 minimum each.
+                </>
+              ) : (
+                <>
+                  ⚠️ <strong>Action needed:</strong> Your current surplus leaves less than ₹1,000 to invest. We recommend saving at least <strong>₹{(expenses + splurgeMoney + 1000).toLocaleString('en-IN')}/month</strong> in total or reducing expenses to unlock investing capacity.
+                </>
+              )}
+            </div>
+          </motion.div>
+        )}
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -666,11 +656,20 @@ export const QuestionnairePage = () => {
             Previous
           </button>
           <button
-            onClick={() => setStep(step + 1)}
-            className="flex-1 group relative inline-flex items-center justify-center px-8 py-4 font-bold text-white transition-all duration-200 bg-gray-900 dark:bg-white dark:text-gray-900 font-pj rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900"
+            onClick={() => {
+              if (isDeficit) {
+                alert("Cannot proceed with high expenses. Please edit your financial details.");
+                return;
+              }
+              setStep(step + 1);
+            }}
+            disabled={isDeficit}
+            className={`flex-1 group relative inline-flex items-center justify-center px-8 py-4 font-bold text-white transition-all duration-200 font-pj rounded-xl shadow-lg border-none outline-none ${isDeficit 
+              ? 'bg-gray-400 cursor-not-allowed opacity-50' 
+              : 'bg-gray-900 dark:bg-white dark:text-gray-900 hover:shadow-xl hover:-translate-y-1'}`}
           >
             <span>Proceed to Risk Assessment</span>
-            <ArrowRight className="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1" />
+            {!isDeficit && <ArrowRight className="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1" />}
           </button>
         </motion.div>
       </motion.div >
@@ -931,7 +930,7 @@ export const QuestionnairePage = () => {
 
     // Default estimated growth rates
     const growthRates: Record<string, string> = {
-      'LOW RISK': '7-9% p.a.',
+      'LOW RISK': '8-9% p.a.',
       'MEDIUM RISK': '10-12% p.a.',
       'HIGH RISK': '13-16%+ p.a.'
     };
@@ -967,7 +966,10 @@ export const QuestionnairePage = () => {
           <div className="space-y-6 lg:col-span-1 border-b pb-8 lg:pb-0 lg:border-b-0 lg:border-r border-gray-700/50 lg:pr-6">
             <div className="p-6 bg-gradient-to-br from-emerald-900/60 to-gray-900 rounded-2xl border border-emerald-500/30 shadow-xl overflow-hidden relative group transition-all duration-300 hover:shadow-[0_0_30px_rgba(16,185,129,0.2)]">
               <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl transform translate-x-10 -translate-y-10 pointer-events-none transition-transform duration-700 group-hover:scale-150" />
-              <h3 className="text-2xl font-bold text-emerald-400 mb-3 drop-shadow-sm relative z-10">{finalStrategy}</h3>
+              <h3 className="text-2xl font-bold text-emerald-400 mb-3 drop-shadow-sm relative z-10 flex items-center gap-3">
+                <span>{displayCategory === 'LOW RISK' ? '🛡️' : displayCategory === 'MEDIUM RISK' ? '⚖️' : '🚀'}</span>
+                {finalStrategy}
+              </h3>
               <p className="text-gray-300 text-sm leading-relaxed relative z-10">{description}</p>
             </div>
 
@@ -1037,6 +1039,7 @@ export const QuestionnairePage = () => {
                     : 'text-gray-500 hover:text-white hover:bg-gray-800/50'
                     }`}
                 >
+                  <span className="mr-2">{cat === 'LOW RISK' ? '🛡️' : cat === 'MEDIUM RISK' ? '⚖️' : '🚀'}</span>
                   {cat} {riskCategory === cat && '✨'}
                 </button>
               ))}
@@ -1082,9 +1085,10 @@ export const QuestionnairePage = () => {
                       const isViable = perFund >= MIN_FUND;
                       return (
                         <li key={fIdx} className="text-xs text-gray-200 flex flex-col items-start gap-2 bg-gray-800/40 p-3 rounded-lg border border-gray-700/30">
-                          <div className="w-6 h-6 rounded-full bg-white flex items-center justify-center shadow-md p-0.5 shrink-0 overflow-hidden">
-                            <img src={getFundIcon(fund)} alt="amc logo" className="w-full h-full rounded-full object-contain" onError={(e) => e.currentTarget.style.display = 'none'} />
-                          </div>
+                          <FundIcon 
+                            fundName={fund} 
+                            className="w-8 h-8 md:w-10 md:h-10 shadow-md p-1" 
+                          />
                           <span className="leading-snug font-medium line-clamp-2">{fund} <span className="text-gray-400">({split}%)</span></span>
                           <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${isViable
                             ? 'bg-emerald-500/20 text-emerald-400'

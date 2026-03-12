@@ -4,7 +4,10 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Navigation } from '../components/Navigation';
 import { SettingsModal } from '../components/SettingsModal';
 import { formatIndianCurrency } from '../utils/currency';
-import { motion } from 'framer-motion';
+import { calculateFIREMetrics } from '../utils/finance';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Award } from 'lucide-react';
+import confetti from 'canvas-confetti';
 
 const StatCard = ({ title, value, subtitle, isHighlighted = false }: { title: string, value: string, subtitle: string, isHighlighted?: boolean }) => {
   const highlightClass = isHighlighted ? 'bg-emerald-100 border-emerald-600 scale-105 dark:bg-emerald-900/40 dark:border-emerald-500' : 'bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700';
@@ -18,12 +21,13 @@ const StatCard = ({ title, value, subtitle, isHighlighted = false }: { title: st
 }
 
 export const UserProfileDashboard = () => {
-  const { user, hardReset } = useAuth();
+  const { user, hardReset, updateFinancialData } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isHardResetOpen, setIsHardResetOpen] = useState(false);
   const [isTutorialMode, setIsTutorialMode] = useState(false);
+  const [showFireCelebration, setShowFireCelebration] = useState(false);
 
   useEffect(() => {
     if (location.state?.tutorialMode) {
@@ -42,46 +46,33 @@ export const UserProfileDashboard = () => {
   }
 
   const { financialData } = user;
-  const annualIncome = financialData.monthlyIncome * 12;
-  const annualExpenses = financialData.monthlyExpenses * 12;
-  const annualSurplus = annualIncome - annualExpenses;
-  const savingsRate = annualIncome > 0 ? ((annualSurplus / annualIncome) * 100).toFixed(1) : "0";
+  const {
+    annualExpenses,
+    annualIncome,
+    annualSurplus,
+    savingsRate,
+    fireNumber,
+    yearsToFire,
+    estimatedRetirementAge,
+    currentTotalWealth
+  } = calculateFIREMetrics(financialData);
 
-  // Align Calculation with Calculator Page (Future Value method)
-  const inflationRate = (user.financialData.inflationRate || 6) / 100;
-
-  // Dynamic Expected Return based on Risk Profile
-  let expectedReturnRate = 0.12; // default Medium Risk
-  if (financialData.riskProfile?.includes("Capital Stability")) expectedReturnRate = 0.08; // Low Risk
-  else if (financialData.riskProfile?.includes("High Growth")) expectedReturnRate = 0.16; // High Risk
-
-  const r = expectedReturnRate;
-
-  const yearsToInvest = Math.max(0, financialData.targetRetirementAge - financialData.age);
-  const futureAnnualExpenses = annualExpenses * Math.pow(1 + inflationRate, yearsToInvest);
-
-  // Use the stored selectedFireAmount if available, otherwise calculate a traditional (25x) inflated one
-  const fireNumber = financialData.selectedFireAmount && financialData.selectedFireAmount > 0 
-      ? financialData.selectedFireAmount 
-      : futureAnnualExpenses * 25;
-
-  const portfolioHistory = financialData.portfolioHistory || [];
-  const latestPortfolioValue = portfolioHistory.length > 0 ? portfolioHistory[portfolioHistory.length - 1].currentValue : 0;
-  const currentTotalWealth = financialData.currentSavings + latestPortfolioValue;
-
-  let yearsToFire = 0;
-  if (currentTotalWealth >= fireNumber) {
-    yearsToFire = 0;
-  } else if (annualSurplus > 0) {
-    yearsToFire = Math.max(0, Math.log((fireNumber * r + annualSurplus) / (currentTotalWealth * r + annualSurplus)) / Math.log(1 + r));
-  } else if (currentTotalWealth > 0) {
-    yearsToFire = Math.max(0, Math.log(fireNumber / currentTotalWealth) / Math.log(1 + r));
-  } else {
-    yearsToFire = Infinity;
-  }
-
-  const estimatedRetirementAge = financialData.age + yearsToFire;
   const netWorth = currentTotalWealth;
+
+  const isFireAchieved = currentTotalWealth >= fireNumber && fireNumber > 0;
+
+  useEffect(() => {
+    if (isFireAchieved && !financialData.fireCelebrated) {
+      setShowFireCelebration(true);
+      confetti({
+        particleCount: 200,
+        spread: 120,
+        origin: { y: 0.5 },
+        colors: ['#10b981', '#fbbf24', '#ffffff', '#34d399']
+      });
+      updateFinancialData({ fireCelebrated: true });
+    }
+  }, [isFireAchieved, financialData.fireCelebrated]);
 
   const targetYearsToRetire = Math.max(0, financialData.targetRetirementAge - financialData.age);
   const willMissTimeline = yearsToFire > targetYearsToRetire;
@@ -345,6 +336,57 @@ export const UserProfileDashboard = () => {
           </div>
         </main>
       </div>
+
+      <AnimatePresence>
+        {showFireCelebration && (
+          <div className="fixed inset-0 bg-emerald-950/95 backdrop-blur-xl z-[200] flex items-center justify-center p-6 text-center">
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="max-w-xl w-full"
+            >
+              <motion.div
+                animate={{
+                  scale: [1, 1.1, 1],
+                  rotate: [0, 10, -10, 0]
+                }}
+                transition={{ repeat: Infinity, duration: 3 }}
+                className="w-32 h-32 bg-emerald-500 rounded-full mx-auto mb-8 flex items-center justify-center shadow-[0_0_50px_rgba(16,185,129,0.5)] border-4 border-white"
+              >
+                <Award className="w-16 h-16 text-white" />
+              </motion.div>
+
+              <h2 className="text-5xl md:text-6xl font-black text-white mb-6 tracking-tighter">
+                MISSION ACCOMPLISHED! 🔥
+              </h2>
+              <p className="text-emerald-200 text-xl md:text-2xl font-bold mb-10 leading-relaxed">
+                Congratulations, <span className="text-white underline decoration-white/30">{user.name}</span>!
+                Your portfolio has reached <span className="text-white font-black">{formatIndianCurrency(currentTotalWealth)}</span>,
+                officially meeting your FIRE target.
+              </p>
+
+              <div className="space-y-4">
+                <motion.div
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.5 }}
+                  className="bg-white/10 border border-white/20 p-6 rounded-3xl"
+                >
+                  <p className="text-sm font-bold text-emerald-300 uppercase tracking-widest mb-1">Status</p>
+                  <p className="text-2xl font-black text-white">FINANCIALLY INDEPENDENT</p>
+                </motion.div>
+
+                <button
+                  onClick={() => setShowFireCelebration(false)}
+                  className="w-full py-5 bg-white text-emerald-900 font-black rounded-2xl shadow-2xl hover:bg-emerald-50 transition-all uppercase tracking-widest text-sm mt-4 hover:scale-[1.02]"
+                >
+                  Enter Freedom Mode
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

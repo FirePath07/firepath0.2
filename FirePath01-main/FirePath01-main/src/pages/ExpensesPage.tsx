@@ -12,7 +12,7 @@ import {
     Wallet, TrendingUp, TrendingDown, AlertTriangle, Info, Plus,
     Trash2, Calendar, ShoppingCart, Home, Coffee, Car,
     Activity, Music, Heart, Smartphone, MoreHorizontal, CheckCircle2,
-    ChevronDown, ChevronUp, Zap, Sparkles, Target, Plane
+    ChevronDown, Zap, Sparkles, Target, Plane
 } from 'lucide-react';
 
 const CATEGORIES = [
@@ -28,7 +28,7 @@ const CATEGORIES = [
     { name: 'Miscellaneous', icon: MoreHorizontal, color: '#64748b' }
 ];
 
-const QUICK_AMOUNTS = [100, 500, 1000, 2000, 5000];
+const QUICK_AMOUNTS = [1000, 2000, 3000, 5000];
 
 export const ExpensesPage = () => {
     const { user, updateFinancialData } = useAuth();
@@ -42,6 +42,7 @@ export const ExpensesPage = () => {
     const [expenseNotes, setExpenseNotes] = useState('');
     const [taggedGoalId, setTaggedGoalId] = useState('');
     const [showForm, setShowForm] = useState(false);
+    const [error, setError] = useState('');
 
     if (!user) {
         navigate('/');
@@ -108,24 +109,30 @@ export const ExpensesPage = () => {
     // Impact Logic
     const fireImpact = useMemo(() => {
         const deficit = -remainingBalance;
-        if (deficit <= 0) return { type: 'positive', text: `Saving ${formatIndianCurrency(remainingBalance)} extra! You could reach FIRE ${Math.floor(remainingBalance / 5000) + 1} months earlier if this surplus is invested.` };
+        if (deficit <= 0) return { type: 'positive', text: `You have a surplus of ${formatIndianCurrency(remainingBalance)}! Maintaining this habit helps you reach your financial goals faster.` };
 
-        // Simple heuristic: if we under-invest by X, timeline shifts
-        const monthsShift = Math.ceil(deficit / (fireSip || 5000) * 1.5);
-        return { type: 'negative', text: `Current overspending could extend your FIRE timeline by approximately ${monthsShift} months.` };
-    }, [remainingBalance, fireSip]);
+        return { type: 'negative', text: `Overspending this month reduces your investable surplus. Try to stick to your planned budget to stay aligned with your FIRE timeline.` };
+    }, [remainingBalance]);
 
     const goalImpact = useMemo(() => {
-        if (remainingBalance >= 0) return { type: 'positive', text: "All future goals are on track. Keep it up!" };
-        const deficit = Math.abs(remainingBalance);
-        return { type: 'negative', text: `At this spending level, your next major goal might be delayed by ${Math.ceil(deficit / 3000)} months.` };
+        if (remainingBalance >= 0) return { type: 'positive', text: "Budget health is good. Your future goals are well-supported by your current spending habits." };
+        return { type: 'negative', text: "High spending may slow down your goal-specific savings. Review your non-essential categories to recover your plan." };
     }, [remainingBalance]);
 
     // Handle Actions
     const handleAddExpense = async (e: React.FormEvent) => {
         e.preventDefault();
+        setError('');
         const amount = Number(expenseAmount);
-        if (amount <= 0 || !expenseName.trim()) return;
+        
+        if (amount <= 0) {
+            setError("Amount must be a positive number.");
+            return;
+        }
+        if (!expenseName.trim()) {
+            setError("Expense name is required.");
+            return;
+        }
 
         const newExpense = {
             id: Date.now().toString(),
@@ -161,18 +168,16 @@ export const ExpensesPage = () => {
 
                 {/* Section 4: Monthly Summary Panel */}
                 <div className="bg-white dark:bg-slate-800/40 rounded-[3rem] p-8 md:p-12 mb-12 shadow-2xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-700/50">
-                    <div className="flex flex-col lg:flex-row justify-between gap-12">
-                        <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-8">
-                            <SummaryCard label="Monthly Income" value={monthlyIncome} icon={Wallet} color="emerald" />
-                            <SummaryCard label="Total Expenses" value={totalMonthlyExpenses} icon={ShoppingCart} color="rose" />
-                            <SummaryCard label="Investments" value={totalInvestments} icon={Activity} color="blue" />
-                            <SummaryCard
-                                label="Remaining"
-                                value={remainingBalance}
-                                icon={remainingBalance >= 0 ? TrendingUp : TrendingDown}
-                                color={remainingBalance >= 0 ? "emerald" : "rose"}
-                            />
-                        </div>
+                    <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-6">
+                        <SummaryCard label="Monthly Income" value={monthlyIncome} icon={Wallet} color="emerald" />
+                        <SummaryCard label="Total Expenses" value={totalMonthlyExpenses} icon={ShoppingCart} color="rose" />
+                        <SummaryCard label="Investments" value={totalInvestments} icon={Activity} color="blue" />
+                        <SummaryCard
+                            label="Remaining"
+                            value={remainingBalance}
+                            icon={remainingBalance >= 0 ? TrendingUp : TrendingDown}
+                            color={remainingBalance >= 0 ? "emerald" : "rose"}
+                        />
                     </div>
                     {remainingBalance < 0 && (
                         <motion.div
@@ -191,144 +196,167 @@ export const ExpensesPage = () => {
                     {/* Left Column: Input & History */}
                     <div className="lg:col-span-7 space-y-12">
 
-                        {/* Section 3: Expense Input System */}
-                        <div className="bg-white dark:bg-slate-800/40 rounded-[3rem] p-10 border border-slate-100 dark:border-slate-700/50 shadow-xl overflow-hidden relative">
-                            <div className="flex justify-between items-center mb-8">
-                                <h2 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-3">
-                                    <Plus className="text-emerald-500" /> Log Transaction
-                                </h2>
+                        {/* Expense Input System - Refactored to prominent button + Modal */}
+                        <div className="bg-white dark:bg-slate-800/40 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-700/50 shadow-lg overflow-hidden relative">
+                            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+                                <div>
+                                    <h2 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-3">
+                                        <Plus className="text-emerald-500" /> Log Your Spending
+                                    </h2>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Keep your FIRE journey accurate by tracking every expense.</p>
+                                </div>
                                 <button
-                                    onClick={() => setShowForm(!showForm)}
-                                    className="p-3 bg-slate-100 dark:bg-slate-700 rounded-full hover:bg-emerald-500 hover:text-white transition-all"
+                                    onClick={() => setShowForm(true)}
+                                    className="px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-2xl shadow-lg shadow-emerald-500/20 transition-all flex items-center gap-2"
                                 >
-                                    {showForm ? <ChevronUp /> : <ChevronDown />}
+                                    <Plus size={20} /> Add New Expense
                                 </button>
                             </div>
+                        </div>
 
-                            <AnimatePresence>
-                                {showForm && (
-                                    <motion.form
-                                        initial={{ height: 0, opacity: 0 }}
-                                        animate={{ height: 'auto', opacity: 1 }}
-                                        exit={{ height: 0, opacity: 0 }}
-                                        onSubmit={handleAddExpense}
-                                        className="space-y-6"
+                        <AnimatePresence>
+                            {showForm && (
+                                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[60] flex items-center justify-center p-4">
+                                    <motion.div
+                                        initial={{ scale: 0.9, opacity: 0 }}
+                                        animate={{ scale: 1, opacity: 1 }}
+                                        exit={{ scale: 0.9, opacity: 0 }}
+                                        className="bg-white dark:bg-slate-800 rounded-[2.5rem] p-8 md:p-10 max-w-2xl w-full shadow-2xl relative border border-slate-100 dark:border-slate-700"
                                     >
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Expense Name</label>
-                                                <input
-                                                    type="text"
-                                                    value={expenseName}
-                                                    onChange={(e) => setExpenseName(e.target.value)}
-                                                    placeholder="e.g. Weekly Groceries"
-                                                    className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-900/50 border-none rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all dark:text-white"
-                                                    required
-                                                />
+                                        <div className="flex justify-between items-center mb-8">
+                                            <h2 className="text-2xl font-black text-slate-900 dark:text-white">Add Expense</h2>
+                                            <button 
+                                                onClick={() => { setShowForm(false); setError(''); }}
+                                                className="p-3 bg-slate-100 dark:bg-slate-700 rounded-full hover:bg-rose-500 hover:text-white transition-all text-slate-500"
+                                            >
+                                                <ChevronDown />
+                                            </button>
+                                        </div>
+
+                                        {error && (
+                                            <div className="mb-6 p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-600 dark:text-rose-400 text-sm font-bold flex items-center gap-3">
+                                                <AlertTriangle size={18} /> {error}
                                             </div>
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Amount (₹)</label>
-                                                <div className="relative group">
+                                        )}
+
+                                        <form onSubmit={handleAddExpense} className="space-y-6">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                                <div className="space-y-2">
+                                                    <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-4">Expense Name</label>
                                                     <input
-                                                        type="number"
-                                                        value={expenseAmount}
-                                                        onChange={(e) => setExpenseAmount(e.target.value)}
-                                                        placeholder="0.00"
-                                                        className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-900/50 border-none rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all dark:text-white font-bold text-lg"
+                                                        type="text"
+                                                        value={expenseName}
+                                                        onChange={(e) => setExpenseName(e.target.value)}
+                                                        placeholder="e.g. Weekly Groceries"
+                                                        className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all dark:text-white"
                                                         required
                                                     />
-                                                    <div className="flex gap-2 mt-3">
-                                                        {QUICK_AMOUNTS.map(amt => (
-                                                            <button
-                                                                key={amt}
-                                                                type="button"
-                                                                onClick={() => setExpenseAmount(amt.toString())}
-                                                                className="flex-1 py-2 bg-slate-100 dark:bg-slate-800 text-[10px] font-black text-slate-500 dark:text-slate-400 rounded-lg hover:bg-emerald-500 hover:text-white transition-all active:scale-95"
-                                                            >
-                                                                ₹{amt}
-                                                            </button>
-                                                        ))}
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-4">Amount (₹)</label>
+                                                    <div className="relative group">
+                                                        <input
+                                                            type="number"
+                                                            value={expenseAmount}
+                                                            onChange={(e) => setExpenseAmount(e.target.value)}
+                                                            placeholder="0.00"
+                                                            className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all dark:text-white font-bold text-lg"
+                                                            required
+                                                        />
+                                                        <div className="grid grid-cols-4 gap-2 mt-3">
+                                                            {QUICK_AMOUNTS.map(amt => (
+                                                                <button
+                                                                    key={amt}
+                                                                    type="button"
+                                                                    onClick={() => setExpenseAmount(amt.toString())}
+                                                                    className="py-2.5 bg-slate-100 dark:bg-slate-800 text-[10px] font-black text-slate-500 dark:text-slate-400 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-emerald-500 hover:text-white transition-all active:scale-95 text-center"
+                                                                >
+                                                                    ₹{amt.toLocaleString('en-IN')}
+                                                                </button>
+                                                            ))}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
 
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Category</label>
-                                                <div className="flex flex-wrap gap-3 mt-2">
-                                                    {CATEGORIES.slice(0, 5).map(cat => (
+                                            <div className="space-y-3">
+                                                <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-4">Select Category</label>
+                                                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                                                    {CATEGORIES.map(cat => (
                                                         <button
                                                             key={cat.name}
                                                             type="button"
                                                             onClick={() => setExpenseCategory(cat.name)}
-                                                            className={`p-2 rounded-xl border transition-all flex items-center gap-2 ${expenseCategory === cat.name ? 'bg-emerald-500 text-white border-emerald-500 shadow-lg' : 'bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 text-slate-500 hover:border-emerald-500'}`}
+                                                            className={`p-3 rounded-xl border transition-all flex flex-col items-center gap-2 group/cat ${expenseCategory === cat.name 
+                                                                ? 'bg-emerald-500 text-white border-emerald-500 shadow-lg' 
+                                                                : 'bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-emerald-500'}`}
                                                         >
-                                                            <cat.icon size={14} />
-                                                            <span className="text-[10px] font-bold">{cat.name}</span>
+                                                            <cat.icon size={18} />
+                                                            <span className="text-[9px] font-black uppercase tracking-tight text-center transition-colors group-hover/cat:text-emerald-500">{cat.name}</span>
                                                         </button>
                                                     ))}
                                                 </div>
-                                                <select
-                                                    value={expenseCategory}
-                                                    onChange={(e) => setExpenseCategory(e.target.value)}
-                                                    className="w-full mt-3 px-6 py-4 bg-slate-50 dark:bg-slate-900/50 border-none rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all dark:text-white appearance-none cursor-pointer"
-                                                >
-                                                    {CATEGORIES.map(cat => (
-                                                        <option key={cat.name} value={cat.name}>{cat.name}</option>
-                                                    ))}
-                                                </select>
                                             </div>
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Date</label>
-                                                <div className="relative">
-                                                    <Calendar className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
-                                                    <input
-                                                        type="date"
-                                                        value={expenseDate}
-                                                        onChange={(e) => setExpenseDate(e.target.value)}
-                                                        className="w-full pl-14 pr-6 py-4 bg-slate-50 dark:bg-slate-900/50 border-none rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all dark:text-white"
-                                                    />
+
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                                <div className="space-y-2">
+                                                    <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-4">Date</label>
+                                                    <div className="relative">
+                                                        <Calendar className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                                                        <input
+                                                            type="date"
+                                                            value={expenseDate}
+                                                            onChange={(e) => setExpenseDate(e.target.value)}
+                                                            className="w-full pl-14 pr-6 py-4 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all dark:text-white"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-4">Link to Goal (Optional)</label>
+                                                    <select
+                                                        value={taggedGoalId}
+                                                        onChange={(e) => setTaggedGoalId(e.target.value)}
+                                                        className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all dark:text-white appearance-none cursor-pointer"
+                                                    >
+                                                        <option value="">No specific goal</option>
+                                                        {goals.map(goal => (
+                                                            <option key={goal.id} value={goal.id}>{goal.name}</option>
+                                                        ))}
+                                                    </select>
                                                 </div>
                                             </div>
-                                        </div>
 
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                             <div className="space-y-2">
-                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Link to Goal (Optional)</label>
-                                                <select
-                                                    value={taggedGoalId}
-                                                    onChange={(e) => setTaggedGoalId(e.target.value)}
-                                                    className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-900/50 border-none rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all dark:text-white appearance-none"
-                                                >
-                                                    <option value="">No specific goal</option>
-                                                    {goals.map(goal => (
-                                                        <option key={goal.id} value={goal.id}>{goal.name}</option>
-                                                    ))}
-                                                </select>
-                                            </div>
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Notes</label>
+                                                <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-4">Notes</label>
                                                 <input
                                                     type="text"
                                                     value={expenseNotes}
                                                     onChange={(e) => setExpenseNotes(e.target.value)}
-                                                    placeholder="Add context..."
-                                                    className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-900/50 border-none rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all dark:text-white"
+                                                    placeholder="Add more context..."
+                                                    className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all dark:text-white"
                                                 />
                                             </div>
-                                        </div>
 
-                                        <button
-                                            type="submit"
-                                            className="w-full py-5 bg-gradient-to-r from-emerald-600 to-emerald-400 text-white font-black rounded-3xl shadow-xl shadow-emerald-500/30 hover:-translate-y-1 transition-all uppercase tracking-widest text-xs"
-                                        >
-                                            Record Transaction
-                                        </button>
-                                    </motion.form>
-                                )}
-                            </AnimatePresence>
-                        </div>
+                                            <div className="flex gap-4 pt-4">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowForm(false)}
+                                                    className="flex-1 py-4 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-black rounded-2xl hover:bg-slate-200 transition-all uppercase tracking-widest text-xs"
+                                                >
+                                                    Cancel
+                                                </button>
+                                                <button
+                                                    type="submit"
+                                                    className="flex-1 py-4 bg-emerald-600 text-white font-black rounded-2xl shadow-xl shadow-emerald-500/30 hover:bg-emerald-500 transition-all uppercase tracking-widest text-xs"
+                                                >
+                                                    Save Expense
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </motion.div>
+                                </div>
+                            )}
+                        </AnimatePresence>
 
                         {/* Recent History */}
                         <div className="bg-white dark:bg-slate-800/40 rounded-[3rem] p-10 border border-slate-100 dark:border-slate-700/50 shadow-xl">
@@ -350,18 +378,18 @@ export const ExpensesPage = () => {
                     {/* Right Column: Analysis & Insights */}
                     <div className="lg:col-span-5 space-y-12">
 
-                        {/* Section 6 & 7: Impact Panels */}
+                        {/* Impact Panels */}
                         <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-[3.5rem] p-10 text-white shadow-2xl relative overflow-hidden">
                             <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-[100px] pointer-events-none" />
 
                             <h2 className="text-xl font-black mb-10 flex items-center gap-3 italic">
-                                <Sparkles className="text-emerald-400" /> Dynamic Intelligence
+                                <Sparkles className="text-emerald-400" /> Spending Insights
                             </h2>
 
                             <div className="space-y-10">
                                 {/* FIRE Impact */}
                                 <div className="space-y-4">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Impact on FIRE Progress</p>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Comparison to FIRE Plan</p>
                                     <div className={`p-6 rounded-[2rem] border ${fireImpact.type === 'negative' ? 'bg-rose-500/5 border-rose-500/20' : 'bg-emerald-500/5 border-emerald-500/20'}`}>
                                         <p className="text-sm font-bold leading-relaxed">{fireImpact.text}</p>
                                     </div>
@@ -369,7 +397,7 @@ export const ExpensesPage = () => {
 
                                 {/* Goals Impact */}
                                 <div className="space-y-4">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Impact on Future Goals</p>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Comparison to Goal Planner</p>
                                     <div className={`p-6 rounded-[2rem] border ${goalImpact.type === 'negative' ? 'bg-amber-500/5 border-amber-500/20' : 'bg-emerald-500/5 border-emerald-500/20'}`}>
                                         <p className="text-sm font-bold leading-relaxed">{goalImpact.text}</p>
                                     </div>
@@ -377,7 +405,7 @@ export const ExpensesPage = () => {
                             </div>
                         </div>
 
-                        {/* Section 8: Smart Suggestions */}
+                        {/* Smart Suggestions */}
                         <div className="space-y-4">
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-6">Smart Insights</p>
                             <div className="grid grid-cols-1 gap-4">
@@ -392,7 +420,7 @@ export const ExpensesPage = () => {
                             </div>
                         </div>
 
-                        {/* Section 5 & 9: Visual Analysis */}
+                        {/* Visual Analysis */}
                         <div className="bg-white dark:bg-slate-800/40 rounded-[3rem] p-8 border border-slate-100 dark:border-slate-700/50 shadow-xl">
                             <h2 className="text-xl font-black text-slate-900 dark:text-white mb-8 px-4">Spending Breakdown</h2>
                             {categoryData.length > 0 ? (
@@ -423,7 +451,7 @@ export const ExpensesPage = () => {
                             )}
                         </div>
 
-                        {/* Section 5: Monthly Trends */}
+                        {/* Monthly Trends */}
                         <div className="bg-white dark:bg-slate-800/40 rounded-[3rem] p-8 border border-slate-100 dark:border-slate-700/50 shadow-xl">
                             <h2 className="text-xl font-black text-slate-900 dark:text-white mb-8 px-4">Monthly Trends</h2>
                             <div className="h-[250px]">
@@ -457,7 +485,7 @@ export const ExpensesPage = () => {
                             </div>
                         </div>
 
-                        {/* Section 5: Monthly Comparison */}
+                        {/* Monthly Comparison */}
                         <div className="bg-white dark:bg-slate-800/40 rounded-[3rem] p-8 border border-slate-100 dark:border-slate-700/50 shadow-xl">
                             <h2 className="text-xl font-black text-slate-900 dark:text-white mb-8 px-4">Monthly Comparison</h2>
                             <div className="h-[250px]">

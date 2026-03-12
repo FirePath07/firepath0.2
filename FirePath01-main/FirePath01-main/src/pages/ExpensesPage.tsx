@@ -6,13 +6,13 @@ import { formatIndianCurrency } from '../utils/currency';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip,
-    BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line, Legend
+    BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend, AreaChart, Area,
 } from 'recharts';
 import {
     Wallet, TrendingUp, TrendingDown, AlertTriangle, Info, Plus,
     Trash2, Calendar, ShoppingCart, Home, Coffee, Car,
     Activity, Music, Heart, Smartphone, MoreHorizontal, CheckCircle2,
-    ChevronDown, ChevronUp, Zap, Sparkles, Target
+    ChevronDown, ChevronUp, Zap, Sparkles, Target, Plane
 } from 'lucide-react';
 
 const CATEGORIES = [
@@ -20,12 +20,15 @@ const CATEGORIES = [
     { name: 'Food', icon: Coffee, color: '#f59e0b' },
     { name: 'Transport', icon: Car, color: '#10b981' },
     { name: 'Shopping', icon: ShoppingCart, color: '#ec4899' },
+    { name: 'Travel', icon: Plane, color: '#06b6d4' },
     { name: 'Entertainment', icon: Music, color: '#8b5cf6' },
     { name: 'Health', icon: Heart, color: '#ef4444' },
-    { name: 'Subscriptions', icon: Smartphone, color: '#06b6d4' },
+    { name: 'Subscriptions', icon: Smartphone, color: '#6366f1' },
     { name: 'Utilities', icon: Zap, color: '#facc15' },
     { name: 'Miscellaneous', icon: MoreHorizontal, color: '#64748b' }
 ];
+
+const QUICK_AMOUNTS = [100, 500, 1000, 2000, 5000];
 
 export const ExpensesPage = () => {
     const { user, updateFinancialData } = useAuth();
@@ -225,24 +228,51 @@ export const ExpensesPage = () => {
                                             </div>
                                             <div className="space-y-2">
                                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Amount (₹)</label>
-                                                <input
-                                                    type="number"
-                                                    value={expenseAmount}
-                                                    onChange={(e) => setExpenseAmount(e.target.value)}
-                                                    placeholder="0.00"
-                                                    className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-900/50 border-none rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all dark:text-white"
-                                                    required
-                                                />
+                                                <div className="relative group">
+                                                    <input
+                                                        type="number"
+                                                        value={expenseAmount}
+                                                        onChange={(e) => setExpenseAmount(e.target.value)}
+                                                        placeholder="0.00"
+                                                        className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-900/50 border-none rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all dark:text-white font-bold text-lg"
+                                                        required
+                                                    />
+                                                    <div className="flex gap-2 mt-3">
+                                                        {QUICK_AMOUNTS.map(amt => (
+                                                            <button
+                                                                key={amt}
+                                                                type="button"
+                                                                onClick={() => setExpenseAmount(amt.toString())}
+                                                                className="flex-1 py-2 bg-slate-100 dark:bg-slate-800 text-[10px] font-black text-slate-500 dark:text-slate-400 rounded-lg hover:bg-emerald-500 hover:text-white transition-all active:scale-95"
+                                                            >
+                                                                ₹{amt}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
 
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                             <div className="space-y-2">
                                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Category</label>
+                                                <div className="flex flex-wrap gap-3 mt-2">
+                                                    {CATEGORIES.slice(0, 5).map(cat => (
+                                                        <button
+                                                            key={cat.name}
+                                                            type="button"
+                                                            onClick={() => setExpenseCategory(cat.name)}
+                                                            className={`p-2 rounded-xl border transition-all flex items-center gap-2 ${expenseCategory === cat.name ? 'bg-emerald-500 text-white border-emerald-500 shadow-lg' : 'bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 text-slate-500 hover:border-emerald-500'}`}
+                                                        >
+                                                            <cat.icon size={14} />
+                                                            <span className="text-[10px] font-bold">{cat.name}</span>
+                                                        </button>
+                                                    ))}
+                                                </div>
                                                 <select
                                                     value={expenseCategory}
                                                     onChange={(e) => setExpenseCategory(e.target.value)}
-                                                    className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-900/50 border-none rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all dark:text-white appearance-none"
+                                                    className="w-full mt-3 px-6 py-4 bg-slate-50 dark:bg-slate-900/50 border-none rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all dark:text-white appearance-none cursor-pointer"
                                                 >
                                                     {CATEGORIES.map(cat => (
                                                         <option key={cat.name} value={cat.name}>{cat.name}</option>
@@ -398,20 +428,31 @@ export const ExpensesPage = () => {
                             <h2 className="text-xl font-black text-slate-900 dark:text-white mb-8 px-4">Monthly Trends</h2>
                             <div className="h-[250px]">
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <LineChart data={trendData}>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.1} />
-                                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 'bold' }} />
+                                    <AreaChart data={trendData}>
+                                        <defs>
+                                            <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                                                <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                                            </linearGradient>
+                                        </defs>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.05} />
+                                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 'bold', fill: '#94a3b8' }} />
                                         <YAxis hide />
-                                        <RechartsTooltip />
-                                        <Line
+                                        <RechartsTooltip 
+                                            contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '12px', color: '#fff' }}
+                                            itemStyle={{ color: '#10b981' }}
+                                        />
+                                        <Area
                                             type="monotone"
                                             dataKey="amount"
                                             stroke="#10b981"
                                             strokeWidth={4}
-                                            dot={{ r: 6, fill: '#10b981', strokeWidth: 2, stroke: '#fff' }}
-                                            activeDot={{ r: 8 }}
+                                            fillOpacity={1}
+                                            fill="url(#colorAmount)"
+                                            dot={{ r: 4, fill: '#10b981', strokeWidth: 2, stroke: '#fff' }}
+                                            activeDot={{ r: 6, strokeWidth: 0 }}
                                         />
-                                    </LineChart>
+                                    </AreaChart>
                                 </ResponsiveContainer>
                             </div>
                         </div>

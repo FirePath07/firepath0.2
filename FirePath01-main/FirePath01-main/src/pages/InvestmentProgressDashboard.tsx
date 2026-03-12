@@ -690,13 +690,37 @@ export const InvestmentProgressDashboard = () => {
                                     onClick={async () => {
                                         if (achievedGoal) {
                                             const updatedGoals = (financialData.goals || []).filter(g => g.id !== achievedGoal.id);
-                                            await updateFinancialData({ goals: updatedGoals });
+                                            
+                                            // Add as an expense when finished
+                                            const categoryMapping: Record<string, string> = {
+                                                'Vehicle': 'Transport',
+                                                'Electronics': 'Shopping',
+                                                'Travel': 'Travel',
+                                                'Other': 'Miscellaneous'
+                                            };
+
+                                            const newExpense = {
+                                                id: Date.now().toString(),
+                                                amount: achievedGoal.targetAmount,
+                                                description: `Goal Achieved: ${achievedGoal.name}`,
+                                                category: categoryMapping[achievedGoal.category] || 'Miscellaneous',
+                                                date: new Date().toISOString().split('T')[0],
+                                                notes: `Successfully completed future goal: ${achievedGoal.name}`,
+                                                taggedGoalId: achievedGoal.id
+                                            };
+
+                                            const updatedExpenses = [...(financialData.expensesList || []), newExpense];
+                                            
+                                            await updateFinancialData({ 
+                                                goals: updatedGoals,
+                                                expensesList: updatedExpenses
+                                            });
                                             setAchievedGoal(null);
                                         }
                                     }}
                                     className="w-full py-5 bg-rose-600 text-white font-black rounded-2xl shadow-xl hover:shadow-rose-500/30 hover:-translate-y-1 transition-all uppercase tracking-widest text-xs"
                                 >
-                                    Finish Goal & Revert SIP
+                                    Finish Goal & Record Expense
                                 </button>
                             </div>
                         </motion.div>

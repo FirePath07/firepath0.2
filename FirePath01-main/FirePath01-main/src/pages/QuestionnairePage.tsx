@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { formatIndianCurrency } from '../utils/currency';
@@ -219,7 +219,7 @@ const ALL_QUESTIONS = [...INPUT_QUESTIONS, ...RISK_QUESTIONS];
 
 export const QuestionnairePage = () => {
   const navigate = useNavigate();
-  const { user, updateFinancialData } = useAuth();
+  const { user, loading, updateFinancialData } = useAuth();
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number | string>>({});
   const [manualCategory, setManualCategory] = useState<string | null>(null);
@@ -1182,9 +1182,18 @@ export const QuestionnairePage = () => {
     );
   };
 
-  if (!user) {
-    navigate('/login');
-    return null;
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/login');
+    }
+  }, [user, loading, navigate]);
+
+  if (loading || !user) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="animate-spin w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full"></div>
+      </div>
+    );
   }
 
   let progress = 0;

@@ -24,16 +24,12 @@ export const UserProfilePage = () => {
         }
     }, [user, loading, navigate]);
 
-    if (loading) {
+    if (loading || !user || !user.name || !user.financialData) {
         return (
             <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
                 <div className="animate-spin w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full"></div>
             </div>
         );
-    }
-
-    if (!user) {
-        return null;
     }
 
     const { financialData } = user;
@@ -95,7 +91,7 @@ export const UserProfilePage = () => {
                                 <div className="inline-block relative">
                                     <div className="w-24 h-24 bg-white dark:bg-gray-900 rounded-full p-1 shadow-xl">
                                         <div className="w-full h-full bg-emerald-100 dark:bg-emerald-900/50 rounded-full flex items-center justify-center text-3xl font-black text-emerald-700 dark:text-emerald-300">
-                                            {user.name.charAt(0).toUpperCase()}
+                                            {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
                                         </div>
                                     </div>
                                     <div className="absolute bottom-1 right-1 w-6 h-6 bg-emerald-500 border-2 border-white dark:border-gray-900 rounded-full flex items-center justify-center">
@@ -121,7 +117,7 @@ export const UserProfilePage = () => {
                                         <span className="text-gray-500 dark:text-gray-400 flex items-center gap-2">
                                             <User size={16} /> Current Age
                                         </span>
-                                        <span className="font-bold text-gray-900 dark:text-white">{financialData.age} Years</span>
+                                        <span className="font-bold text-gray-900 dark:text-white">{financialData?.age || 'N/A'} Years</span>
                                     </div>
                                 </div>
                             </div>
@@ -136,7 +132,7 @@ export const UserProfilePage = () => {
                                 <Target size={20} className="text-emerald-400" /> FIRE Strategy
                             </h4>
                             <p className="text-sm text-emerald-100/80 leading-relaxed font-medium">
-                                Your <span className="text-emerald-300 font-bold">{financialData.riskProfile}</span> is optimized for your target retirement age of {financialData.targetRetirementAge}.
+                                Your <span className="text-emerald-300 font-bold">{financialData?.riskProfile || 'N/A'}</span> is optimized for your target retirement age of {financialData?.targetRetirementAge || 'N/A'}.
                             </p>
                         </div>
                     </div>
@@ -198,7 +194,7 @@ export const UserProfilePage = () => {
                                 icon={Calendar} 
                                 label="Est. Retirement Age" 
                                 value={`${Math.round(estimatedRetirementAge)} Years`} 
-                                subtext={`Target: ${financialData.targetRetirementAge} Years`}
+                                subtext={`Target: ${financialData?.targetRetirementAge || 'N/A'} Years`}
                                 color="bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400"
                             />
                         </div>

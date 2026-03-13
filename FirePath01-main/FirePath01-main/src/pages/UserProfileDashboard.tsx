@@ -66,36 +66,16 @@ export const UserProfileDashboard = () => {
     }
   }, [location, user, navigate]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="animate-spin w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full"></div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return null;
-  }
-
-  const { financialData } = user;
   const {
-    annualExpenses,
-    annualIncome,
-    annualSurplus,
-    savingsRate,
     fireNumber,
-    yearsToFire,
-    estimatedRetirementAge,
     currentTotalWealth
-  } = calculateFIREMetrics(financialData);
-
-  const netWorth = currentTotalWealth;
+  } = user?.financialData ? calculateFIREMetrics(user.financialData) : { fireNumber: 0, currentTotalWealth: 0 };
 
   const isFireAchieved = currentTotalWealth >= fireNumber && fireNumber > 0;
 
   useEffect(() => {
-    if (isFireAchieved && !financialData.fireCelebrated) {
+    if (!user || !user.financialData) return;
+    if (isFireAchieved && !user.financialData.fireCelebrated) {
       setShowFireCelebration(true);
       confetti({
         particleCount: 200,
@@ -105,8 +85,26 @@ export const UserProfileDashboard = () => {
       });
       updateFinancialData({ fireCelebrated: true });
     }
-  }, [isFireAchieved, financialData.fireCelebrated]);
+  }, [isFireAchieved, user?.financialData?.fireCelebrated, user, updateFinancialData]);
 
+  if (loading || !user || !user.financialData) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="animate-spin w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
+
+  const { financialData } = user;
+  const {
+    annualExpenses,
+    annualIncome,
+    annualSurplus,
+    savingsRate,
+    estimatedRetirementAge,
+  } = calculateFIREMetrics(financialData);
+
+  const yearsToFire = calculateFIREMetrics(financialData).yearsToFire;
   const targetYearsToRetire = Math.max(0, financialData.targetRetirementAge - financialData.age);
   const willMissTimeline = yearsToFire > targetYearsToRetire;
   const isLowRisk = financialData.riskProfile?.includes("Capital Stability");
@@ -119,7 +117,7 @@ export const UserProfileDashboard = () => {
     { title: 'Annual Income', value: formatIndianCurrency(annualIncome), subtitle: `${formatIndianCurrency(financialData.monthlyIncome)}/month`, metricName: 'Annual Income' },
     { title: 'Annual Expenses', value: formatIndianCurrency(annualExpenses), subtitle: `${formatIndianCurrency(financialData.monthlyExpenses)}/month`, metricName: 'Annual Expenses' },
     { title: 'Savings Rate', value: `${savingsRate}%`, subtitle: `Saving ${formatIndianCurrency(annualSurplus)} per year`, metricName: 'Savings Rate' },
-    { title: 'Net Worth', value: formatIndianCurrency(netWorth), subtitle: 'Your current assets', metricName: 'Net Worth' },
+    { title: 'Net Worth', value: formatIndianCurrency(currentTotalWealth), subtitle: 'Your current assets', metricName: 'Net Worth' },
     { title: 'Years to FIRE', value: isFinite(yearsToFire) ? `${yearsToFire.toFixed(1)} yrs` : 'N/A', subtitle: subtitleMessage, metricName: 'Years to FIRE' },
   ];
 
@@ -179,7 +177,7 @@ export const UserProfileDashboard = () => {
           <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">Your Financial Dashboard</h1>
-              <p className="text-gray-600 dark:text-gray-300">Welcome back, <button onClick={() => navigate('/user-details')} className="text-emerald-700 dark:text-emerald-400 font-bold hover:underline">{user.name}</button>! Here's your FIRE journey overview.</p>
+              <p className="text-gray-600 dark:text-gray-300">Welcome back, <button onClick={() => navigate('/user-details')} className="text-emerald-700 dark:text-emerald-400 font-bold hover:underline">{user?.name || 'User'}</button>! Here's your FIRE journey overview.</p>
             </div>
           </div>
 

@@ -87,7 +87,7 @@ export const StrategyExplanationPage = () => {
 
     if (loading || !user) {
         return (
-            <div className="min-h-screen bg-[#0f172a] text-white flex items-center justify-center">
+            <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
                 <div className="animate-spin w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full"></div>
             </div>
         );

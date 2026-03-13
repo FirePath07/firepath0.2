@@ -140,25 +140,12 @@ export const InvestmentProgressDashboard = () => {
         setIsRefreshing(false);
     };
 
-    if (loading) {
-        return (
-            <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-                <div className="animate-spin w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full"></div>
-            </div>
-        );
-    }
-
-    if (!user) return null;
-
-    const { financialData } = user;
-    const portfolio = financialData.portfolio || [];
-    const basket = financialData.selectedBasket;
-
-    const { currentTotalWealth, fireNumber } = calculateFIREMetrics(financialData);
+    const { currentTotalWealth, fireNumber } = user?.financialData ? calculateFIREMetrics(user.financialData) : { currentTotalWealth: 0, fireNumber: 0 };
     const isFireAchieved = currentTotalWealth >= fireNumber && fireNumber > 0;
 
     useEffect(() => {
-        if (isFireAchieved && !financialData.fireCelebrated) {
+        if (!user || !user.financialData) return;
+        if (isFireAchieved && !user.financialData.fireCelebrated) {
             setShowFireCelebration(true);
             confetti({
                 particleCount: 200,
@@ -169,7 +156,19 @@ export const InvestmentProgressDashboard = () => {
             // Mark as celebrated on the server/context
             updateFinancialData({ fireCelebrated: true });
         }
-    }, [isFireAchieved, financialData.fireCelebrated]);
+    }, [isFireAchieved, user?.financialData?.fireCelebrated, user, updateFinancialData]);
+
+    if (loading || !user || !user.financialData) {
+        return (
+            <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+                <div className="animate-spin w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full"></div>
+            </div>
+        );
+    }
+
+    const { financialData } = user;
+    const portfolio = financialData.portfolio || [];
+    const basket = financialData.selectedBasket;
 
     // Compute Summary
     let totalInvested = 0;

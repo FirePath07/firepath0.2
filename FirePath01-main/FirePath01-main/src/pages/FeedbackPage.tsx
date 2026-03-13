@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Navigation } from '../components/Navigation';
@@ -23,14 +23,7 @@ export const FeedbackPage = () => {
     const [myFeedback, setMyFeedback] = useState<FeedbackItem[]>([]);
     const [loadingFeedback, setLoadingFeedback] = useState(true);
 
-    useEffect(() => {
-        if (loading) return;
-        if (!user) {
-            navigate('/login');
-        }
-    }, [user, loading, navigate]);
-
-    const fetchMyFeedback = async () => {
+    const fetchMyFeedback = useCallback(async () => {
         const token = localStorage.getItem('token');
         if (!token) return;
         try {
@@ -47,11 +40,24 @@ export const FeedbackPage = () => {
         } finally {
             setLoadingFeedback(false);
         }
-    };
+    }, []);
 
     useEffect(() => {
-        fetchMyFeedback();
-    }, []);
+        if (loading) return;
+        if (!user) {
+            navigate('/login');
+        } else {
+            fetchMyFeedback();
+        }
+    }, [user, loading, navigate, fetchMyFeedback]);
+
+    if (loading || !user) {
+        return (
+            <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+                <div className="animate-spin w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full"></div>
+            </div>
+        );
+    }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -185,7 +191,7 @@ export const FeedbackPage = () => {
                             </span>
                         </div>
 
-                        <div className="space-y-6 max-h-[700px] overflow-y-auto pr-2 scrollbar-hide">
+                        <div className="space-y-6 max-h-[700px] overflow-y-auto pr-2 scrollbar-hide no-scrollbar">
                             {loadingFeedback ? (
                                 <div className="text-center py-20">
                                     <div className="animate-spin w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full mx-auto"></div>

@@ -4,16 +4,15 @@ import { useNavigate } from 'react-router-dom';
 import { Navigation } from '../components/Navigation';
 import { formatIndianCurrency } from '../utils/currency';
 import { motion, AnimatePresence } from 'framer-motion';
-// ... rest of imports ...
 import {
     PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip,
-    BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend, AreaChart, Area,
+    XAxis, YAxis, CartesianGrid, Legend, AreaChart, Area,
 } from 'recharts';
 import {
     Wallet, TrendingUp, TrendingDown, AlertTriangle, Info, Plus,
     Trash2, Calendar, ShoppingCart, Home, Coffee, Car,
     Activity, Music, Heart, Smartphone, MoreHorizontal, CheckCircle2,
-    ChevronDown, Zap, Sparkles, Target, Plane
+    ChevronDown, Zap, Target, Plane, Sparkles
 } from 'lucide-react';
 
 const CATEGORIES = [
@@ -45,94 +44,93 @@ export const ExpensesPage = () => {
     const [showForm, setShowForm] = useState(false);
     const [error, setError] = useState('');
 
-    useEffect(() => {
-        if (loading) return;
-        if (!user) {
-            navigate('/');
-        }
-    }, [user, loading, navigate]);
+    // Move all logic variables before early return
+    const { financialData } = user || {};
+    const expensesList = financialData?.expensesList || [];
+    const goals = financialData?.goals || [];
+    const monthlyIncome = financialData?.monthlyIncome || 0;
+    const fireSip = financialData?.defaultMonthlySIP || 0;
 
-    if (loading) {
-        return (
-            <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-                <div className="animate-spin w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full"></div>
-            </div>
-        );
-    }
-
-    if (!user) {
-        return null;
-    }
-
-    const { financialData } = user;
-    const expensesList = financialData.expensesList || [];
-    const goals = financialData.goals || [];
-    const monthlyIncome = financialData.monthlyIncome || 0;
-    const fireSip = financialData.defaultMonthlySIP || 0;
-
-    // Derived Calculations
     const currentMonth = new Date().getMonth(); // 0-11
     const currentYear = new Date().getFullYear();
 
-    const currentMonthExpenses = expensesList.filter(exp => {
+    const currentMonthExpenses = expensesList.filter((exp: any) => {
+        if (!exp.date) return false;
         const [y, m] = exp.date.split('-').map(Number);
         return y === currentYear && m === (currentMonth + 1);
     });
 
-    const totalMonthlyExpenses = currentMonthExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+    const totalMonthlyExpenses = currentMonthExpenses.reduce((sum: number, exp: any) => sum + exp.amount, 0);
 
-    const activeGoalsSIP = goals.reduce((sum, goal) => {
-        const remainingAmt = Math.max(0, goal.targetAmount - goal.currentSavings);
+    const activeGoalsSIP = goals.reduce((sum: number, goal: any) => {
+        const remainingAmt = Math.max(0, goal.targetAmount - (goal.currentSavings || 0));
         const reqSip = goal.targetMonths > 0 ? remainingAmt / goal.targetMonths : 0;
         return sum + (reqSip > 0 && remainingAmt > 0 ? reqSip : 0);
     }, 0);
 
-    const totalInvestments = fireSip + activeGoalsSIP;
+    const totalInvestments = (fireSip || 0) + activeGoalsSIP;
     const remainingBalance = monthlyIncome - totalMonthlyExpenses - totalInvestments;
 
-    // Chart Data
+    // Memoized Chart & Trend Data
     const categoryData = useMemo(() => {
-        const data = CATEGORIES.map(cat => ({
+        if (!user || !user.financialData) return [];
+        return CATEGORIES.map(cat => ({
             name: cat.name,
             value: currentMonthExpenses
-                .filter(exp => exp.category === cat.name)
-                .reduce((sum, exp) => sum + exp.amount, 0),
+                .filter((exp: any) => exp.category === cat.name)
+                .reduce((sum: number, exp: any) => sum + exp.amount, 0),
             color: cat.color
         })).filter(d => d.value > 0);
-        return data;
-    }, [currentMonthExpenses]);
+    }, [currentMonthExpenses, user]);
 
     const trendData = useMemo(() => {
-        // Mocking last 4 months for trend visual
+        if (!user || !user.financialData) return [];
         const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         const last4 = [];
         for (let i = 3; i >= 0; i--) {
             const mIdx = (currentMonth - i + 12) % 12;
             const yVal = currentMonth - i < 0 ? currentYear - 1 : currentYear;
             const total = expensesList
-                .filter(exp => {
+                .filter((exp: any) => {
+                    if (!exp.date) return false;
                     const [y, m] = exp.date.split('-').map(Number);
                     return m === (mIdx + 1) && y === yVal;
                 })
-                .reduce((sum, exp) => sum + exp.amount, 0);
+                .reduce((sum: number, exp: any) => sum + exp.amount, 0);
 
             last4.push({ name: months[mIdx], amount: total });
         }
         return last4;
-    }, [expensesList, currentMonth, currentYear]);
+    }, [expensesList, currentMonth, currentYear, user]);
 
     // Impact Logic
     const fireImpact = useMemo(() => {
-        const deficit = -remainingBalance;
-        if (deficit <= 0) return { type: 'positive', text: `You have a surplus of ${formatIndianCurrency(remainingBalance)}! Maintaining this habit helps you reach your financial goals faster.` };
-
+        if (!user || !user.financialData) return { type: 'positive', text: '' };
+        if (remainingBalance >= 0) return { type: 'positive', text: `You have a surplus of ${formatIndianCurrency(remainingBalance)}! Maintaining this habit helps you reach your financial goals faster.` };
         return { type: 'negative', text: `Overspending this month reduces your investable surplus. Try to stick to your planned budget to stay aligned with your FIRE timeline.` };
-    }, [remainingBalance]);
+    }, [remainingBalance, user]);
 
     const goalImpact = useMemo(() => {
+        if (!user || !user.financialData) return { type: 'positive', text: '' };
         if (remainingBalance >= 0) return { type: 'positive', text: "Budget health is good. Your future goals are well-supported by your current spending habits." };
         return { type: 'negative', text: "High spending may slow down your goal-specific savings. Review your non-essential categories to recover your plan." };
-    }, [remainingBalance]);
+    }, [remainingBalance, user]);
+
+    // Auth redirection
+    useEffect(() => {
+        if (loading) return;
+        if (!user) {
+            navigate('/login');
+        }
+    }, [user, loading, navigate]);
+
+    if (loading || !user || !user.financialData) {
+        return (
+            <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+                <div className="animate-spin w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full"></div>
+            </div>
+        );
+    }
 
     // Handle Actions
     const handleAddExpense = async (e: React.FormEvent) => {
@@ -171,7 +169,7 @@ export const ExpensesPage = () => {
 
     const handleDeleteExpense = async (id: string) => {
         if (!window.confirm("Delete this expense?")) return;
-        const newExpensesList = expensesList.filter(exp => exp.id !== id);
+        const newExpensesList = expensesList.filter((exp: any) => exp.id !== id);
         await updateFinancialData({ expensesList: newExpensesList });
     };
 
@@ -181,7 +179,7 @@ export const ExpensesPage = () => {
 
             <main className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 py-12">
 
-                {/* Section 4: Monthly Summary Panel */}
+                {/* Monthly Summary Panel */}
                 <div className="bg-white dark:bg-slate-800/40 rounded-[3rem] p-8 md:p-12 mb-12 shadow-2xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-700/50">
                     <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-6">
                         <SummaryCard label="Monthly Income" value={monthlyIncome} icon={Wallet} color="emerald" />
@@ -210,8 +208,6 @@ export const ExpensesPage = () => {
 
                     {/* Left Column: Input & History */}
                     <div className="lg:col-span-7 space-y-12">
-
-                        {/* Expense Input System - Refactored to prominent button + Modal */}
                         <div className="bg-white dark:bg-slate-800/40 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-700/50 shadow-lg overflow-hidden relative">
                             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                                 <div>
@@ -334,7 +330,7 @@ export const ExpensesPage = () => {
                                                         className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all dark:text-white appearance-none cursor-pointer"
                                                     >
                                                         <option value="">No specific goal</option>
-                                                        {goals.map(goal => (
+                                                        {goals.map((goal: any) => (
                                                             <option key={goal.id} value={goal.id}>{goal.name}</option>
                                                         ))}
                                                     </select>
@@ -373,16 +369,15 @@ export const ExpensesPage = () => {
                             )}
                         </AnimatePresence>
 
-                        {/* Recent History */}
                         <div className="bg-white dark:bg-slate-800/40 rounded-[3rem] p-10 border border-slate-100 dark:border-slate-700/50 shadow-xl">
                             <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-8 flex items-center gap-3">
-                                <HistoryIcon className="text-slate-400" /> Transaction Logs
+                                Transaction Logs
                             </h2>
                             <div className="space-y-4 max-h-[800px] overflow-y-auto pr-2 no-scrollbar">
                                 {expensesList.length === 0 ? (
                                     <div className="py-20 text-center opacity-30 italic font-bold">No transactions found...</div>
                                 ) : (
-                                    [...expensesList].reverse().map((exp) => (
+                                    [...expensesList].reverse().map((exp: any) => (
                                         <ExpenseRow key={exp.id} expense={exp} onDelete={() => handleDeleteExpense(exp.id)} goals={goals} />
                                     ))
                                 )}
@@ -392,25 +387,18 @@ export const ExpensesPage = () => {
 
                     {/* Right Column: Analysis & Insights */}
                     <div className="lg:col-span-5 space-y-12">
-
-                        {/* Impact Panels */}
                         <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-[3.5rem] p-10 text-white shadow-2xl relative overflow-hidden">
                             <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-[100px] pointer-events-none" />
-
                             <h2 className="text-xl font-black mb-10 flex items-center gap-3 italic">
                                 <Sparkles className="text-emerald-400" /> Spending Insights
                             </h2>
-
                             <div className="space-y-10">
-                                {/* FIRE Impact */}
                                 <div className="space-y-4">
                                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Comparison to FIRE Plan</p>
                                     <div className={`p-6 rounded-[2rem] border ${fireImpact.type === 'negative' ? 'bg-rose-500/5 border-rose-500/20' : 'bg-emerald-500/5 border-emerald-500/20'}`}>
                                         <p className="text-sm font-bold leading-relaxed">{fireImpact.text}</p>
                                     </div>
                                 </div>
-
-                                {/* Goals Impact */}
                                 <div className="space-y-4">
                                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Comparison to Goal Planner</p>
                                     <div className={`p-6 rounded-[2rem] border ${goalImpact.type === 'negative' ? 'bg-amber-500/5 border-amber-500/20' : 'bg-emerald-500/5 border-emerald-500/20'}`}>
@@ -420,7 +408,6 @@ export const ExpensesPage = () => {
                             </div>
                         </div>
 
-                        {/* Smart Suggestions */}
                         <div className="space-y-4">
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-6">Smart Insights</p>
                             <div className="grid grid-cols-1 gap-4">
@@ -431,11 +418,9 @@ export const ExpensesPage = () => {
                                 {categoryData.find(d => d.name === 'Food' && d.value > monthlyIncome * 0.2) && (
                                     <InsightCard text="Dining expenses are quite high this month (over 20% of income). Cooking at home could save you ₹2,000+." variant="info" />
                                 )}
-                                <InsightCard text="Consistency is key. Regular logging helps our AI predict your savings with 95% more accuracy." variant="info" />
                             </div>
                         </div>
 
-                        {/* Visual Analysis */}
                         <div className="bg-white dark:bg-slate-800/40 rounded-[3rem] p-8 border border-slate-100 dark:border-slate-700/50 shadow-xl">
                             <h2 className="text-xl font-black text-slate-900 dark:text-white mb-8 px-4">Spending Breakdown</h2>
                             {categoryData.length > 0 ? (
@@ -466,7 +451,6 @@ export const ExpensesPage = () => {
                             )}
                         </div>
 
-                        {/* Monthly Trends */}
                         <div className="bg-white dark:bg-slate-800/40 rounded-[3rem] p-8 border border-slate-100 dark:border-slate-700/50 shadow-xl">
                             <h2 className="text-xl font-black text-slate-900 dark:text-white mb-8 px-4">Monthly Trends</h2>
                             <div className="h-[250px]">
@@ -499,22 +483,6 @@ export const ExpensesPage = () => {
                                 </ResponsiveContainer>
                             </div>
                         </div>
-
-                        {/* Monthly Comparison */}
-                        <div className="bg-white dark:bg-slate-800/40 rounded-[3rem] p-8 border border-slate-100 dark:border-slate-700/50 shadow-xl">
-                            <h2 className="text-xl font-black text-slate-900 dark:text-white mb-8 px-4">Monthly Comparison</h2>
-                            <div className="h-[250px]">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={trendData}>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.1} />
-                                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 'bold' }} />
-                                        <YAxis hide />
-                                        <RechartsTooltip />
-                                        <Bar dataKey="amount" fill="#3b82f6" radius={[10, 10, 0, 0]} />
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </main>
@@ -522,21 +490,29 @@ export const ExpensesPage = () => {
     );
 };
 
-const SummaryCard = ({ label, value, icon: Icon, color }: any) => (
-    <div className="bg-slate-50 dark:bg-slate-900/40 p-6 rounded-[2.5rem] border border-slate-100 dark:border-slate-700/50 hover:-translate-y-1 transition-all group">
-        <div className={`p-4 rounded-2xl bg-${color}-500/10 text-${color}-500 w-fit mb-4 group-hover:scale-110 transition-transform`}>
-            <Icon size={24} />
+const SummaryCard = ({ label, value, icon: Icon, color }: any) => {
+    const colorStyles: Record<string, string> = {
+        emerald: "bg-emerald-500/10 text-emerald-500",
+        rose: "bg-rose-500/10 text-rose-500",
+        blue: "bg-blue-500/10 text-blue-500"
+    };
+
+    return (
+        <div className="bg-slate-50 dark:bg-slate-900/40 p-6 rounded-[2.5rem] border border-slate-100 dark:border-slate-700/50 hover:-translate-y-1 transition-all group">
+            <div className={`p-4 rounded-2xl ${colorStyles[color] || 'bg-slate-500/10 text-slate-500'} w-fit mb-4 group-hover:scale-110 transition-transform`}>
+                <Icon size={24} />
+            </div>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{label}</p>
+            <p className={`text-xl font-black ${color === 'rose' && value > 0 ? 'text-rose-500' : 'text-slate-900 dark:text-white'}`}>
+                {formatIndianCurrency(value)}
+            </p>
         </div>
-        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{label}</p>
-        <p className={`text-xl font-black ${color === 'rose' && value > 0 ? 'text-rose-500' : 'text-slate-900 dark:text-white'}`}>
-            {formatIndianCurrency(value)}
-        </p>
-    </div>
-);
+    );
+};
 
 const ExpenseRow = ({ expense, onDelete, goals }: any) => {
     const categoryInfo = CATEGORIES.find(c => c.name === expense.category) || CATEGORIES[8];
-    const taggedGoal = goals.find((g: any) => g.id === expense.taggedGoalId);
+    const taggedGoal = (goals || []).find((g: any) => g.id === expense.taggedGoalId);
 
     return (
         <motion.div
@@ -594,11 +570,3 @@ const InsightCard = ({ text, variant }: { text: string, variant: 'warning' | 'in
         </div>
     );
 };
-
-const HistoryIcon = ({ className }: { className?: string }) => (
-    <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-        <path d="M3 3v5h5" />
-        <path d="M12 7v5l4 2" />
-    </svg>
-);

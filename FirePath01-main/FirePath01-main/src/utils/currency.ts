@@ -1,4 +1,5 @@
-export const formatIndianCurrency = (value: number): string => {
+export const formatIndianCurrency = (value: number | undefined | null): string => {
+    if (value === undefined || value === null) return '₹0';
     if (value >= 10000000) {
         return `₹${Number((value / 10000000).toFixed(2))} Cr`;
     }

@@ -5,6 +5,7 @@ import { formatIndianCurrency } from '../utils/currency';
 import { motion } from 'framer-motion';
 import { Clock, Shield, ArrowRight, TrendingUp, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { FundIcon } from '../components/FundIcon';
+import { distributeSIPAcrossFunds, calculateFinancialAllocation } from '../utils/finance';
 
 const INPUT_QUESTIONS = [
   {
@@ -237,9 +238,7 @@ export const QuestionnairePage = () => {
     const currentSavings = answers.currentSavings ? Number(answers.currentSavings) : 0;
     const selectedFireAmount = answers.selectedFireAmount ? Number(answers.selectedFireAmount) : 0;
 
-    const surplus = Math.max(0, monthlyIncome - monthlyExpenses);
-    const splurgeMoney = surplus >= 3000 ? (surplus - 3000) * 0.15 : 0;
-    const defaultMonthlySIP = Math.max(0, surplus - splurgeMoney);
+    const { totalSIP: defaultMonthlySIP } = calculateFinancialAllocation(monthlyIncome, monthlyExpenses);
 
     const yearsToRetire = retireAge > currentAge ? retireAge - currentAge : 0;
     let timePressure = "Low";
@@ -403,9 +402,7 @@ export const QuestionnairePage = () => {
     // ── NEW: income split logic ──────────────────────────────────────
     const income = answers.monthlyIncome ? Number(answers.monthlyIncome) : 0;
     const expenses = answers.monthlyExpenses ? Number(answers.monthlyExpenses) : 0;
-    const surplus = Math.max(0, income - expenses);
-    const splurgeMoney = surplus >= 3000 ? (surplus - 3000) * 0.15 : 0;
-    const investable = Math.max(0, surplus - splurgeMoney);
+    const { surplus, splurgeMoney, totalSIP: investable, minSIPReserve } = calculateFinancialAllocation(income, expenses);
     const canInvest = investable >= 1000;
     const isDeficit = expenses > income;
 
@@ -586,53 +583,61 @@ export const QuestionnairePage = () => {
             {income > 0 ? (
               <div className="space-y-8">
                 {/* Visual stacked bar */}
-                <div className="h-6 w-full flex bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner">
+                <div className="h-6 w-full flex bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner font-black text-[8px] text-white">
                   <motion.div 
                     initial={{ width: 0 }} 
                     animate={{ width: `${(expenses / income) * 100}%` }} 
                     transition={{ delay: 0.7, duration: 1.2 }} 
-                    className="h-full bg-rose-500 group relative cursor-help" 
-                  />
-                  <motion.div 
-                    initial={{ width: 0 }} 
-                    animate={{ width: `${(splurgeMoney / income) * 100}%` }} 
-                    transition={{ delay: 0.9, duration: 1.2 }} 
-                    className="h-full bg-amber-500 group relative cursor-help border-l-2 border-slate-900/10" 
-                  />
-                  <motion.div 
-                    initial={{ width: 0 }} 
-                    animate={{ width: `${(investable / income) * 100}%` }} 
-                    transition={{ delay: 1.1, duration: 1.2 }} 
-                    className={`h-full ${canInvest ? 'bg-emerald-500' : 'bg-slate-400'} border-l-2 border-slate-900/10`} 
-                  />
+                    className="h-full bg-rose-500 group relative cursor-help flex items-center justify-center overflow-hidden" 
+                  >
+                    EXPENSES
+                  </motion.div>
+                  {splurgeMoney > 0 && (
+                    <motion.div 
+                        initial={{ width: 0 }} 
+                        animate={{ width: `${(splurgeMoney / income) * 100}%` }} 
+                        transition={{ delay: 0.9, duration: 1.2 }} 
+                        className="h-full bg-amber-500 group relative cursor-help border-l border-slate-900/10 flex items-center justify-center overflow-hidden" 
+                    >
+                        SPLURGE
+                    </motion.div>
+                  )}
+                  {investable > 0 && (
+                    <motion.div 
+                        initial={{ width: 0 }} 
+                        animate={{ width: `${(investable / income) * 100}%` }} 
+                        transition={{ delay: 1.1, duration: 1.2 }} 
+                        className={`h-full ${canInvest ? 'bg-emerald-500' : 'bg-slate-400'} border-l border-slate-900/10 flex items-center justify-center overflow-hidden`} 
+                    >
+                        INVESTMENTS
+                    </motion.div>
+                  )}
                 </div>
+                {surplus > 0 && (
+                    <p className="text-[10px] text-slate-400 font-bold mt-2 text-center">
+                        * Strategy follows a <span className="text-emerald-500">₹3,000 Minimum SIP</span> threshold for optimal diversification.
+                    </p>
+                )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                  <div className="flex flex-col">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-3 h-3 rounded-full bg-rose-500" />
-                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Fixed Expenses</span>
-                    </div>
-                    <p className="text-lg font-black text-slate-900 dark:text-white">₹{expenses.toLocaleString('en-IN')}</p>
-                    <p className="text-[10px] font-bold text-slate-400">{Math.round((expenses / income) * 100)}% of Salary</p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="flex flex-col p-4 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">
+                    <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 mb-1">Step 1: Surplus</span>
+                    <p className="text-sm font-black text-slate-900 dark:text-white">₹{surplus.toLocaleString('en-IN')}</p>
                   </div>
                   
-                  <div className="flex flex-col">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-3 h-3 rounded-full bg-amber-500" />
-                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Splurge Buffer</span>
-                    </div>
-                    <p className="text-lg font-black text-slate-900 dark:text-white">₹{splurgeMoney.toLocaleString('en-IN')}</p>
-                    <p className="text-[10px] font-bold text-slate-400">Fixed 15% Allocation</p>
+                  <div className="flex flex-col p-4 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">
+                    <span className="text-[8px] font-black uppercase tracking-widest text-emerald-500 mb-1">Step 2: SIP Base</span>
+                    <p className="text-sm font-black text-emerald-600">₹{minSIPReserve.toLocaleString('en-IN')}</p>
                   </div>
 
-                  <div className="flex flex-col">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-3 h-3 rounded-full bg-emerald-500" />
-                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Investable SIP</span>
-                    </div>
-                    <p className="text-xl font-black text-emerald-500">₹{investable.toLocaleString('en-IN')}</p>
-                    <p className="text-[10px] font-bold text-emerald-500/60 font-black italic">Remaining Surplus</p>
+                  <div className="flex flex-col p-4 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">
+                    <span className="text-[8px] font-black uppercase tracking-widest text-amber-500 mb-1">Step 3: Splurge (15%)</span>
+                    <p className="text-sm font-black text-amber-600">₹{splurgeMoney.toLocaleString('en-IN')}</p>
+                  </div>
+
+                  <div className="flex flex-col p-4 bg-emerald-500 text-white rounded-2xl shadow-lg border border-emerald-400">
+                    <span className="text-[8px] font-black uppercase tracking-widest text-emerald-100 mb-1">Step 4: Total SIP</span>
+                    <p className="text-sm font-black italic">₹{investable.toLocaleString('en-IN')}</p>
                   </div>
                 </div>
 
@@ -646,7 +651,7 @@ export const QuestionnairePage = () => {
                   <div className="text-sm font-bold leading-relaxed">
                     {canInvest ? (
                       <>
-                        System identifies <strong>₹{investable.toLocaleString('en-IN')}/month</strong> available for strategic deployment. This covers <strong>{Math.floor(investable / 1000)}</strong> diversified funds.
+                        System identifies <strong>₹{investable.toLocaleString('en-IN')}/month</strong> available for strategic deployment. Baskets now follow the <strong>₹3,000 Minimum Floor</strong> rule.
                       </>
                     ) : (
                       <>
@@ -796,12 +801,8 @@ export const QuestionnairePage = () => {
     // ── Compute investable from actual income - expenses ──────────────
     const income = answers.monthlyIncome ? Number(answers.monthlyIncome) : 0;
     const expenses = answers.monthlyExpenses ? Number(answers.monthlyExpenses) : 0;
-    const surplus = Math.max(0, income - expenses);
+    const { surplus, splurgeMoney, totalSIP: investable } = calculateFinancialAllocation(income, expenses);
     const isLowSavings = surplus < 3000;
-    
-    // In low-savings, splurge is 0, SIP is full surplus
-    const splurgeMoney = surplus >= 3000 ? (surplus - 3000) * 0.15 : 0;
-    const investable = Math.max(0, surplus - splurgeMoney);
     const MIN_FUND = 1000; // minimum ₹1,000 per fund
 
     const a = {
@@ -882,22 +883,26 @@ export const QuestionnairePage = () => {
       if (category === 'LOW RISK') {
         return [
           {
-            title: "Basket 1 (Conservative)",
+            title: "Low Risk Basket",
+            description: "Stable returns with minimal volatility",
             funds: [{ name: "ICICI Prudential Corporate Bond Fund", split: 100 }]
           },
           {
-            title: "Basket 2 (Balanced)",
+            title: "Safety First Basket",
+            description: "Focus on capital preservation",
             funds: [{ name: "HDFC Corporate Bond Fund", split: 100 }]
           },
           {
-            title: "Basket 3 (Growth)",
+            title: "Income Focus Basket",
+            description: "Fixed income orientation",
             funds: [{ name: "Kotak Corporate Bond Fund", split: 100 }]
           }
         ];
       } else if (category === 'HIGH RISK') {
         return [
           {
-            title: "Basket 1 (Aggressive Focus)",
+            title: "High Risk Basket",
+            description: "Maximised growth with higher volatility",
             funds: [
               { name: "SBI Focused Equity Fund", split: 40 },
               { name: "Nippon India Small Cap Fund", split: 35 },
@@ -905,7 +910,8 @@ export const QuestionnairePage = () => {
             ]
           },
           {
-            title: "Basket 2 (Dynamic High Risk)",
+            title: "Aggressive Opportunity",
+            description: "Dynamic selection of high-potential funds",
             funds: [
               { name: "ICICI Prudential Focused Equity Fund", split: 40 },
               { name: "SBI Small Cap Fund", split: 35 },
@@ -913,7 +919,8 @@ export const QuestionnairePage = () => {
             ]
           },
           {
-            title: "Basket 3 (Steady Aggressive)",
+            title: "Wealth Builder Basket",
+            description: "Consistent compounding over long horizons",
             funds: [
               { name: "HDFC Focused Fund", split: 40 },
               { name: "Kotak Small Cap Fund", split: 35 },
@@ -925,7 +932,8 @@ export const QuestionnairePage = () => {
         // MEDIUM RISK
         return [
           {
-            title: "Basket 1 (Core Growth)",
+            title: "Medium Risk Basket",
+            description: "Balanced growth with moderate risk",
             funds: [
               { name: "UTI Nifty 50 Index Fund", split: 50 },
               { name: "Parag Parikh Flexi Cap Fund", split: 30 },
@@ -933,7 +941,8 @@ export const QuestionnairePage = () => {
             ]
           },
           {
-            title: "Basket 2 (Balanced Mix)",
+            title: "Balanced Growth Basket",
+            description: "Diversified across equity and gold",
             funds: [
               { name: "ICICI Prudential Nifty 50 Index Fund", split: 50 },
               { name: "HDFC Flexi Cap Fund", split: 30 },
@@ -941,7 +950,8 @@ export const QuestionnairePage = () => {
             ]
           },
           {
-            title: "Basket 3 (Steady Medium)",
+            title: "Prudent Growth Basket",
+            description: "Standard risk-adjusted return profile",
             funds: [
               { name: "HDFC Nifty 50 Index Fund", split: 50 },
               { name: "Kotak Flexicap Fund", split: 30 },
@@ -1008,11 +1018,26 @@ export const QuestionnairePage = () => {
           <div className="space-y-6 lg:col-span-1 border-b pb-8 lg:pb-0 lg:border-b-0 lg:border-r border-gray-700/50 lg:pr-6">
             <div className="p-6 bg-gradient-to-br from-emerald-900/60 to-gray-900 rounded-2xl border border-emerald-500/30 shadow-xl overflow-hidden relative group transition-all duration-300 hover:shadow-[0_0_30px_rgba(16,185,129,0.2)]">
               <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl transform translate-x-10 -translate-y-10 pointer-events-none transition-transform duration-700 group-hover:scale-150" />
-              <h3 className="text-2xl font-bold text-emerald-400 mb-3 drop-shadow-sm relative z-10 flex items-center gap-3">
+              <h3 className="text-2xl font-bold text-emerald-400 mb-2 drop-shadow-sm relative z-10 flex items-center gap-3">
                 <span>{displayCategory === 'LOW RISK' ? '🛡️' : displayCategory === 'MEDIUM RISK' ? '⚖️' : '🚀'}</span>
                 {finalStrategy}
               </h3>
-              <p className="text-gray-300 text-sm leading-relaxed relative z-10">{description}</p>
+              <p className="text-gray-300 text-xs leading-relaxed relative z-10 mb-4">{description}</p>
+              
+              <div className="space-y-2 relative z-10 pt-4 border-t border-gray-700/50">
+                <div className="flex justify-between text-[10px] font-bold">
+                    <span className="text-gray-500 uppercase">Monthly Surplus</span>
+                    <span className="text-white">₹{surplus.toLocaleString('en-IN')}</span>
+                </div>
+                <div className="flex justify-between text-[10px] font-bold">
+                    <span className="text-gray-500 uppercase text-rose-400">Splurge (15%)</span>
+                    <span className="text-rose-400">-₹{splurgeMoney.toLocaleString('en-IN')}</span>
+                </div>
+                <div className="flex justify-between text-[10px] font-black border-t border-gray-700/50 pt-2">
+                    <span className="text-emerald-400 uppercase">Target SIP</span>
+                    <span className="text-emerald-400">₹{investable.toLocaleString('en-IN')}</span>
+                </div>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -1125,12 +1150,10 @@ export const QuestionnairePage = () => {
                   </h4>
 
                   <ul className="flex-1 space-y-4 mb-8 relative z-10">
-                    {basket.funds.map((fundObj, fIdx) => {
+                    {distributeSIPAcrossFunds(investable, basket.funds).map((fundObj, fIdx) => {
                       const fund = fundObj.name;
                       const split = fundObj.split;
-                      const perFund = investable > 0
-                        ? Math.floor(investable * (split / 100))
-                        : 0;
+                      const perFund = fundObj.amount;
                       const isViable = perFund >= MIN_FUND;
                       return (
                         <li key={fIdx} className="text-xs text-gray-200 flex flex-col items-start gap-2 bg-gray-800/40 p-3 rounded-lg border border-gray-700/30">

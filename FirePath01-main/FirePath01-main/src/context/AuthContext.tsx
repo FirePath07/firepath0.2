@@ -53,6 +53,7 @@ export interface UserFinancialData {
     targetMonths: number;
     category: string;
     createdAt: string;
+    isActive: boolean;
   }>;
 }
 

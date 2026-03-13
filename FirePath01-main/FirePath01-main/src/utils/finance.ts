@@ -71,3 +71,85 @@ export const calculateFIREMetrics = (financialData: UserFinancialData) => {
     expectedReturnRate
   };
 };
+
+export const calculateFinancialAllocation = (income: number, expenses: number) => {
+    const surplus = Math.max(0, income - expenses);
+    const minSIPReserve = 3000;
+    
+    let splurgeMoney = 0;
+    if (surplus > minSIPReserve) {
+        splurgeMoney = (surplus - minSIPReserve) * 0.15;
+    }
+    
+    const totalSIP = Math.max(0, surplus - splurgeMoney);
+    
+    return {
+        surplus,
+        splurgeMoney,
+        totalSIP,
+        minSIPReserve: surplus > 0 ? Math.min(surplus, minSIPReserve) : 0
+    };
+};
+
+export const distributeSIPAcrossFunds = (totalSIP: number, funds: { name: string; split: number }[]) => {
+    if (totalSIP === 0) {
+        return funds.map(f => ({ ...f, amount: 0 }));
+    }
+
+    const fundCount = funds.length;
+    const minPerFund = 1000;
+
+    // RULE: If total SIP is close to or equal to ₹3,000, split evenly
+    if (totalSIP <= (fundCount * minPerFund) + 100) { // +100 to handle "close to"
+        const evenAmount = Math.floor(totalSIP / fundCount);
+        const distributed = funds.map((f, i) => ({
+            ...f,
+            amount: i === 0 ? evenAmount + (totalSIP - evenAmount * fundCount) : evenAmount
+        }));
+        return distributed;
+    }
+
+    // Normal SIP Distribution (Above ₹3,000)
+    let amounts = funds.map(f => Math.floor(totalSIP * (f.split / 100)));
+    
+    // Adjust for minimum ₹1,000 rule
+    let needsAdjustment = amounts.some(a => a < minPerFund);
+    
+    if (needsAdjustment) {
+        // Set all to at least 1000
+        amounts = amounts.map(a => Math.max(a, minPerFund));
+        let currentTotal = amounts.reduce((a, b) => a + b, 0);
+        
+        if (currentTotal > totalSIP) {
+            let overflow = currentTotal - totalSIP;
+            // Reduce from funds that are > 1000
+            while (overflow > 0) {
+                let maxVal = Math.max(...amounts);
+                let maxIdx = amounts.indexOf(maxVal);
+                if (maxVal > minPerFund) {
+                    let reduction = Math.min(overflow, maxVal - minPerFund);
+                    amounts[maxIdx] -= reduction;
+                    overflow -= reduction;
+                } else {
+                    break;
+                }
+            }
+        } else if (currentTotal < totalSIP) {
+            let remainder = totalSIP - currentTotal;
+            let maxSplit = Math.max(...funds.map(f => f.split));
+            let maxIdx = funds.findIndex(f => f.split === maxSplit);
+            amounts[maxIdx] += remainder;
+        }
+    } else {
+        let currentTotal = amounts.reduce((a, b) => a + b, 0);
+        let remainder = totalSIP - currentTotal;
+        let maxSplit = Math.max(...funds.map(f => f.split));
+        let maxIdx = funds.findIndex(f => f.split === maxSplit);
+        amounts[maxIdx] += remainder;
+    }
+
+    return funds.map((f, i) => ({
+        ...f,
+        amount: amounts[i]
+    }));
+};

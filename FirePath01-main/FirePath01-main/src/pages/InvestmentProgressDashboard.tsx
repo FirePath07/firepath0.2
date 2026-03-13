@@ -11,7 +11,7 @@ import {
     PieChart, Pie, Cell, Legend
 } from 'recharts';
 import { TrendingUp, Plus, Wallet, Briefcase, RefreshCcw, Landmark, CheckCircle2, Award, AlertTriangle } from 'lucide-react';
-import { calculateFIREMetrics } from '../utils/finance';
+import { calculateFIREMetrics, calculateFinancialAllocation, distributeSIPAcrossFunds } from '../utils/finance';
 
 const COLORS = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ec4899', '#64748b'];
 
@@ -217,20 +217,21 @@ export const InvestmentProgressDashboard = () => {
         // 1. Update Portfolio (FIRE Corpus)
         const newPortfolio = [...portfolio];
         if (fireInvestAmount > 0) {
-            basket.funds.forEach(fund => {
-                const fundAmount = (fireInvestAmount * fund.split) / 100;
+            const distributedFunds = distributeSIPAcrossFunds(fireInvestAmount, basket.funds);
+            distributedFunds.forEach(fund => {
+                if (fund.amount <= 0) return;
                 const nav = navPrices[fund.name] || getBaseNav(fund.name);
-                const unitsBought = fundAmount / nav;
+                const unitsBought = fund.amount / nav;
 
                 const existingIndex = newPortfolio.findIndex(p => p.fundName === fund.name);
                 if (existingIndex >= 0) {
                     newPortfolio[existingIndex].units += unitsBought;
-                    newPortfolio[existingIndex].totalInvested += fundAmount;
+                    newPortfolio[existingIndex].totalInvested += fund.amount;
                 } else {
                     newPortfolio.push({
                         fundName: fund.name,
                         units: unitsBought,
-                        totalInvested: fundAmount,
+                        totalInvested: fund.amount,
                         navAtPurchase: nav
                     });
                 }
@@ -290,13 +291,13 @@ export const InvestmentProgressDashboard = () => {
         const salary = Number(newSalary) || financialData.monthlyIncome;
         const expenses = newExpenses ? Number(newExpenses) : financialData.monthlyExpenses;
 
-        const surplus = Math.max(0, salary - expenses);
-        const splurge = surplus >= 3000 ? (surplus - 3000) * 0.15 : 0;
-        const investable = Math.max(0, surplus - splurge);
+        const { totalSIP: investable } = calculateFinancialAllocation(salary, expenses);
 
         // Recalculate FIRE Number (Inflated 25x Rule)
         const inflationRate = (financialData.inflationRate || 6) / 100;
         const yearsToInvest = Math.max(0, (financialData.targetRetirementAge || 60) - (financialData.age || 25));
+        
+        // Correctly calculate based on NEW expenses
         const futureAnnualExpenses = (expenses * 12) * Math.pow(1 + inflationRate, yearsToInvest);
         const newFireNumber = futureAnnualExpenses * 25;
 
@@ -304,7 +305,7 @@ export const InvestmentProgressDashboard = () => {
             monthlyIncome: salary,
             monthlyExpenses: expenses,
             defaultMonthlySIP: investable,
-            selectedFireAmount: newFireNumber // Update the target corpus to reflect new expenses
+            selectedFireAmount: newFireNumber
         });
 
         setRecommendedSip(investable);
@@ -602,11 +603,14 @@ export const InvestmentProgressDashboard = () => {
                             {((financialData.defaultMonthlySIP || 0) + (Number(bonusAmount) || 0)) > 0 && basket && (
                                 <div className="mb-6 bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-xl border border-emerald-100 dark:border-emerald-800/30">
                                     <p className="text-xs font-bold uppercase text-emerald-800 dark:text-emerald-400 mb-3 tracking-wider">Preview Allocation</p>
-                                    <div className="space-y-2">
-                                        {basket.funds.map(f => (
-                                            <div key={f.name} className="flex justify-between text-sm">
-                                                <span className="text-gray-700 dark:text-gray-300 truncate pr-4">{f.name}</span>
-                                                <span className="font-bold text-gray-900 dark:text-white">{formatIndianCurrency((((financialData.defaultMonthlySIP || 0) + (Number(bonusAmount) || 0)) * f.split) / 100)}</span>
+                                    <div className="space-y-4">
+                                        {distributeSIPAcrossFunds(((financialData.defaultMonthlySIP || 0) + (Number(bonusAmount) || 0)), basket.funds).map(f => (
+                                            <div key={f.name} className="flex justify-between items-center text-sm">
+                                                <div className="flex flex-col">
+                                                    <span className="text-gray-700 dark:text-gray-300 font-bold truncate pr-4">{f.name}</span>
+                                                    <span className="text-[10px] text-gray-500">{f.split}% Recommended Split</span>
+                                                </div>
+                                                <span className="font-black text-gray-900 dark:text-white">{formatIndianCurrency(f.amount)}</span>
                                             </div>
                                         ))}
                                     </div>

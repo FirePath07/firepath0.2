@@ -6,6 +6,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, AreaChart, Area, XAx
 import { Target, ShieldCheck, HeartPulse, Shield, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { formatIndianCurrency } from '../utils/currency';
 import { FundIcon } from '../components/FundIcon';
+import { calculateFinancialAllocation, distributeSIPAcrossFunds } from '../utils/finance';
 
 // Mapping strategy to its profile
 const strategyData: Record<string, any> = {
@@ -100,40 +101,40 @@ export const StrategyExplanationPage = () => {
     const currentSavings = financialData.currentSavings || 0;
     const netInvestedSavings = currentSavings; // No insurance deduction
 
-    // Monthly investable surplus = income minus expenses minus splurge money
-    const monthlyExpenses = financialData.monthlyExpenses || 0;
-    const splurgeMoney = income * 0.15;
-    const monthlyInvestableSurplus = Math.max(0, income - monthlyExpenses - splurgeMoney);
-
-    // All of investor's monthly surplus flows into funds
-    const investmentBudget = monthlyInvestableSurplus;
-    const expensesBudget = monthlyExpenses;
-
     const stratName = financialData.riskProfile || "Balanced Growth Strategy";
     const activeStrategy = strategyData[stratName] || strategyData["Balanced Growth Strategy"];
 
+    const monthlyExpenses = financialData.monthlyExpenses || 0;
+    const { splurgeMoney, totalSIP: investmentBudget } = calculateFinancialAllocation(income, monthlyExpenses);
+    const expensesBudget = monthlyExpenses;
+
+    const distributedFunds = distributeSIPAcrossFunds(investmentBudget, activeStrategy.baskets[0].funds);
+
     const incomeBreakdown = [
-        ...activeStrategy.baskets[0].funds.map((f: any) => ({
-            name: f.name,
-            amount: (investmentBudget * f.split) / 100,
-            percentage: income > 0 ? ((investmentBudget * f.split) / 100 / income) * 100 : 0,
-            isFund: true
-        })),
         {
             name: "Monthly Expenses",
             amount: expensesBudget,
             percentage: income > 0 ? (expensesBudget / income) * 100 : 0,
-            isFund: false
+            color: '#f43f5e', // rose-500
+            icon: '🏠'
         },
         {
             name: "Splurge Money",
             amount: splurgeMoney,
             percentage: income > 0 ? (splurgeMoney / income) * 100 : 0,
-            isFund: false
+            color: '#f59e0b', // amber-500
+            icon: '🍿'
+        },
+        {
+            name: "Total Investments",
+            amount: investmentBudget,
+            percentage: income > 0 ? (investmentBudget / income) * 100 : 0,
+            color: '#10b981', // emerald-500
+            icon: '💰'
         }
     ].filter(i => i.percentage > 0);
 
-    const COLORS = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ec4899', '#64748b'];
+    const CHART_COLORS = incomeBreakdown.map(i => i.color);
 
     // Calculate Projection Chart — uses netInvestedSavings as starting base (excludes insurance corpus)
     const generateProjection = () => {
@@ -304,7 +305,7 @@ export const StrategyExplanationPage = () => {
                                         isAnimationActive={hasMounted}
                                     >
                                         {incomeBreakdown.map((_entry: any, index: number) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                            <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                                         ))}
                                     </Pie>
                                     <Tooltip
@@ -317,23 +318,26 @@ export const StrategyExplanationPage = () => {
 
                         <div className="space-y-5">
                             {incomeBreakdown.map((item, idx) => (
-                                <div key={idx} className="bg-gray-900/40 p-4 rounded-xl border border-gray-700/50 relative overflow-hidden">
+                                <div key={idx} className="bg-gray-900/40 p-5 rounded-2xl border border-gray-700/50 relative overflow-hidden group hover:border-emerald-500/20 transition-all duration-300">
                                     <div className="flex justify-between items-center mb-3">
-                                        <span className={`font-semibold ${item.isFund ? 'text-emerald-400' : 'text-gray-300'}`}>{item.name}</span>
-                                        <span className="font-bold text-white">{formatIndianCurrency(item.amount)}</span>
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-xl">{(item as any).icon}</span>
+                                            <span className="font-bold text-gray-200 tracking-tight">{item.name}</span>
+                                        </div>
+                                        <span className="font-black text-white text-lg">{formatIndianCurrency(item.amount)}</span>
                                     </div>
                                     <div className="flex items-center gap-3">
-                                        <div className="w-full bg-gray-800 rounded-full h-2 overflow-hidden">
+                                        <div className="w-full bg-gray-800 rounded-full h-2.5 overflow-hidden shadow-inner">
                                             <motion.div
                                                 initial={{ width: 0 }}
                                                 whileInView={{ width: `${item.percentage}%` }}
                                                 transition={{ duration: 1.5, ease: "easeOut" }}
                                                 viewport={{ once: true }}
-                                                className="h-full rounded-full"
-                                                style={{ backgroundColor: COLORS[idx % COLORS.length] }}
+                                                className="h-full rounded-full shadow-[0_0_10px_rgba(0,0,0,0.5)]"
+                                                style={{ backgroundColor: (item as any).color }}
                                             />
                                         </div>
-                                        <span className="text-xs font-bold text-gray-400 min-w-[40px] text-right">{item.percentage.toFixed(1)}%</span>
+                                        <span className="text-xs font-black text-gray-400 min-w-[45px] text-right">{item.percentage.toFixed(1)}%</span>
                                     </div>
                                 </div>
                             ))}
@@ -361,8 +365,8 @@ export const StrategyExplanationPage = () => {
                                 </div>
 
                                 <div className="space-y-6 relative z-10">
-                                    {basket.funds.map((fund: any, fIdx: number) => {
-                                        const fundAmount = (investmentBudget * fund.split) / 100;
+                                    {distributedFunds.map((fund: any, fIdx: number) => {
+                                        const fundAmount = fund.amount;
                                         return (
                                             <div key={fIdx} className="bg-gray-800/80 border border-gray-700/50 rounded-2xl p-5 hover:bg-gray-800 transition duration-300">
                                                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
@@ -383,14 +387,14 @@ export const StrategyExplanationPage = () => {
                                                     <div className="flex-1 mr-6 relative h-3 bg-gray-900 rounded-full overflow-hidden shadow-inner">
                                                         <motion.div
                                                             initial={{ width: 0 }}
-                                                            whileInView={{ width: `${fund.split}%` }}
+                                                            whileInView={{ width: `${(fund.amount / (investmentBudget || 1)) * 100}%` }}
                                                             transition={{ duration: 1.5, delay: 0.1 * fIdx, ease: "easeOut" }}
                                                             viewport={{ once: true }}
                                                             className={`absolute top-0 left-0 h-full rounded-full ${getRiskColorClass(fund.risk)}`}
                                                         />
                                                     </div>
                                                     <span className="text-sm font-black text-gray-300 bg-gray-900 px-3 py-1 rounded-lg border border-gray-700 shadow-inner">
-                                                        {fund.split}%
+                                                        {investmentBudget > 0 ? Math.round((fund.amount / investmentBudget) * 100) : 0}%
                                                     </span>
                                                 </div>
                                             </div>

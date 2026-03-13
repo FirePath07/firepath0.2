@@ -4,8 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import { Navigation } from '../components/Navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatIndianCurrency } from '../utils/currency';
+import { calculateFIREMetrics } from '../utils/finance';
 import confetti from 'canvas-confetti';
-import { Target, Plus, Car, Laptop, Plane, AlertTriangle, CheckCircle2, Goal, X, Trash2, TrendingUp } from 'lucide-react';
+import { Target, Plus, Car, Plane, AlertTriangle, CheckCircle2, Goal, X, Trash2, TrendingUp, Home, Bike, Flame, AlertCircle, ChevronUp, ChevronDown, Clock } from 'lucide-react';
 
 export const FutureGoalsDashboard = () => {
     const { user, loading, updateFinancialData } = useAuth();
@@ -26,7 +27,7 @@ export const FutureGoalsDashboard = () => {
     const [goalTarget, setGoalTarget] = useState('');
     const [goalSavings, setGoalSavings] = useState('');
     const [goalTimeline, setGoalTimeline] = useState(''); // in years
-    const [goalCategory, setGoalCategory] = useState('Other');
+    const [goalCategory, setGoalCategory] = useState('Travel');
     
     // Add Savings Form State
     const [addAmount, setAddAmount] = useState('');
@@ -54,6 +55,7 @@ export const FutureGoalsDashboard = () => {
     const fireSip = financialData.defaultMonthlySIP || 0;
 
     const totalGoalsSip = goals.reduce((sum, goal) => {
+        if (!goal.isActive) return sum;
         const remAmt = Math.max(0, goal.targetAmount - goal.currentSavings);
         const reqSip = goal.targetMonths > 0 ? remAmt / goal.targetMonths : 0;
         return sum + (reqSip > 0 && remAmt > 0 ? reqSip : 0);
@@ -69,6 +71,11 @@ export const FutureGoalsDashboard = () => {
         const targetMonths = targetYears * 12;
         const targetAmount = Number(goalTarget);
         const currentSavings = Number(goalSavings) || 0;
+
+        const remainingAmt = Math.max(0, targetAmount - currentSavings);
+        const newGoalSip = targetMonths > 0 ? remainingAmt / targetMonths : 0;
+        const available = monthlySurplus - fireSip - totalGoalsSip;
+        const infeasible = newGoalSip > available && newGoalSip > 0;
         
         if (isEditMode && selectedGoalId) {
             const updatedGoals = goals.map(g => {
@@ -79,7 +86,8 @@ export const FutureGoalsDashboard = () => {
                         targetAmount,
                         currentSavings,
                         targetMonths,
-                        category: goalCategory
+                        category: goalCategory,
+                        isActive: g.isActive && !infeasible // Deactivate if edited to be infeasible
                     };
                 }
                 return g;
@@ -95,27 +103,28 @@ export const FutureGoalsDashboard = () => {
                 currentSavings,
                 targetMonths,
                 category: goalCategory,
-                createdAt: new Date().toISOString()
+                createdAt: new Date().toISOString(),
+                isActive: !infeasible
             };
 
             const updatedGoals = [...goals, newGoal];
             await updateFinancialData({ goals: updatedGoals });
             
-            const remainingAmt = Math.max(0, targetAmount - currentSavings);
-            const newGoalSip = targetMonths > 0 ? remainingAmt / targetMonths : 0;
-            
-            const activeGoalsSIP = goals.reduce((sum, goal) => {
-                const remAmt = Math.max(0, goal.targetAmount - goal.currentSavings);
-                const reqSip = goal.targetMonths > 0 ? remAmt / goal.targetMonths : 0;
-                return sum + (reqSip > 0 && remAmt > 0 ? reqSip : 0);
-            }, 0);
-            
-            const investmentSip = financialData.defaultMonthlySIP || 0;
-            const oldOverall = investmentSip + activeGoalsSIP;
-            const newOverall = oldOverall + newGoalSip;
+            if (!infeasible) {
+                const investmentSip = financialData.defaultMonthlySIP || 0;
+                const activeGoalsSIP = goals.reduce((sum, goal) => {
+                    if (!goal.isActive) return sum;
+                    const remAmt = Math.max(0, goal.targetAmount - goal.currentSavings);
+                    const reqSip = goal.targetMonths > 0 ? remAmt / goal.targetMonths : 0;
+                    return sum + (reqSip > 0 && remAmt > 0 ? reqSip : 0);
+                }, 0);
+                
+                const oldOverall = investmentSip + activeGoalsSIP;
+                const newOverall = oldOverall + newGoalSip;
 
-            setSipPopupData({ oldSip: oldOverall, newSip: newOverall, goalSip: newGoalSip, goalName: goalName });
-            setIsSipPopupOpen(true);
+                setSipPopupData({ oldSip: oldOverall, newSip: newOverall, goalSip: newGoalSip, goalName: goalName });
+                setIsSipPopupOpen(true);
+            }
         }
         
         setGoalName('');
@@ -180,9 +189,11 @@ export const FutureGoalsDashboard = () => {
     
     const getCategoryIcon = (cat: string) => {
         switch (cat) {
-            case 'Vehicle': return <Car className="w-6 h-6" />;
-            case 'Electronics': return <Laptop className="w-6 h-6" />;
+            case 'Car': return <Car className="w-6 h-6" />;
+            case 'Bike': return <Bike className="w-6 h-6" />;
+            case 'House': return <Home className="w-6 h-6" />;
             case 'Travel': return <Plane className="w-6 h-6" />;
+            case 'Emergency Fund': return <AlertCircle className="w-6 h-6" />;
             default: return <Goal className="w-6 h-6" />;
         }
     };
@@ -198,15 +209,9 @@ export const FutureGoalsDashboard = () => {
                     <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none"></div>
                     <div className="relative z-10">
                         <h1 className="text-5xl font-black text-gray-900 dark:text-white mb-3 tracking-tighter italic">Future <span className="text-emerald-500">Goals</span></h1>
-                        <div className="flex flex-wrap gap-4 items-center">
-                            <p className="text-gray-500 dark:text-gray-400 font-bold max-w-xl">
-                                Separate your dreams from your retirement. Track big purchases without risking your FIRE path.
-                            </p>
-                            <div className="px-5 py-2 bg-gray-100 dark:bg-gray-700/50 rounded-2xl border border-gray-200 dark:border-gray-600">
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Available Surplus</p>
-                                <p className="text-lg font-black text-gray-900 dark:text-white">{formatIndianCurrency(monthlySurplus)} <span className="text-[10px] text-gray-400">/mo</span></p>
-                            </div>
-                        </div>
+                        <p className="text-gray-500 dark:text-gray-400 font-bold max-w-xl">
+                            Separate your dreams from your retirement. Track big purchases without risking your FIRE path.
+                        </p>
                     </div>
                     <button
                         onClick={() => { setIsEditMode(false); setGoalName(''); setGoalTarget(''); setGoalSavings(''); setGoalTimeline(''); setGoalCategory('Other'); setIsAddGoalOpen(true); }}
@@ -217,184 +222,215 @@ export const FutureGoalsDashboard = () => {
                     </button>
                 </div>
 
-                {/* Extreme Warning System */}
-                {isLudicrous && (
-                    <motion.div 
-                        initial={{ y: 20, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        className="mb-12 p-8 bg-rose-500 text-white rounded-[3rem] shadow-2xl shadow-rose-500/40 relative overflow-hidden"
-                    >
-                        <div className="absolute right-0 bottom-0 opacity-10 -mr-10 -mb-10">
-                            <AlertTriangle size={200} />
-                        </div>
-                        <div className="flex flex-col md:flex-row items-center gap-8 relative z-10">
-                            <div className="w-20 h-20 bg-white/20 backdrop-blur-md rounded-3xl flex items-center justify-center shrink-0 animate-pulse">
-                                <AlertTriangle size={40} className="text-white" />
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                    {/* Sidebar: Metrics */}
+                    <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-24">
+                        <div className="bg-white dark:bg-gray-800 p-8 rounded-[2.5rem] shadow-xl border border-gray-100 dark:border-gray-700 relative overflow-hidden group hover:shadow-2xl transition-all duration-500">
+                            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:rotate-12 transition-transform">
+                                <Flame className="w-16 h-16 text-emerald-500" />
                             </div>
-                            <div>
-                                <h2 className="text-3xl font-black uppercase tracking-tighter mb-2 italic">⚠️ Plan Feasibility: CRITICAL</h2>
-                                <p className="text-rose-100 font-bold text-lg leading-relaxed max-w-3xl">
-                                    Your total monthly commitment <span className="text-white bg-black/20 px-2 rounded-lg">{formatIndianCurrency(totalGoalsSip + fireSip)}</span> exceeds your surplus <span className="text-white bg-black/20 px-2 rounded-lg">{formatIndianCurrency(monthlySurplus)}</span>. 
-                                    This plan is mathematically impossible and will eat into your essential expenses or debt. Delay some goals or increase income immediately!
-                                </p>
-                                <div className="mt-6 flex flex-wrap gap-3">
-                                    <div className="px-4 py-2 bg-white/20 rounded-full text-xs font-black uppercase tracking-widest">FIRE Requirement: {formatIndianCurrency(fireSip)}</div>
-                                    <div className="px-4 py-2 bg-white/20 rounded-full text-xs font-black uppercase tracking-widest">Goals Requirement: {formatIndianCurrency(totalGoalsSip)}</div>
-                                    <div className="px-4 py-2 bg-black/20 rounded-full text-xs font-black uppercase tracking-widest text-rose-200">Allocation: {totalBurnRate.toFixed(0)}% of Surplus</div>
+                            <div className="relative z-10">
+                                <p className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-4">FIRE Readiness</p>
+                                <div className="flex items-baseline gap-2 mb-4">
+                                    <span className="text-6xl font-black text-gray-900 dark:text-white tracking-tighter">
+                                        {Math.min(100, (calculateFIREMetrics(financialData).currentTotalWealth / (calculateFIREMetrics(financialData).fireNumber || 1)) * 100).toFixed(1)}
+                                    </span>
+                                    <span className="text-2xl font-bold text-gray-400">%</span>
+                                </div>
+                                <div className="h-3 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden shadow-inner">
+                                    <motion.div 
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${Math.min(100, (calculateFIREMetrics(financialData).currentTotalWealth / (calculateFIREMetrics(financialData).fireNumber || 1)) * 100)}%` }}
+                                        className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.4)]"
+                                    />
+                                </div>
+                                <p className="text-[10px] font-bold text-gray-400 mt-4 uppercase tracking-tighter italic">Tracked vs Target Corpus</p>
+                            </div>
+                        </div>
+
+                        <div className="bg-white dark:bg-gray-800 p-8 rounded-[2.5rem] shadow-xl border border-gray-100 dark:border-gray-700 relative overflow-hidden group hover:shadow-2xl transition-all duration-500">
+                           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:rotate-12 transition-transform">
+                                <Clock className="w-16 h-16 text-blue-500" />
+                            </div>
+                            <div className="relative z-10">
+                                <p className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-4">Time to FIRE</p>
+                                <div className="flex items-baseline gap-2 mb-2">
+                                    <span className="text-6xl font-black text-gray-900 dark:text-white tracking-tighter">
+                                        {calculateFIREMetrics(financialData).yearsToFire === Infinity ? '∞' : calculateFIREMetrics(financialData).yearsToFire.toFixed(1)}
+                                    </span>
+                                    <span className="text-2xl font-bold text-gray-400 mr-2">Years</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-[10px] font-bold text-gray-500 dark:text-gray-400 mt-4 uppercase tracking-tighter">
+                                    <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
+                                    Dynamic Projection
                                 </div>
                             </div>
                         </div>
-                    </motion.div>
-                )}
+                    </div>
 
-                {/* Goals List */}
-                {goals.length === 0 ? (
-                    <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-16 text-center border border-gray-100 dark:border-gray-700">
-                        <div className="inline-flex items-center justify-center p-6 bg-emerald-50 dark:bg-emerald-900/30 rounded-full mb-6">
-                            <Target className="w-12 h-12 text-emerald-600 dark:text-emerald-400" />
+                    <div className="lg:col-span-8 space-y-8">
+                        {/* Extreme Warning System */}
+                        {isLudicrous && (
+                            <motion.div 
+                                initial={{ y: 20, opacity: 0 }}
+                                animate={{ y: 0, opacity: 1 }}
+                                className="p-8 bg-rose-500 text-white rounded-[3rem] shadow-2xl shadow-rose-500/40 relative overflow-hidden"
+                            >
+                                <div className="absolute right-0 bottom-0 opacity-10 -mr-10 -mb-10">
+                                    <AlertTriangle size={200} />
+                                </div>
+                                <div className="flex flex-col md:flex-row items-center gap-8 relative z-10">
+                                    <div className="w-20 h-20 bg-white/20 backdrop-blur-md rounded-3xl flex items-center justify-center shrink-0 animate-pulse">
+                                        <AlertTriangle size={40} className="text-white" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-3xl font-black uppercase tracking-tighter mb-2 italic">⚠️ Plan Feasibility: CRITICAL</h2>
+                                        <p className="text-rose-100 font-bold text-lg leading-relaxed max-w-3xl">
+                                            Your total monthly commitment <span className="text-white bg-black/20 px-2 rounded-lg">{formatIndianCurrency(totalGoalsSip + fireSip)}</span> exceeds your surplus <span className="text-white bg-black/20 px-2 rounded-lg">{formatIndianCurrency(monthlySurplus)}</span>. 
+                                            This plan is mathematically impossible and will eat into your essential expenses or debt. Delay some goals or increase income immediately!
+                                        </p>
+                                        <div className="mt-6 flex flex-wrap gap-3">
+                                            <div className="px-4 py-2 bg-white/20 rounded-full text-xs font-black uppercase tracking-widest">FIRE Requirement: {formatIndianCurrency(fireSip)}</div>
+                                            <div className="px-4 py-2 bg-white/20 rounded-full text-xs font-black uppercase tracking-widest">Goals Requirement: {formatIndianCurrency(totalGoalsSip)}</div>
+                                            <div className="px-4 py-2 bg-black/20 rounded-full text-xs font-black uppercase tracking-widest text-rose-200">Allocation: {totalBurnRate.toFixed(0)}% of Surplus</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
+
+                        <div className="space-y-8">
+                            {goals.length === 0 ? (
+                                <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-16 text-center border border-gray-100 dark:border-gray-700">
+                                    <div className="inline-flex items-center justify-center p-6 bg-emerald-50 dark:bg-emerald-900/30 rounded-full mb-6">
+                                        <Target className="w-12 h-12 text-emerald-600 dark:text-emerald-400" />
+                                    </div>
+                                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">No Future Goals Set</h2>
+                                    <p className="text-gray-600 dark:text-gray-400 max-w-lg mx-auto mb-8">
+                                        Want to throw a big wedding, buy a new laptop, or go on vacation? Setup an independent goal track outside of your FIRE portfolio here!
+                                    </p>
+                                    <button
+                                        onClick={() => setIsAddGoalOpen(true)}
+                                        className="px-8 py-3 bg-emerald-600 text-white font-bold rounded-xl shadow-lg hover:bg-emerald-700 transition"
+                                    >
+                                        Create First Goal
+                                    </button>
+                                </div>
+                            ) : (
+                                goals.map((goal, idx) => {
+                                    const remainingAmt = Math.max(0, goal.targetAmount - goal.currentSavings);
+                                    const requiredSip = goal.targetMonths > 0 ? remainingAmt / goal.targetMonths : 0;
+                                    const progress = Math.min(100, (goal.currentSavings / goal.targetAmount) * 100);
+                                    const isComplete = progress >= 100;
+
+                                    return (
+                                        <motion.div 
+                                            key={goal.id} 
+                                            initial={{ opacity: 0, x: -20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            transition={{ delay: idx * 0.1 }}
+                                            className={`bg-white dark:bg-gray-800 rounded-[2.5rem] shadow-xl border overflow-hidden group hover:shadow-2xl transition-all duration-500 relative flex flex-col md:flex-row ${!goal.isActive && !isComplete ? 'border-amber-500/50 grayscale-[0.5]' : 'border-gray-100 dark:border-gray-700/50'}`}
+                                        >
+                                            <div className="p-8 flex-1 flex flex-col md:flex-row items-center gap-8">
+                                                <div className="flex items-center gap-5 md:w-1/3">
+                                                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 shadow-inner shrink-0 ${isComplete ? 'bg-emerald-500 text-white' : 'bg-gray-50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 group-hover:bg-emerald-500 group-hover:text-white'}`}>
+                                                        {getCategoryIcon(goal.category)}
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <h3 className="font-black text-2xl text-gray-900 dark:text-white tracking-tight truncate">{goal.name}</h3>
+                                                        <div className="flex gap-2">
+                                                            <span className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-full text-[10px] font-black uppercase tracking-widest">{goal.category}</span>
+                                                            {!goal.isActive && !isComplete && (
+                                                                <span className="px-3 py-1 bg-amber-500 text-white rounded-full text-[10px] font-black uppercase tracking-widest">Infeasible</span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex-1 w-full space-y-4">
+                                                    <div className="flex justify-between items-center text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                                        <span>Progress: {formatIndianCurrency(goal.currentSavings)} / {formatIndianCurrency(goal.targetAmount)}</span>
+                                                        <span className={`${isComplete ? 'text-emerald-500' : 'text-emerald-600'}`}>{progress.toFixed(0)}%</span>
+                                                    </div>
+                                                    <div className="h-3 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden shadow-inner">
+                                                        <motion.div 
+                                                            initial={{ width: 0 }}
+                                                            animate={{ width: `${progress}%` }}
+                                                            className={`h-full rounded-full ${isComplete ? 'bg-emerald-500' : 'bg-gradient-to-r from-emerald-600 to-emerald-400'}`}
+                                                        />
+                                                    </div>
+                                                    <div className="flex gap-4">
+                                                        <div className="text-[10px] font-bold text-gray-500">
+                                                            Monthly Required: <span className="text-gray-900 dark:text-white">{formatIndianCurrency(requiredSip)}</span>
+                                                        </div>
+                                                        <div className="text-[10px] font-bold text-gray-500">
+                                                            Target: <span className="text-gray-900 dark:text-white">{new Date(new Date().setMonth(new Date().getMonth() + goal.targetMonths)).getFullYear()}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex flex-col gap-3 shrink-0">
+                                                    {!isComplete ? (
+                                                        <div className="flex gap-2">
+                                                            {goal.isActive ? (
+                                                                <button 
+                                                                    onClick={() => { setSelectedGoalId(goal.id); setIsAddSavingsOpen(true); }}
+                                                                    className="px-6 py-4 bg-black dark:bg-white text-white dark:text-gray-900 font-black rounded-2xl shadow-xl hover:-translate-y-1 active:scale-95 transition-all text-[10px] uppercase tracking-widest flex items-center gap-2"
+                                                                >
+                                                                    <Plus className="w-4 h-4 stroke-[4]" /> Add Funds
+                                                                </button>
+                                                            ) : (
+                                                                <div className="flex flex-col items-end gap-2 text-right">
+                                                                    <button 
+                                                                        onClick={async () => {
+                                                                            const available = monthlySurplus - fireSip - totalGoalsSip;
+                                                                            if (requiredSip <= available) {
+                                                                                const updatedGoals = goals.map(g => g.id === goal.id ? { ...g, isActive: true } : g);
+                                                                                await updateFinancialData({ goals: updatedGoals });
+                                                                            } else {
+                                                                                // Suggestions already visible in UI below
+                                                                            }
+                                                                        }}
+                                                                        className={`px-6 py-4 font-black rounded-2xl shadow-xl hover:-translate-y-1 active:scale-95 transition-all text-[10px] uppercase tracking-widest flex items-center gap-2 ${requiredSip <= (monthlySurplus - fireSip - totalGoalsSip) ? 'bg-emerald-600 text-white shadow-emerald-500/20' : 'bg-gray-400 text-white cursor-not-allowed'}`}
+                                                                    >
+                                                                        {requiredSip <= (monthlySurplus - fireSip - totalGoalsSip) ? 'Activate & Rework Plan' : 'Plan Impossible'}
+                                                                    </button>
+                                                                    {requiredSip > (monthlySurplus - fireSip - totalGoalsSip) && (
+                                                                        <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-tighter max-w-[150px] leading-tight opacity-80 group-hover:opacity-100 transition-opacity">
+                                                                            ⚠️ Extend timeline by {Math.ceil((requiredSip / (Math.max(1, monthlySurplus - fireSip - totalGoalsSip)) * (goal.targetMonths / 12)) - (goal.targetMonths / 12))} yrs or boost income.
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            )}
+                                                            <div className="flex gap-2">
+                                                                <button 
+                                                                    onClick={() => handleEditGoal(goal)}
+                                                                    className="w-12 h-12 bg-gray-100 dark:bg-gray-700 text-gray-500 rounded-2xl flex items-center justify-center hover:bg-emerald-500 hover:text-white transition-all shadow-sm"
+                                                                >
+                                                                    <Target className="w-5 h-5" />
+                                                                </button>
+                                                                <button 
+                                                                    onClick={() => handleDeleteGoal(goal.id)}
+                                                                    className="w-12 h-12 bg-rose-100 dark:bg-rose-900/30 text-rose-500 rounded-2xl flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all shadow-sm"
+                                                                >
+                                                                    <Trash2 className="w-5 h-5" />
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex items-center gap-2 text-emerald-500 font-black text-xs uppercase italic bg-emerald-50 dark:bg-emerald-900/20 px-4 py-2 rounded-xl">
+                                                            <CheckCircle2 className="w-5 h-5" /> Achievement Unlocked
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    );
+                                })
+                            )}
                         </div>
-                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">No Future Goals Set</h2>
-                        <p className="text-gray-600 dark:text-gray-400 max-w-lg mx-auto mb-8">
-                            Want to throw a big wedding, buy a new laptop, or go on vacation? Setup an independent goal track outside of your FIRE portfolio here!
-                        </p>
-                        <button
-                            onClick={() => setIsAddGoalOpen(true)}
-                            className="px-8 py-3 bg-emerald-600 text-white font-bold rounded-xl shadow-lg hover:bg-emerald-700 transition"
-                        >
-                            Create First Goal
-                        </button>
                     </div>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {goals.map((goal, idx) => {
-                            const remainingAmt = Math.max(0, goal.targetAmount - goal.currentSavings);
-                            const requiredSip = goal.targetMonths > 0 ? remainingAmt / goal.targetMonths : 0;
-                            const progress = Math.min(100, (goal.currentSavings / goal.targetAmount) * 100);
-                            const isComplete = progress >= 100;
-                            
-                            const isChallenging = requiredSip > monthlySurplus && !isComplete;
-
-                            return (
-                                <motion.div 
-                                    key={goal.id} 
-                                    initial={{ opacity: 0, scale: 0.9 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    transition={{ delay: idx * 0.1 }}
-                                    className="bg-white dark:bg-gray-800 rounded-[2.5rem] shadow-xl border border-gray-100 dark:border-gray-700/50 overflow-hidden group hover:shadow-2xl hover:shadow-emerald-500/10 transition-all duration-500 flex flex-col relative"
-                                >
-                                    {isComplete && (
-                                        <div className="absolute top-0 right-0 p-6 z-10">
-                                            <div className="bg-emerald-500 text-white p-2 rounded-full shadow-lg shadow-emerald-500/40">
-                                                <CheckCircle2 className="w-5 h-5" />
-                                            </div>
-                                        </div>
-                                    )}
-                                    <div className="p-8 flex-1">
-                                        <div className="flex justify-between items-start mb-8">
-                                            <div className="flex items-center gap-5">
-                                                <div className="w-14 h-14 bg-gray-50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 rounded-2xl flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white dark:group-hover:bg-emerald-500 transition-all duration-500 shadow-inner">
-                                                    {getCategoryIcon(goal.category)}
-                                                </div>
-                                                <div>
-                                                    <h3 className="font-black text-2xl text-gray-900 dark:text-white tracking-tight">{goal.name}</h3>
-                                                    <span className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-full text-[10px] font-black uppercase tracking-widest">{goal.category}</span>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                 <button
-                                                    onClick={() => handleEditGoal(goal)}
-                                                    title="Quick Edit"
-                                                    className="w-10 h-10 rounded-2xl flex items-center justify-center text-gray-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/40 transition-all border border-transparent hover:border-emerald-200"
-                                                >
-                                                    <Target className="w-5 h-5" /> 
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDeleteGoal(goal.id)}
-                                                    className="w-10 h-10 rounded-2xl flex items-center justify-center text-gray-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-all border border-transparent hover:border-rose-200"
-                                                >
-                                                    <Trash2 className="w-5 h-5" />
-                                                </button>
-                                            </div>
-                                        </div>
-
-                                        <div className="grid grid-cols-2 gap-6 mb-8">
-                                            <div className="bg-gray-50/50 dark:bg-gray-900/50 p-5 rounded-3xl border border-gray-100 dark:border-gray-800">
-                                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Target Goal</p>
-                                                <p className="text-xl font-black text-gray-900 dark:text-white">{formatIndianCurrency(goal.targetAmount)}</p>
-                                            </div>
-                                            <div className="bg-emerald-50/30 dark:bg-emerald-900/10 p-5 rounded-3xl border border-emerald-100 dark:border-emerald-900/20">
-                                                <p className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-2">Target Year</p>
-                                                <p className="text-xl font-black text-emerald-600 dark:text-emerald-400">
-                                                    {new Date(new Date().setMonth(new Date().getMonth() + goal.targetMonths)).getFullYear()}
-                                                    <span className="text-xs font-bold ml-1">({(goal.targetMonths / 12).toFixed(1)}y)</span>
-                                                </p>
-                                            </div>
-                                        </div>
-
-                                        <div className="mb-8 p-6 bg-gray-50/50 dark:bg-gray-900/50 rounded-3xl border border-gray-100 dark:border-gray-800">
-                                            <div className="flex justify-between items-center mb-4">
-                                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Savings Progress</span>
-                                                <span className="text-sm font-black text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/30 px-3 py-1 rounded-full">{progress.toFixed(0)}%</span>
-                                            </div>
-                                            <div className="h-4 w-full bg-gray-200 dark:bg-gray-700/50 rounded-full overflow-hidden shadow-inner mb-4">
-                                                <motion.div 
-                                                    initial={{ width: 0 }}
-                                                    animate={{ width: `${progress}%` }}
-                                                    transition={{ duration: 1.5, ease: "circOut" }}
-                                                    className={`h-full rounded-full shadow-lg ${isComplete ? 'bg-emerald-500' : 'bg-gradient-to-r from-emerald-600 to-emerald-400'}`} 
-                                                />
-                                            </div>
-                                            <div className="flex justify-between items-center text-xs">
-                                                <p className="font-bold text-gray-500 dark:text-gray-400">{formatIndianCurrency(goal.currentSavings)}</p>
-                                                <p className="font-bold text-gray-900 dark:text-white">Goal: {formatIndianCurrency(goal.targetAmount)}</p>
-                                            </div>
-                                        </div>
-
-                                        {isChallenging && !isLudicrous && (
-                                            <div className="flex items-center gap-3 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/50 rounded-2xl mb-4">
-                                                <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0" />
-                                                <p className="text-[11px] text-amber-600 dark:text-amber-400 font-bold leading-tight uppercase tracking-wider">
-                                                    Timeline Tight: Consider increasing initial savings or delaying goal.
-                                                </p>
-                                            </div>
-                                        )}
-                                        {isLudicrous && (
-                                            <div className="flex items-center gap-3 p-4 bg-rose-50 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-800/50 rounded-2xl mb-4">
-                                                <AlertTriangle className="w-5 h-5 text-rose-500 shrink-0" />
-                                                <p className="text-[11px] text-rose-600 dark:text-rose-400 font-black leading-tight uppercase tracking-wider">
-                                                    UNSUSTAINABLE: Combined plan exceeds surplus!
-                                                </p>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div className="px-8 pb-8 flex gap-3">
-                                        {!isComplete ? (
-                                            <>
-                                                <button 
-                                                    onClick={() => { setSelectedGoalId(goal.id); setIsAddSavingsOpen(true); }}
-                                                    className="flex-[2] py-4 bg-black dark:bg-white text-white dark:text-gray-900 font-black rounded-2xl shadow-xl hover:shadow-emerald-500/20 hover:-translate-y-1 active:scale-95 transition-all text-xs uppercase tracking-widest flex items-center justify-center gap-2"
-                                                >
-                                                    <Plus className="w-4 h-4 stroke-[4]" /> Add Funds
-                                                </button>
-                                                <button 
-                                                    onClick={() => handleEditGoal(goal)}
-                                                    className="flex-1 py-4 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-black rounded-2xl hover:bg-gray-200 transition-all text-[10px] uppercase tracking-widest"
-                                                >
-                                                    Settings
-                                                </button>
-                                            </>
-                                        ) : (
-                                            <div className="w-full py-4 bg-emerald-500/10 border-2 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-black rounded-2xl flex items-center justify-center gap-3">
-                                                <CheckCircle2 className="w-5 h-5" /> MILESTONE ACHIEVED
-                                            </div>
-                                        )}
-                                    </div>
-                                </motion.div>
-                            );
-                        })}
-                    </div>
-                )}
+                </div>
             </main>
 
             {/* MODALS */}
@@ -414,73 +450,157 @@ export const FutureGoalsDashboard = () => {
                             <h3 className="text-3xl font-black text-gray-900 dark:text-white mb-2 tracking-tight">{isEditMode ? 'Edit Goal' : 'Create Goal'}</h3>
                             <p className="text-sm text-gray-500 dark:text-gray-400 mb-8 font-medium">Set a target separate from your FIRE corpus.</p>
 
-                            <div className="space-y-6 mb-10">
-                                <div>
-                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Goal Identity</label>
+                            <div className="space-y-8 mb-10 overflow-y-auto max-h-[60vh] pr-2 no-scrollbar">
+                                {/* Group 1: Goal Type & Category */}
+                                <div className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-3xl border border-gray-100 dark:border-gray-700">
+                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Goal Identity</label>
+                                    <div className="space-y-4">
+                                        <input
+                                            type="text"
+                                            value={goalName}
+                                            onChange={(e) => setGoalName(e.target.value)}
+                                            placeholder="e.g. My Dream House"
+                                            className="w-full px-6 py-4 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl font-bold text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
+                                        />
+                                        <div className="grid grid-cols-2 gap-3">
+                                            {['House', 'Car', 'Bike', 'Travel', 'Emergency Fund'].map(cat => (
+                                                <button
+                                                    key={cat}
+                                                    onClick={() => setGoalCategory(cat)}
+                                                    className={`px-4 py-3 rounded-xl border text-xs font-bold flex items-center gap-2 transition-all ${goalCategory === cat 
+                                                        ? 'bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-500/20' 
+                                                        : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-100 dark:border-gray-700 hover:border-emerald-500/50'}`}
+                                                >
+                                                    <span className="shrink-0">{getCategoryIcon(cat)}</span>
+                                                    {cat}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Group 2: Financial Targets */}
+                                <div className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-3xl border border-gray-100 dark:border-gray-700">
+                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-6">Financial Target</label>
+                                    <div className="space-y-6">
+                                        <div>
+                                            <div className="flex justify-between mb-2">
+                                                <span className="text-xs font-bold text-gray-500">Goal Amount (₹)</span>
+                                                <span className="text-sm font-black text-emerald-600 dark:text-emerald-400">{formatIndianCurrency(Number(goalTarget) || 0)}</span>
+                                            </div>
+                                            <input
+                                                type="range"
+                                                min="10000"
+                                                max="10000000"
+                                                step="10000"
+                                                value={goalTarget}
+                                                onChange={(e) => setGoalTarget(e.target.value)}
+                                                className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+                                            />
+                                            <div className="flex gap-4 mt-4">
+                                                <input
+                                                    type="number"
+                                                    value={goalTarget}
+                                                    onChange={(e) => setGoalTarget(Math.max(0, Number(e.target.value)).toString())}
+                                                    className="flex-1 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl font-bold text-sm text-gray-900 dark:text-white"
+                                                />
+                                                <div className="flex gap-1">
+                                                    <button onClick={() => setGoalTarget((Number(goalTarget) + 50000).toString())} className="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-emerald-100 text-gray-900 dark:text-white"><ChevronUp className="w-4 h-4" /></button>
+                                                    <button onClick={() => setGoalTarget(Math.max(0, Number(goalTarget) - 50000).toString())} className="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-rose-100 text-gray-900 dark:text-white"><ChevronDown className="w-4 h-4" /></button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <div className="flex justify-between mb-2">
+                                                <span className="text-xs font-bold text-gray-500">Already Saved (₹)</span>
+                                                <span className="text-sm font-black text-blue-600 dark:text-blue-400">{formatIndianCurrency(Number(goalSavings) || 0)}</span>
+                                            </div>
+                                            <input
+                                                type="number"
+                                                value={goalSavings}
+                                                onChange={(e) => setGoalSavings(Math.max(0, Number(e.target.value)).toString())}
+                                                className="w-full px-4 py-2 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl font-bold text-sm text-gray-900 dark:text-white"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Group 3: Time Horizon */}
+                                <div className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-3xl border border-gray-100 dark:border-gray-700">
+                                    <div className="flex justify-between mb-6">
+                                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Time Horizon</label>
+                                        <span className="text-sm font-black text-amber-500">{goalTimeline} <span className="text-[10px]">Years</span></span>
+                                    </div>
                                     <input
-                                        type="text"
-                                        value={goalName}
-                                        onChange={(e) => setGoalName(e.target.value)}
-                                        placeholder="e.g. Tesla Model 3"
-                                        className="w-full px-6 py-4 bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl font-bold text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
+                                        type="range"
+                                        min="0.5"
+                                        max="25"
+                                        step="0.5"
+                                        value={goalTimeline}
+                                        onChange={(e) => setGoalTimeline(e.target.value)}
+                                        className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-amber-500"
                                     />
-                                </div>
-                                <div className="grid grid-cols-2 gap-6">
-                                    <div>
-                                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Target (₹)</label>
-                                        <input
-                                            type="number"
-                                            value={goalTarget}
-                                            onChange={(e) => setGoalTarget(e.target.value)}
-                                            placeholder="800000"
-                                            className="w-full px-6 py-4 bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl font-bold text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Initial (₹)</label>
-                                        <input
-                                            type="number"
-                                            value={goalSavings}
-                                            onChange={(e) => setGoalSavings(e.target.value)}
-                                            placeholder="50000"
-                                            className="w-full px-6 py-4 bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl font-bold text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
-                                        />
+                                    <div className="flex gap-4 mt-4">
+                                        <div className="flex-1 flex items-center justify-center bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 py-2 font-bold">
+                                            {Math.round(Number(goalTimeline) * 12)} <span className="text-[10px] ml-1 text-gray-400">Months</span>
+                                        </div>
+                                        <div className="flex gap-1">
+                                            <button onClick={() => setGoalTimeline((Number(goalTimeline) + 0.5).toString())} className="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-amber-100"><ChevronUp className="w-4 h-4" /></button>
+                                            <button onClick={() => setGoalTimeline(Math.max(0.5, Number(goalTimeline) - 0.5).toString())} className="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-amber-100"><ChevronDown className="w-4 h-4" /></button>
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="grid grid-cols-2 gap-6">
-                                    <div>
-                                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Horizon (Years)</label>
-                                        <input
-                                            type="number"
-                                            value={goalTimeline}
-                                            onChange={(e) => setGoalTimeline(e.target.value)}
-                                            placeholder="3"
-                                            step="0.1"
-                                            className="w-full px-6 py-4 bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl font-bold text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Category</label>
-                                        <select
-                                            value={goalCategory}
-                                            onChange={(e) => setGoalCategory(e.target.value)}
-                                            className="w-full px-6 py-4 bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl font-bold text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all appearance-none cursor-pointer"
+
+                                {/* Unachievable Goal Warning */}
+                                {(() => {
+                                    const reqMonths = Number(goalTimeline) * 12;
+                                    const reqSip = reqMonths > 0 ? (Number(goalTarget) - Number(goalSavings)) / reqMonths : 0;
+                                    const available = monthlySurplus - fireSip - totalGoalsSip;
+                                    const isWarning = reqSip > available && reqSip > 0;
+
+                                    if (!isWarning) return null;
+
+                                    return (
+                                        <motion.div 
+                                            initial={{ opacity: 0, scale: 0.9 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            className="p-6 bg-rose-500 rounded-[2rem] text-white shadow-xl shadow-rose-500/20"
                                         >
-                                            <option value="Vehicle">Vehicle</option>
-                                            <option value="Electronics">Electronics</option>
-                                            <option value="Travel">Travel</option>
-                                            <option value="Other">Other</option>
-                                        </select>
-                                    </div>
-                                </div>
+                                            <div className="flex items-center gap-3 mb-4">
+                                                <AlertTriangle className="w-6 h-6" />
+                                                <h4 className="font-black uppercase tracking-tight italic">Achievement Warning</h4>
+                                            </div>
+                                            <p className="text-xs font-bold leading-relaxed mb-4 text-rose-100 transition-all duration-300">
+                                                This goal may not be achievable with your current financial plan. The monthly investment required (<strong>{formatIndianCurrency(reqSip)}</strong>) exceeds your current available capacity (<strong>{formatIndianCurrency(available)}</strong>).
+                                            </p>
+                                            <ul className="text-[10px] space-y-2 font-black uppercase text-rose-200">
+                                                <li>• Increase your income</li>
+                                                <li>• Extend the goal timeline</li>
+                                                <li>• Reduce the target amount</li>
+                                            </ul>
+                                        </motion.div>
+                                    );
+                                })()}
                             </div>
 
-                            <button
+                             <button
                                 onClick={handleCreateGoal}
                                 disabled={!goalName || !goalTarget || !goalTimeline}
-                                className="w-full py-5 bg-emerald-600 disabled:bg-gray-200 disabled:text-gray-500 dark:disabled:bg-gray-700 text-white font-black rounded-2xl shadow-xl shadow-emerald-500/20 hover:shadow-emerald-500/40 hover:-translate-y-1 active:scale-95 transition-all text-sm uppercase tracking-widest"
+                                className={`w-full py-5 text-white font-black rounded-2xl shadow-xl hover:-translate-y-1 active:scale-95 transition-all text-sm uppercase tracking-widest ${(() => {
+                                    const reqMonths = Number(goalTimeline) * 12;
+                                    const reqSip = reqMonths > 0 ? (Number(goalTarget) - Number(goalSavings)) / reqMonths : 0;
+                                    const available = monthlySurplus - fireSip - totalGoalsSip;
+                                    return reqSip > available && reqSip > 0 ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-500/20' : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/20';
+                                })()}`}
                             >
-                                {isEditMode ? 'Update Goal Settings' : 'Initialize Goal Tracker'}
+                                {(() => {
+                                    const reqMonths = Number(goalTimeline) * 12;
+                                    const reqSip = reqMonths > 0 ? (Number(goalTarget) - Number(goalSavings)) / reqMonths : 0;
+                                    const available = monthlySurplus - fireSip - totalGoalsSip;
+                                    if (reqSip > available && reqSip > 0) return 'Acknowledge Infeasible Goal';
+                                    return isEditMode ? 'Update Goal Settings' : 'Initialize Goal Tracker';
+                                })()}
                             </button>
                         </motion.div>
                     </div>

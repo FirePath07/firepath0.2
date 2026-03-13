@@ -1,0 +1,594 @@
+================================================================================
+                         FIREPATH WEBSITE — COMPLETE OVERVIEW
+================================================================================
+Created: 12 March 2026
+This file is a plain-English reference document. It does NOT affect any code.
+================================================================================
+
+
+────────────────────────────────────────────────────────────────────────────────
+1. WHAT IS THIS WEBSITE?
+────────────────────────────────────────────────────────────────────────────────
+
+FirePath is a personal finance web application built specifically for Indian
+users who want to achieve FIRE — Financial Independence, Retire Early.
+
+In plain terms:
+  - You sign up and enter your income, expenses, age, and financial goals.
+  - The app tells you how much money you need to save to retire early.
+  - It helps you choose mutual funds to invest in.
+  - It tracks your investments, expenses, and future goals in one place.
+  - It shows you charts and projections so you can see your progress over time.
+  - An admin (the app owner) can view all users, read feedback, and reply to it.
+
+
+────────────────────────────────────────────────────────────────────────────────
+2. TECH STACK (TOOLS AND TECHNOLOGIES USED)
+────────────────────────────────────────────────────────────────────────────────
+
+FRONTEND (what the user sees in the browser)
+  - React 19          → The main library for building the user interface.
+  - TypeScript        → A typed version of JavaScript. Catches errors early.
+  - Vite              → The tool that runs and builds the frontend quickly.
+  - TailwindCSS 4     → A styling library. Makes it easy to style elements.
+  - Framer Motion     → Adds smooth animations and transitions on screen.
+  - Recharts          → Draws the charts and graphs (pie charts, line charts).
+  - React Router DOM  → Handles navigation between pages without reloading.
+  - Lucide React      → Provides the small icons used throughout the site.
+  - Canvas Confetti   → Shows a confetti celebration animation.
+  - @react-oauth/google → Lets users log in with their Google account.
+  - jwt-decode        → Reads login tokens on the browser side.
+
+BACKEND (the server that stores and manages data)
+  - Node.js           → The server environment that runs JavaScript.
+  - Express.js        → A framework for handling web requests on the server.
+  - MongoDB (Atlas)   → The cloud database where all user data is stored.
+  - Mongoose          → A tool to interact with MongoDB in a structured way.
+  - bcryptjs          → Securely hashes (scrambles) passwords before storing.
+  - jsonwebtoken      → Creates and verifies login tokens (JWT).
+  - cors              → Allows the frontend to communicate with the backend.
+  - dotenv            → Loads secret keys from .env files.
+  - nodemon           → Auto-restarts the server when code changes (dev only).
+  - node-cache        → Caches (temporarily stores) data to avoid repeated calls.
+
+EXTERNAL APIs USED
+  - mfapi.in          → Free Indian mutual fund API. Used to get live NAV
+                        (Net Asset Value) prices for mutual funds.
+  - Yahoo Finance     → Used to get live market index data (Nifty 50, Bank
+                        Nifty, Sensex).
+  - Google OAuth      → Used for "Sign in with Google" functionality.
+  - NewsAPI / TPIL    → Used on the Articles page to fetch financial news.
+
+
+────────────────────────────────────────────────────────────────────────────────
+3. HOW THE FRONTEND IS BUILT
+────────────────────────────────────────────────────────────────────────────────
+
+The frontend lives inside the "src" folder. When you run "npm run dev", Vite
+starts a local development server (usually at http://localhost:5173).
+
+HOW IT STARTS:
+  index.html → src/main.tsx → src/App.tsx → all the pages
+
+  1. index.html     : The single HTML file. It has one <div id="root"> where
+                      everything gets loaded by JavaScript.
+  2. src/main.tsx   : The entry point. It wraps the whole app in:
+                      - GoogleOAuthProvider (for Google login)
+                      - ThemeProvider (for dark/light mode)
+                      Then it mounts the App component.
+  3. src/App.tsx    : Defines all the routes (URL paths) and maps each URL
+                      to a page component.
+
+HOW NAVIGATION WORKS:
+  React Router DOM is used so that clicking links changes the URL and shows a
+  different page without refreshing the browser. Examples:
+    /           → Home Page
+    /login      → Login Page
+    /profile    → Main Dashboard
+    /expenses   → Expenses Page
+    (and so on — full list in Section 4)
+
+HOW DATA IS SHARED BETWEEN PAGES:
+  Two "Context" files act as a shared data store for all pages:
+  - AuthContext.tsx  → Holds the logged-in user's data (name, email, all
+                       financial data). Every page can read from this.
+  - ThemeContext.tsx → Holds whether the user is in dark or light mode.
+
+  When a user logs in, their data is fetched from the backend and stored in
+  AuthContext. Any page that needs financial data reads it from there.
+  When a page saves changes, it calls updateFinancialData(), which saves to
+  AuthContext AND sends the update to the backend database.
+
+
+────────────────────────────────────────────────────────────────────────────────
+4. PAGES IN THE WEBSITE
+────────────────────────────────────────────────────────────────────────────────
+
+Here is every page in the app, what it does, and its URL:
+
+1. HOME PAGE  (/src/pages/HomePage.tsx)
+   URL: /
+   What it does: The welcome/landing page. Has a hero banner with a motivational
+   headline and buttons. If you are logged in it shows "Continue Planning" and
+   "Dashboard" buttons. If not logged in, it shows "Get Started" and "Try
+   Calculator". Also has a 3-card feature grid below.
+
+2. LOGIN PAGE  (/src/pages/LoginPage.tsx)
+   URL: /login
+   What it does: A form where existing users enter their email and password to
+   log in. Also has a "Sign in with Google" button. On success, a JWT token
+   is saved in the browser's localStorage.
+
+3. SIGN UP PAGE  (/src/pages/SignUpPage.tsx)
+   URL: /signup
+   What it does: A form for new users to create an account (name, email,
+   password). Also has "Sign up with Google". Creates a new user in the
+   database on success and logs them in immediately.
+
+4. QUESTIONNAIRE PAGE  (/src/pages/QuestionnairePage.tsx)
+   URL: /questionnaire
+   What it does: A multi-step quiz that asks the user about their:
+   - Monthly income, expenses, age, retirement age
+   - Financial goals (Travel, Business, etc.)
+   - Risk tolerance (from questions like "How would you react to a market crash?")
+   - FIRE number preference (Lean FIRE, Traditional FIRE, Fat FIRE)
+   At the end, it calculates a Risk Profile and recommends a mutual fund basket.
+   It saves all results to the user's profile.
+
+5. RISK PAGE  (/src/pages/RiskPage.tsx)
+   URL: /risk
+   What it does: Shows the results of the questionnaire. Displays:
+   - The recommended mutual fund basket (set of funds based on risk).
+   - A projection graph showing how the investment grows over time.
+   - The recommended monthly SIP (Systematic Investment Plan) amount.
+   - Options to confirm or change the strategy.
+
+6. STRATEGY EXPLANATION PAGE  (/src/pages/StrategyExplanationPage.tsx)
+   URL: /strategy-explanation
+   What it does: An educational page that explains what mutual funds are, what
+   SIP is, what FIRE means, and how the recommended basket strategy works.
+   Helps users understand why the app made the recommendations it did.
+
+7. USER PROFILE DASHBOARD  (/src/pages/UserProfileDashboard.tsx)
+   URL: /profile
+   What it does: The main dashboard after login. Shows:
+   - Key stats: Monthly income, expenses, current savings, FIRE target.
+   - Live market data (Nifty 50, Sensex, Bank Nifty prices).
+   - FIRE progress (how close the user is to their retirement goal).
+   - A celebratory overlay if the user has reached their FIRE target.
+   - Quick links to all other sections of the app.
+
+8. USER PROFILE PAGE  (/src/pages/UserProfilePage.tsx)
+   URL: /user-details
+   What it does: Shows the user's personal details and financial settings.
+   Allows editing of income, expenses, savings, age etc. Has a "Hard Reset"
+   button to wipe all financial data and start fresh.
+
+9. INVESTMENT PROGRESS DASHBOARD  (/src/pages/InvestmentProgressDashboard.tsx)
+   URL: /investment-dashboard
+   What it does: Shows the full investment tracking system:
+   - The user's portfolio (each fund, units held, current value, P&L).
+   - A graph of portfolio value over time.
+   - Live NAV prices fetched from mfapi.in.
+   - A button to "Invest Monthly SIP" which simulates buying fund units.
+   - Milestone notifications when the portfolio reaches certain values.
+
+10. EXPENSES PAGE  (/src/pages/ExpensesPage.tsx)
+    URL: /expenses
+    What it does: A full expense tracker. Users can:
+    - Add individual expenses (name, amount, category, date, notes).
+    - Tag an expense to a future goal.
+    - See a monthly summary (income vs total expenses vs investments).
+    - View a pie chart of spending by category.
+    - View a bar chart of monthly spending trends.
+    - See a warning if expenses exceed income.
+
+11. FUTURE GOALS DASHBOARD  (/src/pages/FutureGoalsDashboard.tsx)
+    URL: /future-goals
+    What it does: Lets users set personal savings goals (e.g., "Buy a car in
+    2 years, need ₹5,00,000"). For each goal it:
+    - Calculates the required monthly SIP.
+    - Shows progress toward the goal.
+    - Shows a popup when a new goal is added showing the impact on total SIP.
+    - Allows deleting a goal (and merging that SIP back into the main FIRE SIP).
+
+12. CALCULATORS PAGE  (/src/pages/CalculatorsPage.tsx)
+    URL: /calculators
+    What it does: A page that hosts two standalone calculators:
+    - FIRE Calculator: Enter income, expenses, savings, and see when you can
+                       retire.
+    - SIP Calculator: Enter a target amount and see how much to invest monthly.
+    These work without needing to be logged in.
+
+13. ARTICLES PAGE  (/src/pages/ArticlesPage.tsx)
+    URL: /articles
+    What it does: Shows a collection of financial news articles and guides.
+    Fetches articles from external news APIs. Allows filtering by category and
+    searching by keyword.
+
+14. FEEDBACK PAGE  (/src/pages/FeedbackPage.tsx)
+    URL: /feedback
+    What it does: Lets logged-in users submit feedback, suggestions, or
+    ask for advice. Users can also see replies from the admin.
+
+15. ADMIN DASHBOARD  (/src/pages/AdminDashboard.tsx)
+    URL: /admin
+    What it does: Only accessible to the admin account
+    (firepathjjrp@gmail.com). Allows the admin to:
+    - View all registered users and their financial data.
+    - Read all feedback and suggestions submitted by users.
+    - Reply to feedback messages.
+    - Delete users or feedback entries.
+
+
+────────────────────────────────────────────────────────────────────────────────
+5. HOW THE BACKEND WORKS
+────────────────────────────────────────────────────────────────────────────────
+
+The backend lives inside the "server" folder. It runs separately from the
+frontend. Start it with: cd server → node index.js (or nodemon index.js).
+It listens on port 5000 by default.
+
+THE BACKEND DOES FOUR THINGS:
+  A) Handles user accounts (sign up, login, Google login, save profile data).
+  B) Handles feedback (submit, view, admin reply, delete).
+  C) Fetches live market data (Nifty, Sensex, Bank Nifty) from Yahoo Finance
+     and sends it to the frontend.
+  D) Provides a fallback if the market API fails (returns demo values).
+
+HOW LOGIN SECURITY WORKS:
+  - When a user signs up, their password is hashed using bcryptjs (scrambled
+    so it cannot be read). Only the scrambled version is stored.
+  - When they log in, bcryptjs compares their entered password to the stored
+    scrambled version.
+  - On success, the server creates a JWT (JSON Web Token) — a small encrypted
+    string that proves the user is logged in. This is valid for 7 days.
+  - The browser saves this token in localStorage.
+  - Every time the frontend needs to do something that requires being logged in
+    (e.g., save expenses), it sends this token in the request header
+    (x-auth-token). The server checks it before doing anything.
+
+THE THREE API ROUTE FILES (server/routes/):
+  - auth.js      → All user-related endpoints:
+                   POST /api/auth/signup    → Create new account
+                   POST /api/auth/login     → Log in with email/password
+                   GET  /api/auth/me        → Get current user's data
+                   POST /api/auth/google    → Log in / sign up with Google
+                   PUT  /api/auth/profile   → Save updated financial data
+
+  - feedback.js  → All feedback-related endpoints:
+                   POST /api/feedback              → Submit feedback
+                   GET  /api/feedback/me           → Get my own feedback
+                   GET  /api/feedback/admin/users  → Admin: view all users
+                   GET  /api/feedback/admin/suggestions → Admin: view all feedback
+                   PUT  /api/feedback/admin/:id/reply   → Admin: reply to feedback
+                   PUT  /api/feedback/admin/:id/read    → Admin: mark as read
+                   DELETE /api/feedback/admin/suggestions/:id → Admin: delete feedback
+                   DELETE /api/feedback/admin/users/:id       → Admin: delete user
+
+  - record.js    → An older, simpler route for raw record management (legacy,
+                   not actively used in the main app flow).
+
+THE MARKET DATA ENDPOINT (in server/index.js):
+  GET /api/market → Fetches live stock market index data from Yahoo Finance
+                    (Nifty 50, Bank Nifty, Sensex) and returns it to the
+                    frontend. Falls back to demo numbers if Yahoo fails.
+
+
+────────────────────────────────────────────────────────────────────────────────
+6. HOW THE DATABASE IS STRUCTURED
+────────────────────────────────────────────────────────────────────────────────
+
+The database is MongoDB Atlas (a cloud-hosted MongoDB database).
+There are two collections (like tables):
+
+A) USERS COLLECTION (defined in server/models/User.js)
+   Each user document contains:
+   - name, email, passwordHash (hashed password)
+   - financialData (a big nested object with everything financial):
+       * monthlyIncome, monthlyExpenses, currentSavings
+       * age, targetRetirementAge, riskProfile
+       * primaryGoal, selectedFireAmount (Lean/Trad/Fat FIRE number)
+       * inflationRate, budget, defaultMonthlySIP
+       * selectedBasket (the mutual fund basket they chose)
+       * portfolio (list of funds, units held, amount invested, NAV at purchase)
+       * portfolioHistory (daily snapshots of portfolio value over time)
+       * monthlyContributions (record of each SIP payment made)
+       * expensesList (all individual expense entries)
+       * goals (all future goal entries)
+   - createdAt (when the account was made)
+
+B) FEEDBACK COLLECTION (defined in server/models/Feedback.js)
+   Each feedback document contains:
+   - userId (links to the user who submitted it)
+   - userName, userEmail
+   - type (feedback / advice / suggestion)
+   - content (the actual message text)
+   - adminReply (the admin's reply, empty by default)
+   - isRead (whether the admin has read it)
+   - createdAt
+
+
+────────────────────────────────────────────────────────────────────────────────
+7. HOW DEPLOYMENT WORKS
+────────────────────────────────────────────────────────────────────────────────
+
+The frontend and backend are deployed separately.
+
+FRONTEND DEPLOYMENT:
+  - Running locally: "npm run dev" starts a Vite dev server at localhost:5173.
+  - Building for production: "npm run build" outputs the compiled site into the
+    "dist" folder. The dist folder contains plain HTML, CSS, and JS files that
+    any web server can host.
+  - The frontend is designed to be deployed to any static hosting platform
+    (e.g., Vercel, Netlify, GitHub Pages).
+  - The VITE_API_URL environment variable tells the frontend where the backend
+    server is. If not set, it defaults to http://localhost:5000.
+
+BACKEND DEPLOYMENT:
+  - The backend has a "vercel.json" file inside the server folder. This means
+    it is set up to be deployed to Vercel as a serverless Node.js function.
+  - vercel.json tells Vercel: "use index.js as the entry point and route all
+    requests to it."
+  - The backend needs these environment variables to be set on the hosting
+    platform:
+      ATLAS_URI or MONGODB_URI → The MongoDB Atlas connection string
+      JWT_SECRET               → A secret key used to sign login tokens
+      PORT                     → The port to run on (default 5000)
+
+DURING LOCAL DEVELOPMENT:
+  - vite.config.ts sets up a proxy: any request from the frontend to "/api"
+    is automatically forwarded to http://localhost:5000 (the local backend).
+    This means you don't have to worry about CORS issues when testing locally.
+
+
+────────────────────────────────────────────────────────────────────────────────
+8. FILE TYPES AND WHAT THEY DO
+────────────────────────────────────────────────────────────────────────────────
+
+.tsx  (TypeScript + JSX files — React components with TypeScript)
+  Used for: All pages and components in the src folder.
+  What it means: A file that contains both TypeScript code AND HTML-like JSX
+  syntax. Every visual element on screen comes from a .tsx file.
+  Examples in this project:
+    src/App.tsx                          → Sets up all routes
+    src/main.tsx                         → App entry point
+    src/pages/HomePage.tsx               → Home page
+    src/pages/QuestionnairePage.tsx      → The quiz page
+    src/components/Navigation.tsx        → The top navigation bar
+    src/context/AuthContext.tsx          → Shared login/user data store
+    src/context/ThemeContext.tsx         → Shared dark/light mode store
+    src/components/FIRECalculator.tsx    → FIRE calculator widget
+    src/components/SIPCalculator.tsx     → SIP calculator widget
+    src/components/SignInModal.tsx       → Pop-up sign in dialog
+    src/components/SettingsModal.tsx     → Settings pop-up dialog
+    src/components/LearnModal.tsx        → Educational pop-up dialog
+    src/components/FundIcon.tsx          → Displays fund logos/icons
+
+.ts  (TypeScript files — logic only, no visuals)
+  Used for: Utility functions and service files.
+  Examples in this project:
+    src/utils/finance.ts     → calculateFIREMetrics() function. Takes user's
+                               financial data and returns: FIRE number, years
+                               to FIRE, savings rate, etc.
+    src/utils/simulation.ts  → Investment math functions:
+                               calculateSIP() — how much to invest monthly
+                               calculateStepUpSIP() — SIP that grows each year
+                               calculateCorpus() — final investment value
+                               checkFeasibility() — can the user afford the SIP?
+    src/utils/currency.ts    → Currency formatting helpers (e.g., format as ₹)
+    src/services/mutualFunds.ts → getLatestNAV() function. Calls the mfapi.in
+                               API to get the latest price of a mutual fund.
+    vite.config.ts           → Vite configuration (dev server, proxy settings)
+    tsconfig.json            → TypeScript compiler settings
+    tsconfig.app.json        → TypeScript settings specific to the app
+    tsconfig.node.json       → TypeScript settings for Node.js tools
+
+.js  (Plain JavaScript files — used in the backend)
+  Why not TypeScript? The backend (Node.js/Express) is written in plain JS
+  for simplicity.
+  Examples in this project:
+    server/index.js          → The main backend file. Sets up Express, connects
+                               to MongoDB, and defines the /api/market endpoint.
+    server/db.js             → Handles the raw MongoDB connection (legacy helper).
+    server/server.js         → An older minimal server entry (not the main one).
+    server/test_market.js    → A test script to check if the market API works.
+    server/routes/auth.js    → All authentication API routes (login, signup etc.)
+    server/routes/feedback.js → All feedback API routes (submit, admin, delete)
+    server/routes/record.js  → Legacy record routes (basic CRUD, not main flow)
+    server/models/User.js    → Defines the User database structure (schema)
+    server/models/Feedback.js → Defines the Feedback database structure
+    eslint.config.js         → ESLint rules to flag code quality issues
+    postcss.config.js        → PostCSS configuration (used by Tailwind CSS)
+
+.json  (Configuration and data files)
+  package.json (root)       → Lists all frontend dependencies and npm scripts
+                              (dev, build, lint, preview)
+  package.json (server)     → Lists all backend dependencies and npm scripts
+  package-lock.json         → Exact version lock of all installed packages
+  server/vercel.json        → Tells Vercel how to deploy the backend
+  tsconfig*.json            → TypeScript compiler configuration files
+  lint-results.json         → Output from ESLint (code quality checker)
+  .vscode/settings.json     → VS Code editor settings for this project
+
+.html  (The one HTML file)
+  index.html                → The single HTML page of the entire app.
+                              Everything renders inside <div id="root">.
+                              The browser loads this first, then React takes over.
+
+.css  (Stylesheet files)
+  src/index.css             → Global base CSS imported by main.tsx.
+  src/App.css               → Minimal CSS for the App component itself.
+  (Most styling in this project is done through TailwindCSS class names
+   directly inside .tsx files rather than separate .css files.)
+
+.env  (Environment variable files — NOT committed to git)
+  .env (root)               → Frontend secrets: Google Client ID, News API key.
+  server/.env               → Backend secrets: MongoDB URI, JWT secret, port.
+  .env.example              → A safe template showing what variables are needed
+                              (without the actual secret values).
+
+.gitignore  (Git ignore rules)
+  Lists files that should NOT be uploaded to GitHub:
+  - node_modules (too large, re-installed via npm install)
+  - .env files (contain secrets)
+  - dist folder (built output)
+
+.svg  (Vector image file)
+  public/vite.svg           → The small icon shown in the browser tab (favicon).
+                              It is the default Vite logo used as a placeholder.
+
+.txt  (Text files)
+  allmf.txt                 → A large text file containing a list of all Indian
+                              mutual funds. Used as reference data for fund names
+                              and scheme codes.
+  build_error.log           → A log file capturing build errors (debug use only)
+  lint_output.txt           → Output from running ESLint code checks
+  local_lint.txt            → Local copy of lint results
+
+.md  (Markdown documentation files)
+  README.md                 → Basic project documentation (how to set up and run)
+
+
+────────────────────────────────────────────────────────────────────────────────
+9. HOW KEY FEATURES WORK (SIMPLIFIED)
+────────────────────────────────────────────────────────────────────────────────
+
+FIRE NUMBER CALCULATION:
+  Defined in src/utils/finance.ts → calculateFIREMetrics()
+  - Takes your annual expenses and multiplies by 25 (the "4% rule").
+  - Adjusts for inflation over the years until retirement.
+  - Or uses a specific Lean/Traditional/Fat FIRE amount if you chose one.
+  - Calculates how many years until you can retire based on your savings rate
+    and expected investment returns.
+
+SIP CALCULATION:
+  Defined in src/utils/simulation.ts → calculateSIP()
+  - Uses the standard SIP formula to figure out how much to invest each month
+    to reach a target amount in a given number of years.
+  - Also has a "Step-Up SIP" version where the monthly amount increases by 10%
+    each year (calculateStepUpSIP).
+
+LIVE MUTUAL FUND PRICES (NAV):
+  Defined in src/services/mutualFunds.ts → getLatestNAV()
+  - Calls https://api.mfapi.in/mf/{schemeCode} to get the latest price.
+  - Used in the Investment Dashboard to update portfolio value in real time.
+
+LIVE STOCK MARKET DATA:
+  Via the backend → GET /api/market → Yahoo Finance API
+  - Fetches current Nifty 50, Bank Nifty, and Sensex index prices.
+  - Shown on the main dashboard so users can see today's market at a glance.
+
+DARK MODE:
+  Defined in src/context/ThemeContext.tsx
+  - Reads user preference from localStorage.
+  - Adds/removes a "dark" CSS class on the HTML element.
+  - TailwindCSS dark: classes then apply the correct colors automatically.
+
+GOOGLE LOGIN:
+  - Frontend uses @react-oauth/google to show the Google Sign-In button.
+  - On success, frontend sends the user's name, email, and Google ID to
+    backend → POST /api/auth/google.
+  - Backend finds or creates the account and returns a JWT token.
+  - No password is needed for Google users.
+
+CONFETTI CELEBRATION:
+  - When a user's portfolio reaches their FIRE target, a confetti animation
+    plays using the canvas-confetti library.
+  - A flag (fireCelebrated) is saved so it only shows once.
+
+ADMIN ACCESS:
+  - There is no separate admin account type in the database.
+  - The backend simply checks if the logged-in user's email equals
+    "firepathjjrp@gmail.com" and grants admin privileges if so.
+  - This keeps the system simple without needing a role/permission system.
+
+
+────────────────────────────────────────────────────────────────────────────────
+10. FOLDER STRUCTURE SUMMARY
+────────────────────────────────────────────────────────────────────────────────
+
+FirePath01-main/
+│
+├── index.html              ← The single HTML page (app entry)
+├── package.json            ← Frontend dependencies and scripts
+├── vite.config.ts          ← Vite dev server and proxy configuration
+├── tsconfig*.json          ← TypeScript configuration
+├── tailwind.config.js      ← TailwindCSS configuration
+├── postcss.config.js       ← PostCSS configuration (for Tailwind)
+├── eslint.config.js        ← Code linting rules
+├── .env                    ← Frontend environment secrets (not in git)
+├── .env.example            ← Template for environment variables
+├── allmf.txt               ← Reference list of all Indian mutual funds
+│
+├── public/
+│   └── vite.svg            ← Browser tab icon (favicon)
+│
+├── src/
+│   ├── main.tsx            ← App entry point (wraps in providers)
+│   ├── App.tsx             ← Route definitions
+│   ├── index.css           ← Global styles
+│   ├── App.css             ← App-level styles
+│   │
+│   ├── pages/              ← All 15 pages (one .tsx per page)
+│   │   ├── HomePage.tsx
+│   │   ├── LoginPage.tsx
+│   │   ├── SignUpPage.tsx
+│   │   ├── QuestionnairePage.tsx
+│   │   ├── RiskPage.tsx
+│   │   ├── StrategyExplanationPage.tsx
+│   │   ├── UserProfileDashboard.tsx
+│   │   ├── UserProfilePage.tsx
+│   │   ├── InvestmentProgressDashboard.tsx
+│   │   ├── ExpensesPage.tsx
+│   │   ├── FutureGoalsDashboard.tsx
+│   │   ├── CalculatorsPage.tsx
+│   │   ├── ArticlesPage.tsx
+│   │   ├── FeedbackPage.tsx
+│   │   └── AdminDashboard.tsx
+│   │
+│   ├── components/         ← Reusable building blocks
+│   │   ├── Navigation.tsx  ← Top navigation bar
+│   │   ├── FIRECalculator.tsx
+│   │   ├── SIPCalculator.tsx
+│   │   ├── SignInModal.tsx
+│   │   ├── SettingsModal.tsx
+│   │   ├── LearnModal.tsx
+│   │   └── FundIcon.tsx
+│   │
+│   ├── context/            ← Shared data stores
+│   │   ├── AuthContext.tsx ← User data and login logic
+│   │   └── ThemeContext.tsx← Dark/light mode logic
+│   │
+│   ├── services/           ← External API calls
+│   │   └── mutualFunds.ts  ← Fetches live NAV from mfapi.in
+│   │
+│   └── utils/              ← Pure calculation functions
+│       ├── finance.ts      ← FIRE metrics calculator
+│       ├── simulation.ts   ← SIP and corpus calculations
+│       └── currency.ts     ← Indian currency formatting
+│
+├── server/                 ← The entire backend
+│   ├── index.js            ← Main backend server file
+│   ├── server.js           ← Legacy minimal server starter
+│   ├── db.js               ← Raw MongoDB connection helper
+│   ├── package.json        ← Backend dependencies
+│   ├── vercel.json         ← Vercel deployment config for backend
+│   ├── .env                ← Backend secrets (not in git)
+│   ├── test_market.js      ← Script to test the market data API
+│   │
+│   ├── models/
+│   │   ├── User.js         ← User database schema
+│   │   └── Feedback.js     ← Feedback database schema
+│   │
+│   └── routes/
+│       ├── auth.js         ← Login, signup, Google auth, profile update
+│       ├── feedback.js     ← Submit feedback, admin review/reply
+│       └── record.js       ← Legacy record management routes
+│
+└── dist/                   ← Built/compiled frontend (generated, not edited)
+
+
+================================================================================
+END OF OVERVIEW
+================================================================================

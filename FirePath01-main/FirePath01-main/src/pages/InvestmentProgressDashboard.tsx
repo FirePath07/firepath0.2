@@ -10,7 +10,7 @@ import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     PieChart, Pie, Cell, Legend
 } from 'recharts';
-import { TrendingUp, Plus, Wallet, Briefcase, RefreshCcw, Landmark, CheckCircle2, Award } from 'lucide-react';
+import { TrendingUp, Plus, Wallet, Briefcase, RefreshCcw, Landmark, CheckCircle2, Award, AlertTriangle } from 'lucide-react';
 import { calculateFIREMetrics } from '../utils/finance';
 
 const COLORS = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ec4899', '#64748b'];
@@ -282,23 +282,49 @@ export const InvestmentProgressDashboard = () => {
         const salary = Number(newSalary) || financialData.monthlyIncome;
         const expenses = newExpenses ? Number(newExpenses) : financialData.monthlyExpenses;
 
+        const surplus = Math.max(0, salary - expenses);
+        const splurge = surplus >= 3000 ? (surplus - 3000) * 0.15 : 0;
+        const investable = Math.max(0, surplus - splurge);
+
         await updateFinancialData({
             monthlyIncome: salary,
-            monthlyExpenses: expenses
+            monthlyExpenses: expenses,
+            defaultMonthlySIP: investable // Re-calculate default SIP based on new surplus
         });
-
-        const remainingMoney = Math.max(0, salary - expenses);
-        const splurge = salary * 0.15;
-        const investable = Math.max(0, remainingMoney - splurge);
 
         setRecommendedSip(investable);
         setIsUpdateIncomeOpen(false);
         setIsRecommendOpen(true);
     };
 
-    const handleApplyRecommendedSip = async () => {
-        // Automatically set the new recommended SIP as the default
-        await updateFinancialData({ defaultMonthlySIP: recommendedSip });
+    const handleApplyRecommendedSip = async (selectedBasketType?: string) => {
+        const updateData: any = { defaultMonthlySIP: recommendedSip };
+        
+        // If a specific basket type was selected/forced (e.g. LOW RISK in low savings)
+        if (selectedBasketType) {
+            const getBaskets = (category: string) => {
+                if (category === 'LOW RISK') {
+                    return {
+                        name: "Basket 1 (Conservative)",
+                        funds: [
+                            { name: "ICICI Prudential Corporate Bond Fund", split: 40 },
+                            { name: "HDFC Corporate Bond Fund", split: 30 },
+                            { name: "Kotak Corporate Bond Fund", split: 30 }
+                        ],
+                        risk: "Low"
+                    };
+                }
+                return null;
+            };
+
+            const newBasket = getBaskets(selectedBasketType);
+            if (newBasket) {
+                updateData.selectedBasket = newBasket;
+                updateData.riskProfile = "Capital Stability Strategy";
+            }
+        }
+
+        await updateFinancialData(updateData);
         setIsRecommendOpen(false);
         setIsUpdateSipOpen(true);
     };
@@ -658,11 +684,47 @@ export const InvestmentProgressDashboard = () => {
                                 <h3 className="text-3xl font-extrabold text-white mb-2">Updated Investment Plan</h3>
                                 <p className="text-indigo-200 text-sm mb-6">Based on your new salary, here is your target monthly investable surplus.</p>
 
-                                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 mb-8">
+                                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 mb-6">
                                     <p className="text-indigo-200 font-semibold mb-1">Recommended Monthly SIP</p>
                                     <p className="text-5xl font-black text-emerald-400 mb-2">{formatIndianCurrency(recommendedSip)}</p>
-                                    <p className="text-xs text-indigo-300">Spread across your {basket?.name || 'selected basket'}</p>
+                                    <p className="text-xs text-indigo-300">
+                                        {recommendedSip < 3000 
+                                            ? "Forced to Low Risk due to savings threshold" 
+                                            : `Spread across your ${basket?.name || 'selected basket'}`
+                                        }
+                                    </p>
                                 </div>
+
+                                {recommendedSip < 3000 && (
+                                    <div className="mb-6 p-4 bg-amber-500/20 border border-amber-500/40 rounded-2xl flex items-start gap-3 text-left">
+                                        <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+                                        <p className="text-xs text-amber-100 font-medium leading-relaxed">
+                                            Based on your current income and expenses, your available investment amount is limited. 
+                                            At the moment, you can only invest in the <strong>Low Risk (Debt Fund)</strong> basket.
+                                        </p>
+                                    </div>
+                                )}
+
+                                {recommendedSip < 3000 && (
+                                    <div className="flex bg-white/5 p-1 rounded-xl mb-6 border border-white/10">
+                                        {['LOW RISK', 'MEDIUM RISK', 'HIGH RISK'].map(cat => {
+                                            const isDisabled = cat !== 'LOW RISK';
+                                            return (
+                                                <div 
+                                                    key={cat}
+                                                    className={`flex-1 py-2 text-[10px] font-bold rounded-lg transition-all ${
+                                                        cat === 'LOW RISK' 
+                                                            ? 'bg-emerald-500 text-white shadow-lg' 
+                                                            : 'text-white/30 cursor-not-allowed'
+                                                    }`}
+                                                >
+                                                    {cat}
+                                                    {isDisabled && <span className="block text-[7px] text-amber-500/50 mt-0.5">Min ₹3,000 req.</span>}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
 
                                 <div className="flex gap-4">
                                     <button
@@ -672,7 +734,7 @@ export const InvestmentProgressDashboard = () => {
                                         Not right now
                                     </button>
                                     <button
-                                        onClick={handleApplyRecommendedSip}
+                                        onClick={() => handleApplyRecommendedSip(recommendedSip < 3000 ? 'LOW RISK' : undefined)}
                                         className="flex-1 py-4 bg-emerald-500 text-white font-extrabold rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.4)] hover:shadow-[0_0_30px_rgba(16,185,129,0.6)] hover:bg-emerald-400 transition"
                                     >
                                         Apply Allocation

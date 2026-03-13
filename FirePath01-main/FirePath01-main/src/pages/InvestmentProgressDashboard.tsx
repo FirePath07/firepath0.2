@@ -81,7 +81,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 export const InvestmentProgressDashboard = () => {
-    const { user, updateFinancialData } = useAuth();
+    const { user, loading, updateFinancialData } = useAuth();
     const navigate = useNavigate();
 
     const [isUpdateSipOpen, setIsUpdateSipOpen] = useState(false);
@@ -100,12 +100,13 @@ export const InvestmentProgressDashboard = () => {
     const [showFireCelebration, setShowFireCelebration] = useState(false);
 
     useEffect(() => {
+        if (loading) return;
         if (!user) {
             navigate('/login');
         } else {
             refreshMarketData();
         }
-    }, [user, navigate]);
+    }, [user, loading, navigate]);
 
     const refreshMarketData = async () => {
         setIsRefreshing(true);
@@ -138,6 +139,14 @@ export const InvestmentProgressDashboard = () => {
         setNavPrices(prices);
         setIsRefreshing(false);
     };
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+                <div className="animate-spin w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full"></div>
+            </div>
+        );
+    }
 
     if (!user) return null;
 

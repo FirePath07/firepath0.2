@@ -1,9 +1,10 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Navigation } from '../components/Navigation';
 import { formatIndianCurrency } from '../utils/currency';
 import { motion, AnimatePresence } from 'framer-motion';
+// ... rest of imports ...
 import {
     PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip,
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend, AreaChart, Area,
@@ -31,7 +32,7 @@ const CATEGORIES = [
 const QUICK_AMOUNTS = [1000, 2000, 3000, 5000];
 
 export const ExpensesPage = () => {
-    const { user, updateFinancialData } = useAuth();
+    const { user, loading, updateFinancialData } = useAuth();
     const navigate = useNavigate();
 
     // Form State
@@ -44,8 +45,22 @@ export const ExpensesPage = () => {
     const [showForm, setShowForm] = useState(false);
     const [error, setError] = useState('');
 
+    useEffect(() => {
+        if (loading) return;
+        if (!user) {
+            navigate('/');
+        }
+    }, [user, loading, navigate]);
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+                <div className="animate-spin w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full"></div>
+            </div>
+        );
+    }
+
     if (!user) {
-        navigate('/');
         return null;
     }
 

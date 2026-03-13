@@ -71,7 +71,7 @@ const strategyData: Record<string, any> = {
 
 
 export const StrategyExplanationPage = () => {
-    const { user } = useAuth();
+    const { user, loading } = useAuth();
     const navigate = useNavigate();
     const [hasMounted, setHasMounted] = useState(false);
 
@@ -79,8 +79,18 @@ export const StrategyExplanationPage = () => {
         setHasMounted(true);
     }, []);
 
-    if (!user) {
-        return <div className="min-h-screen bg-[#0f172a] text-white flex items-center justify-center">Loading...</div>;
+    useEffect(() => {
+        if (!loading && !user) {
+            navigate('/login');
+        }
+    }, [user, loading, navigate]);
+
+    if (loading || !user) {
+        return (
+            <div className="min-h-screen bg-[#0f172a] text-white flex items-center justify-center">
+                <div className="animate-spin w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full"></div>
+            </div>
+        );
     }
 
     const { financialData } = user;

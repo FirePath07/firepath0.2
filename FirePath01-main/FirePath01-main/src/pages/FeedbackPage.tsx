@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { Navigation } from '../components/Navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageSquare, Send, CheckCircle, Lightbulb, AlertCircle, Clock, Reply } from 'lucide-react';
@@ -13,13 +14,21 @@ interface FeedbackItem {
 }
 
 export const FeedbackPage = () => {
-    const { } = useAuth();
+    const { user, loading } = useAuth();
+    const navigate = useNavigate();
     const [type, setType] = useState<'feedback' | 'advice' | 'suggestion'>('feedback');
     const [content, setContent] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitted, setSubmitted] = useState(false);
     const [myFeedback, setMyFeedback] = useState<FeedbackItem[]>([]);
     const [loadingFeedback, setLoadingFeedback] = useState(true);
+
+    useEffect(() => {
+        if (loading) return;
+        if (!user) {
+            navigate('/login');
+        }
+    }, [user, loading, navigate]);
 
     const fetchMyFeedback = async () => {
         const token = localStorage.getItem('token');

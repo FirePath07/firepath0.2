@@ -30,7 +30,7 @@ interface FeedbackData {
 }
 
 export const AdminDashboard = () => {
-    const { user: currentUser } = useAuth();
+    const { user: currentUser, loading: authLoading } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
     const [activeTab, setActiveTab] = useState<'users' | 'suggestions'>('users');
@@ -46,6 +46,27 @@ export const AdminDashboard = () => {
     const [replyingTo, setReplyingTo] = useState<string | null>(null);
     const [replyText, setReplyText] = useState('');
     const [isSubmittingReply, setIsSubmittingReply] = useState(false);
+
+    const filteredUsers = users.filter(u => 
+        u.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        u.email.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    const filteredSuggestions = suggestions.filter(s => 
+        s.userName.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        s.content.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    const calculateFIRENumber = (u: UserData) => {
+        if (u.financialData?.selectedFireAmount) return u.financialData.selectedFireAmount;
+        const annualExpenses = (u.financialData?.monthlyExpenses || 0) * 12;
+        const inflationRate = (u.financialData?.inflationRate || 6) / 100;
+        const yearsToInvest = Math.max(0, (u.financialData?.targetRetirementAge || 60) - (u.financialData?.age || 25));
+        const futExp = annualExpenses * Math.pow(1 + inflationRate, yearsToInvest);
+        return futExp * 25;
+    };
+
+    const unreadCount = suggestions.filter(s => !s.isRead).length;
 
     const fetchData = async () => {
         setLoading(true);
@@ -75,17 +96,18 @@ export const AdminDashboard = () => {
     };
 
     useEffect(() => {
-        if (currentUser && currentUser.email !== 'firepathjjrp@gmail.com') {
+        if (authLoading) return;
+        if (!currentUser || currentUser.email !== 'firepathjjrp@gmail.com') {
             navigate('/profile');
             return;
         }
-        if (currentUser) fetchData();
+        fetchData();
 
         // Handle tab from URL
         const params = new URLSearchParams(location.search);
         const tab = params.get('tab');
         if (tab === 'suggestions') setActiveTab('suggestions');
-    }, [currentUser, navigate, location]);
+    }, [currentUser, authLoading, navigate, location]);
 
     const handleDeleteUser = async (userId: string) => {
         setIsDeleting(true);
@@ -172,26 +194,16 @@ export const AdminDashboard = () => {
         }
     };
 
-    const filteredUsers = users.filter(u => 
-        u.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        u.email.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    // ... existing functions ...
 
-    const filteredSuggestions = suggestions.filter(s => 
-        s.userName.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        s.content.toLowerCase().includes(searchTerm.toLowerCase())
-    );
 
-    const calculateFIRENumber = (u: UserData) => {
-        if (u.financialData?.selectedFireAmount) return u.financialData.selectedFireAmount;
-        const annualExpenses = (u.financialData?.monthlyExpenses || 0) * 12;
-        const inflationRate = (u.financialData?.inflationRate || 6) / 100;
-        const yearsToInvest = Math.max(0, (u.financialData?.targetRetirementAge || 60) - (u.financialData?.age || 25));
-        const futExp = annualExpenses * Math.pow(1 + inflationRate, yearsToInvest);
-        return futExp * 25;
-    };
-
-    const unreadCount = suggestions.filter(s => !s.isRead).length;
+    if (authLoading) {
+        return (
+            <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+                <div className="animate-spin w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full"></div>
+            </div>
+        );
+    }
 
     if (!currentUser || currentUser.email !== 'firepathjjrp@gmail.com') return null;
 

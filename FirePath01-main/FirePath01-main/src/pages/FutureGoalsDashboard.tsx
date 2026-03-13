@@ -8,7 +8,7 @@ import confetti from 'canvas-confetti';
 import { Target, Plus, Car, Laptop, Plane, AlertTriangle, CheckCircle2, Goal, X, Trash2, TrendingUp } from 'lucide-react';
 
 export const FutureGoalsDashboard = () => {
-    const { user, updateFinancialData } = useAuth();
+    const { user, loading, updateFinancialData } = useAuth();
     const navigate = useNavigate();
 
     const [isAddGoalOpen, setIsAddGoalOpen] = useState(false);
@@ -28,16 +28,23 @@ export const FutureGoalsDashboard = () => {
     const [goalTimeline, setGoalTimeline] = useState(''); // in years
     const [goalCategory, setGoalCategory] = useState('Other');
     
-
-
     // Add Savings Form State
     const [addAmount, setAddAmount] = useState('');
 
     useEffect(() => {
+        if (loading) return;
         if (!user) {
             navigate('/login');
         }
-    }, [user, navigate]);
+    }, [user, loading, navigate]);
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+                <div className="animate-spin w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full"></div>
+            </div>
+        );
+    }
 
     if (!user) return null;
 

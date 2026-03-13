@@ -40,13 +40,20 @@ const StatCard = ({ title, value, subtitle, isHighlighted = false }: { title: st
 }
 
 export const UserProfileDashboard = () => {
-  const { user, hardReset, updateFinancialData } = useAuth();
+  const { user, loading, hardReset, updateFinancialData } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isHardResetOpen, setIsHardResetOpen] = useState(false);
   const [isTutorialMode, setIsTutorialMode] = useState(false);
   const [showFireCelebration, setShowFireCelebration] = useState(false);
+
+  useEffect(() => {
+    if (loading) return;
+    if (!user) {
+      navigate('/');
+    }
+  }, [user, loading, navigate]);
 
   useEffect(() => {
     if (location.state?.tutorialMode) {
@@ -59,8 +66,15 @@ export const UserProfileDashboard = () => {
     }
   }, [location, user, navigate]);
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="animate-spin w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
+
   if (!user) {
-    navigate('/');
     return null;
   }
 

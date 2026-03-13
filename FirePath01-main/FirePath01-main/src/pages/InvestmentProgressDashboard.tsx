@@ -286,10 +286,17 @@ export const InvestmentProgressDashboard = () => {
         const splurge = surplus >= 3000 ? (surplus - 3000) * 0.15 : 0;
         const investable = Math.max(0, surplus - splurge);
 
+        // Recalculate FIRE Number (Inflated 25x Rule)
+        const inflationRate = (financialData.inflationRate || 6) / 100;
+        const yearsToInvest = Math.max(0, (financialData.targetRetirementAge || 60) - (financialData.age || 25));
+        const futureAnnualExpenses = (expenses * 12) * Math.pow(1 + inflationRate, yearsToInvest);
+        const newFireNumber = futureAnnualExpenses * 25;
+
         await updateFinancialData({
             monthlyIncome: salary,
             monthlyExpenses: expenses,
-            defaultMonthlySIP: investable // Re-calculate default SIP based on new surplus
+            defaultMonthlySIP: investable,
+            selectedFireAmount: newFireNumber // Update the target corpus to reflect new expenses
         });
 
         setRecommendedSip(investable);

@@ -56,12 +56,12 @@ export const ExpensesPage = () => {
     const fireSip = financialData.defaultMonthlySIP || 0;
 
     // Derived Calculations
-    const currentMonth = new Date().getMonth();
+    const currentMonth = new Date().getMonth(); // 0-11
     const currentYear = new Date().getFullYear();
 
     const currentMonthExpenses = expensesList.filter(exp => {
-        const d = new Date(exp.date);
-        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+        const [y, m] = exp.date.split('-').map(Number);
+        return y === currentYear && m === (currentMonth + 1);
     });
 
     const totalMonthlyExpenses = currentMonthExpenses.reduce((sum, exp) => sum + exp.amount, 0);
@@ -92,19 +92,19 @@ export const ExpensesPage = () => {
         const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         const last4 = [];
         for (let i = 3; i >= 0; i--) {
-            const m = (currentMonth - i + 12) % 12;
-            const y = currentMonth - i < 0 ? currentYear - 1 : currentYear;
+            const mIdx = (currentMonth - i + 12) % 12;
+            const yVal = currentMonth - i < 0 ? currentYear - 1 : currentYear;
             const total = expensesList
                 .filter(exp => {
-                    const d = new Date(exp.date);
-                    return d.getMonth() === m && d.getFullYear() === y;
+                    const [y, m] = exp.date.split('-').map(Number);
+                    return m === (mIdx + 1) && y === yVal;
                 })
                 .reduce((sum, exp) => sum + exp.amount, 0);
 
-            last4.push({ name: months[m], amount: total });
+            last4.push({ name: months[mIdx], amount: total });
         }
         return last4;
-    }, [expensesList, currentMonth]);
+    }, [expensesList, currentMonth, currentYear]);
 
     // Impact Logic
     const fireImpact = useMemo(() => {

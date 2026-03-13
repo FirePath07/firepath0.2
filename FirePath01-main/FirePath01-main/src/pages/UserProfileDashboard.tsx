@@ -10,12 +10,31 @@ import { Award } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 const StatCard = ({ title, value, subtitle, isHighlighted = false }: { title: string, value: string, subtitle: string, isHighlighted?: boolean }) => {
-  const highlightClass = isHighlighted ? 'bg-emerald-100 border-emerald-600 scale-105 dark:bg-emerald-900/40 dark:border-emerald-500' : 'bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700';
+  let colorClass = 'text-emerald-700 dark:text-emerald-400';
+  let borderClass = 'border-emerald-600 dark:border-emerald-500';
+  let bgClass = isHighlighted ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'bg-white dark:bg-gray-800';
+
+  if (title === 'Years to FIRE') {
+    colorClass = 'text-amber-600 dark:text-amber-400';
+    borderClass = 'border-amber-500 dark:border-amber-400';
+    bgClass = 'bg-amber-50/50 dark:bg-amber-900/10';
+  } else if (title === 'Annual Income') {
+    colorClass = 'text-blue-600 dark:text-blue-400';
+    borderClass = 'border-blue-500 dark:border-blue-400';
+    bgClass = 'bg-blue-50/50 dark:bg-blue-900/10';
+  } else if (title === 'Savings Rate') {
+    colorClass = 'text-rose-600 dark:text-rose-400';
+    borderClass = 'border-rose-500 dark:border-rose-400';
+    bgClass = 'bg-rose-50/50 dark:bg-rose-900/10';
+  }
+
+  const highlightEffect = isHighlighted ? 'scale-105 shadow-xl shadow-gray-200/50 dark:shadow-none' : '';
+
   return (
-    <div className={`rounded-xl shadow-lg p-6 border-l-4 transition-all duration-300 ${highlightClass}`}>
-      <p className="text-gray-600 dark:text-gray-400 text-sm font-medium mb-1">{title}</p>
-      <p className="text-3xl font-bold text-emerald-700 dark:text-emerald-400">{value}</p>
-      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">{subtitle}</p>
+    <div className={`rounded-3xl shadow-lg p-8 border-l-8 transition-all duration-500 ${bgClass} ${borderClass} ${highlightEffect} border-t border-r border-b border-gray-100 dark:border-gray-700/50`}>
+      <p className="text-gray-500 dark:text-gray-400 text-[10px] font-black uppercase tracking-[0.2em] mb-3">{title}</p>
+      <p className={`text-4xl font-black tracking-tight ${colorClass}`}>{value}</p>
+      <p className="text-xs text-gray-400 dark:text-gray-500 mt-3 font-bold italic">{subtitle}</p>
     </div>
   )
 }

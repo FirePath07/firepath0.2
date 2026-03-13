@@ -264,20 +264,26 @@ export const QuestionnairePage = () => {
     else if (foundationAverage >= 3.1 && foundationAverage <= 4.0) foundationLevel = "Strong";
     else if (foundationAverage >= 4.1) foundationLevel = "Very Strong";
 
+    // Recalculate FIRE Number (Inflated 25x Rule) for initial storage
+    const inflationRate = (answers.inflationRate ? Number(answers.inflationRate) : 6) / 100;
+    const futureAnnualExpenses = (monthlyExpenses * 12) * Math.pow(1 + inflationRate, yearsToRetire);
+    const fireTarget = futureAnnualExpenses * 25;
+
     const finalData = {
       ...answers,
       age: currentAge,
       monthlyIncome,
       monthlyExpenses,
       currentSavings,
-      selectedFireAmount,
+      selectedFireAmount: selectedFireAmount || fireTarget, // Use custom if set, else use calculated 25x
       targetRetirementAge: retireAge,
       timePressure,
       foundationLevel,
       riskProfile: finalStrategy,
       mostImportantMetric: 'Years to FIRE' as const,
       defaultMonthlySIP,
-      ...(selectedBasketData && { selectedBasket: selectedBasketData })
+      ...(selectedBasketData && { selectedBasket: selectedBasketData }),
+      inflationRate: inflationRate * 100
     };
 
     updateFinancialData(finalData);

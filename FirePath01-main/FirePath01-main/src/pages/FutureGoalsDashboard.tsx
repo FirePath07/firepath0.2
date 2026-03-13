@@ -43,7 +43,19 @@ export const FutureGoalsDashboard = () => {
 
     const { financialData } = user;
     const goals = financialData.goals || [];
-    const monthlySurplus = Math.max(0, (financialData.monthlyIncome || 0) - (financialData.monthlyExpenses || 0));
+    const monthlyIncome = financialData.monthlyIncome || 0;
+    const monthlyExpenses = financialData.monthlyExpenses || 0;
+    const monthlySurplus = Math.max(0, monthlyIncome - monthlyExpenses);
+    const fireSip = financialData.defaultMonthlySIP || 0;
+
+    const totalGoalsSip = goals.reduce((sum, goal) => {
+        const remAmt = Math.max(0, goal.targetAmount - goal.currentSavings);
+        const reqSip = goal.targetMonths > 0 ? remAmt / goal.targetMonths : 0;
+        return sum + (reqSip > 0 && remAmt > 0 ? reqSip : 0);
+    }, 0);
+
+    const isLudicrous = (totalGoalsSip + fireSip) > monthlySurplus && monthlySurplus > 0;
+    const totalBurnRate = ((totalGoalsSip + fireSip) / monthlySurplus) * 100;
 
     const handleCreateGoal = async () => {
         if (!goalName || !goalTarget || !goalTimeline) return;
@@ -177,20 +189,58 @@ export const FutureGoalsDashboard = () => {
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16">
                 
                 {/* Header */}
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6 bg-white dark:bg-gray-800 p-8 rounded-[2.5rem] shadow-xl shadow-gray-200/50 dark:shadow-none border border-gray-100 dark:border-gray-700">
-                    <div>
-                        <h1 className="text-4xl font-black text-gray-900 dark:text-white mb-2 tracking-tight">Future Goals <span className="text-emerald-500">Planner</span></h1>
-                        <p className="text-gray-500 dark:text-gray-400 font-medium max-w-xl">
-                            Track personal purchases independently. Achieve your dreams without touching your FIRE corpus.
-                        </p>
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6 bg-white dark:bg-gray-800 p-8 rounded-[3rem] shadow-2xl shadow-gray-200/50 dark:shadow-none border border-gray-100 dark:border-gray-700 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none"></div>
+                    <div className="relative z-10">
+                        <h1 className="text-5xl font-black text-gray-900 dark:text-white mb-3 tracking-tighter italic">Future <span className="text-emerald-500">Goals</span></h1>
+                        <div className="flex flex-wrap gap-4 items-center">
+                            <p className="text-gray-500 dark:text-gray-400 font-bold max-w-xl">
+                                Separate your dreams from your retirement. Track big purchases without risking your FIRE path.
+                            </p>
+                            <div className="px-5 py-2 bg-gray-100 dark:bg-gray-700/50 rounded-2xl border border-gray-200 dark:border-gray-600">
+                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Available Surplus</p>
+                                <p className="text-lg font-black text-gray-900 dark:text-white">{formatIndianCurrency(monthlySurplus)} <span className="text-[10px] text-gray-400">/mo</span></p>
+                            </div>
+                        </div>
                     </div>
                     <button
                         onClick={() => { setIsEditMode(false); setGoalName(''); setGoalTarget(''); setGoalSavings(''); setGoalTimeline(''); setGoalCategory('Other'); setIsAddGoalOpen(true); }}
-                        className="px-8 py-4 bg-gradient-to-tr from-emerald-600 to-emerald-400 text-white font-black rounded-2xl shadow-xl shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:-translate-y-1 transition-all flex items-center gap-3 active:scale-95"
+                        className="px-10 py-5 bg-black dark:bg-white text-white dark:text-black font-black rounded-[2rem] shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center gap-3 relative z-10 group"
                     >
-                        <Plus className="w-5 h-5 stroke-[3]" /> Create New Goal
+                        <Plus className="w-6 h-6 stroke-[4] group-hover:rotate-90 transition-transform duration-500" /> 
+                        <span className="uppercase tracking-widest text-xs">Create New Goal</span>
                     </button>
                 </div>
+
+                {/* Extreme Warning System */}
+                {isLudicrous && (
+                    <motion.div 
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        className="mb-12 p-8 bg-rose-500 text-white rounded-[3rem] shadow-2xl shadow-rose-500/40 relative overflow-hidden"
+                    >
+                        <div className="absolute right-0 bottom-0 opacity-10 -mr-10 -mb-10">
+                            <AlertTriangle size={200} />
+                        </div>
+                        <div className="flex flex-col md:flex-row items-center gap-8 relative z-10">
+                            <div className="w-20 h-20 bg-white/20 backdrop-blur-md rounded-3xl flex items-center justify-center shrink-0 animate-pulse">
+                                <AlertTriangle size={40} className="text-white" />
+                            </div>
+                            <div>
+                                <h2 className="text-3xl font-black uppercase tracking-tighter mb-2 italic">⚠️ Plan Feasibility: CRITICAL</h2>
+                                <p className="text-rose-100 font-bold text-lg leading-relaxed max-w-3xl">
+                                    Your total monthly commitment <span className="text-white bg-black/20 px-2 rounded-lg">{formatIndianCurrency(totalGoalsSip + fireSip)}</span> exceeds your surplus <span className="text-white bg-black/20 px-2 rounded-lg">{formatIndianCurrency(monthlySurplus)}</span>. 
+                                    This plan is mathematically impossible and will eat into your essential expenses or debt. Delay some goals or increase income immediately!
+                                </p>
+                                <div className="mt-6 flex flex-wrap gap-3">
+                                    <div className="px-4 py-2 bg-white/20 rounded-full text-xs font-black uppercase tracking-widest">FIRE Requirement: {formatIndianCurrency(fireSip)}</div>
+                                    <div className="px-4 py-2 bg-white/20 rounded-full text-xs font-black uppercase tracking-widest">Goals Requirement: {formatIndianCurrency(totalGoalsSip)}</div>
+                                    <div className="px-4 py-2 bg-black/20 rounded-full text-xs font-black uppercase tracking-widest text-rose-200">Allocation: {totalBurnRate.toFixed(0)}% of Surplus</div>
+                                </div>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
 
                 {/* Goals List */}
                 {goals.length === 0 ? (
@@ -248,15 +298,16 @@ export const FutureGoalsDashboard = () => {
                                             <div className="flex items-center gap-2">
                                                  <button
                                                     onClick={() => handleEditGoal(goal)}
-                                                    className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-all"
+                                                    title="Quick Edit"
+                                                    className="w-10 h-10 rounded-2xl flex items-center justify-center text-gray-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/40 transition-all border border-transparent hover:border-emerald-200"
                                                 >
-                                                    <Plus className="w-4 h-4 rotate-45" /> 
+                                                    <Target className="w-5 h-5" /> 
                                                 </button>
                                                 <button
                                                     onClick={() => handleDeleteGoal(goal.id)}
-                                                    className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-all"
+                                                    className="w-10 h-10 rounded-2xl flex items-center justify-center text-gray-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-all border border-transparent hover:border-rose-200"
                                                 >
-                                                    <Trash2 className="w-4 h-4" />
+                                                    <Trash2 className="w-5 h-5" />
                                                 </button>
                                             </div>
                                         </div>
@@ -294,27 +345,43 @@ export const FutureGoalsDashboard = () => {
                                             </div>
                                         </div>
 
-                                        {isChallenging && (
+                                        {isChallenging && !isLudicrous && (
+                                            <div className="flex items-center gap-3 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/50 rounded-2xl mb-4">
+                                                <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0" />
+                                                <p className="text-[11px] text-amber-600 dark:text-amber-400 font-bold leading-tight uppercase tracking-wider">
+                                                    Timeline Tight: Consider increasing initial savings or delaying goal.
+                                                </p>
+                                            </div>
+                                        )}
+                                        {isLudicrous && (
                                             <div className="flex items-center gap-3 p-4 bg-rose-50 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-800/50 rounded-2xl mb-4">
                                                 <AlertTriangle className="w-5 h-5 text-rose-500 shrink-0" />
-                                                <p className="text-[11px] text-rose-600 dark:text-rose-400 font-bold leading-tight">
-                                                    SIP requirement ({formatIndianCurrency(requiredSip)}) exceeds monthly surplus. Consider extending timeline.
+                                                <p className="text-[11px] text-rose-600 dark:text-rose-400 font-black leading-tight uppercase tracking-wider">
+                                                    UNSUSTAINABLE: Combined plan exceeds surplus!
                                                 </p>
                                             </div>
                                         )}
                                     </div>
 
-                                    <div className="px-8 pb-8">
+                                    <div className="px-8 pb-8 flex gap-3">
                                         {!isComplete ? (
-                                            <button 
-                                                onClick={() => { setSelectedGoalId(goal.id); setIsAddSavingsOpen(true); }}
-                                                className="w-full py-5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-black rounded-2xl shadow-xl hover:shadow-emerald-500/20 hover:-translate-y-1 active:scale-95 transition-all text-sm uppercase tracking-widest flex items-center justify-center gap-3"
-                                            >
-                                                <Plus className="w-5 h-5 stroke-[3]" /> Add Savings
-                                            </button>
+                                            <>
+                                                <button 
+                                                    onClick={() => { setSelectedGoalId(goal.id); setIsAddSavingsOpen(true); }}
+                                                    className="flex-[2] py-4 bg-black dark:bg-white text-white dark:text-gray-900 font-black rounded-2xl shadow-xl hover:shadow-emerald-500/20 hover:-translate-y-1 active:scale-95 transition-all text-xs uppercase tracking-widest flex items-center justify-center gap-2"
+                                                >
+                                                    <Plus className="w-4 h-4 stroke-[4]" /> Add Funds
+                                                </button>
+                                                <button 
+                                                    onClick={() => handleEditGoal(goal)}
+                                                    className="flex-1 py-4 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-black rounded-2xl hover:bg-gray-200 transition-all text-[10px] uppercase tracking-widest"
+                                                >
+                                                    Settings
+                                                </button>
+                                            </>
                                         ) : (
-                                            <div className="w-full py-5 bg-emerald-500/10 border-2 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-black rounded-2xl flex items-center justify-center gap-3">
-                                                <CheckCircle2 className="w-5 h-5" /> GOAL REACHED
+                                            <div className="w-full py-4 bg-emerald-500/10 border-2 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-black rounded-2xl flex items-center justify-center gap-3">
+                                                <CheckCircle2 className="w-5 h-5" /> MILESTONE ACHIEVED
                                             </div>
                                         )}
                                     </div>

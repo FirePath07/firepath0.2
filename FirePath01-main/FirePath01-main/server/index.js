@@ -11,17 +11,30 @@ app.use(express.json()); // Parse JSON bodies
 
 const PORT = process.env.PORT || 5000; // Default to 5000 as per plan
 
-// Connect to MongoDB
-const uri = process.env.ATLAS_URI || process.env.MONGODB_URI;
-if (!uri) {
-  console.error("No MongoDB URI found in environment variables!");
-}
-mongoose.connect(uri)
-  .then(() => console.log("MongoDB database connection established successfully"))
-  .catch(err => {
+let isConnected = false;
+
+app.use(async (req, res, next) => {
+  const uri = process.env.ATLAS_URI || process.env.MONGODB_URI;
+  if (!uri) {
+    console.error("No MongoDB URI found in environment variables!");
+    return res.status(500).json({ msg: 'No MongoDB URI configured' });
+  }
+  
+  if (isConnected || mongoose.connection.readyState === 1) {
+    isConnected = true;
+    return next();
+  }
+
+  try {
+    await mongoose.connect(uri);
+    isConnected = true;
+    console.log("MongoDB database connection established successfully");
+    next();
+  } catch (err) {
     console.error("MongoDB connection error: ", err);
-    // Don't exit process in serverless environment
-  });
+    res.status(500).json({ msg: 'Failed to connect to database' });
+  }
+});
 
 app.use('/api/auth', authRoutes);
 app.use('/api/feedback', feedbackRoutes);

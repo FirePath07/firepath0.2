@@ -224,6 +224,7 @@ export const QuestionnairePage = () => {
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number | string>>({});
   const [manualCategory, setManualCategory] = useState<string | null>(null);
+  const [selectedBasketIndex, setSelectedBasketIndex] = useState<number>(0);
 
 
   // removed handleFireSelection
@@ -1078,7 +1079,7 @@ export const QuestionnairePage = () => {
                   if (manualCategory === 'HIGH RISK') strategyName = "High Growth Strategy";
                   if (manualCategory === 'MEDIUM RISK') strategyName = "Balanced Growth Strategy";
 
-                  const defaultBasket = baskets[0];
+                  const defaultBasket = baskets[selectedBasketIndex];
                   const basketData = {
                     name: defaultBasket.title,
                     funds: defaultBasket.funds.map(f => ({
@@ -1103,7 +1104,7 @@ export const QuestionnairePage = () => {
                   <button
                     key={cat}
                     disabled={isDisabled}
-                    onClick={() => setManualCategory(cat)}
+                    onClick={() => { setManualCategory(cat); setSelectedBasketIndex(0); }}
                     className={`flex-1 min-w-[120px] py-3 text-sm font-bold rounded-xl transition-all duration-300 relative group/btn ${displayCategory === cat
                       ? 'bg-gradient-to-r from-emerald-600 to-emerald-800 text-white shadow-lg shadow-emerald-900/50 transform scale-[1.02]'
                       : 'text-gray-500 hover:text-white hover:bg-gray-800/50'
@@ -1135,13 +1136,16 @@ export const QuestionnairePage = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              {baskets.map((basket, idx) => (
+              {baskets.map((basket, idx) => {
+                const isSelected = selectedBasketIndex === idx;
+                return (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 * idx, duration: 0.4 }}
                   key={idx}
-                  className="relative group bg-gradient-to-b from-gray-800/90 to-gray-900/90 border border-gray-700 hover:border-emerald-500/50 rounded-2xl p-6 shadow-xl hover:shadow-[0_10px_40px_-10px_rgba(16,185,129,0.3)] transition-all duration-300 flex flex-col h-full overflow-hidden"
+                  onClick={() => setSelectedBasketIndex(idx)}
+                  className={`relative cursor-pointer group bg-gradient-to-b from-gray-800/90 to-gray-900/90 border ${isSelected ? 'border-emerald-500 ring-2 ring-emerald-500' : 'border-gray-700 hover:border-emerald-500/50'} rounded-2xl p-6 shadow-xl hover:shadow-[0_10px_40px_-10px_rgba(16,185,129,0.3)] transition-all duration-300 flex flex-col h-full overflow-hidden`}
                 >
                   <div className="absolute inset-0 bg-gradient-to-b from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
 
@@ -1177,27 +1181,16 @@ export const QuestionnairePage = () => {
                   </ul>
 
                   <button
-                    onClick={() => {
-                      let strategyName = finalStrategy;
-                      if (manualCategory === 'LOW RISK') strategyName = "Capital Stability Strategy";
-                      if (manualCategory === 'HIGH RISK') strategyName = "High Growth Strategy";
-                      if (manualCategory === 'MEDIUM RISK') strategyName = "Balanced Growth Strategy";
-
-                      const basketData = {
-                        name: basket.title,
-                        funds: basket.funds.map(f => ({
-                          name: f.name,
-                          split: f.split
-                        }))
-                      };
-                      handleComplete(strategyName, basketData);
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedBasketIndex(idx);
                     }}
-                    className="w-full mt-auto py-2.5 bg-gray-800/80 border border-emerald-500/30 text-emerald-400 font-bold rounded-xl hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-all duration-300 shadow-sm group-hover:shadow-emerald-500/20 relative z-10 text-sm"
+                    className={`w-full mt-auto py-2.5 bg-gray-800/80 border text-sm font-bold rounded-xl transition-all duration-300 shadow-sm relative z-10 ${isSelected ? 'border-emerald-500 bg-emerald-500 text-white shadow-emerald-500/50' : 'border-emerald-500/30 text-emerald-400 hover:bg-emerald-500 hover:text-white hover:border-emerald-500 group-hover:shadow-emerald-500/20'}`}
                   >
-                    Select Basket {idx + 1}
+                    {isSelected ? 'Selected Basket' : `Select Basket ${idx + 1}`}
                   </button>
                 </motion.div>
-              ))}
+              )})}
             </div>
           </div>
         </div>

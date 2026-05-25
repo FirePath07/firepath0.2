@@ -24,6 +24,9 @@ export const SignUpPage = () => {
       if (!email || !password || !name) {
         throw new Error('Please fill in all fields');
       }
+      if (/\d/.test(name)) {
+        throw new Error('Full Name cannot contain numbers');
+      }
       if (password !== confirmPassword) {
         throw new Error('Passwords do not match');
       }

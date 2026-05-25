@@ -108,7 +108,24 @@ export const StrategyExplanationPage = () => {
     const { splurgeMoney, totalSIP: investmentBudget } = calculateFinancialAllocation(income, monthlyExpenses);
     const expensesBudget = monthlyExpenses;
 
-    const distributedFunds = distributeSIPAcrossFunds(investmentBudget, activeStrategy.baskets[0].funds);
+    // Helper to guess risk based on fund name if missing
+    const getRiskFromName = (name: string) => {
+        const lowerName = name.toLowerCase();
+        if (lowerName.includes('small') || lowerName.includes('mid') || lowerName.includes('focused') || lowerName.includes('opportunity')) return 'aggressive';
+        if (lowerName.includes('index') || lowerName.includes('large') || lowerName.includes('flexi') || lowerName.includes('equity')) return 'moderate';
+        if (lowerName.includes('bond') || lowerName.includes('liquid') || lowerName.includes('gold') || lowerName.includes('debt')) return 'stable';
+        return 'moderate';
+    };
+
+    const activeBasket = financialData.selectedBasket ? {
+        ...financialData.selectedBasket,
+        funds: financialData.selectedBasket.funds.map((f: any) => ({
+            ...f,
+            risk: f.risk || getRiskFromName(f.name)
+        }))
+    } : activeStrategy.baskets[0];
+
+    const distributedFunds = distributeSIPAcrossFunds(investmentBudget, activeBasket.funds);
 
     const incomeBreakdown = [
         {
@@ -353,7 +370,7 @@ export const StrategyExplanationPage = () => {
                 >
                     <h3 className="text-3xl font-extrabold text-white mb-8">Your Investment Baskets</h3>
                     <div className="space-y-8">
-                        {activeStrategy.baskets.map((basket: any, bIdx: number) => (
+                        {[activeBasket].map((basket: any, bIdx: number) => (
                             <div key={bIdx} className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-xl rounded-3xl p-8 md:p-10 border border-gray-700/50 shadow-2xl relative overflow-hidden group hover:border-emerald-500/30 transition-all duration-500">
                                 <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl group-hover:bg-emerald-500/10 transition duration-500 pointer-events-none" />
 

@@ -74,10 +74,21 @@ export const FutureGoalsDashboard = () => {
 
         const remainingAmt = Math.max(0, targetAmount - currentSavings);
         const newGoalSip = targetMonths > 0 ? remainingAmt / targetMonths : 0;
-        const available = monthlySurplus - fireSip - totalGoalsSip;
+        let available = monthlySurplus - fireSip - totalGoalsSip;
+        if (isEditMode && selectedGoalId) {
+            const oldGoal = goals.find(g => g.id === selectedGoalId);
+            if (oldGoal && oldGoal.isActive) {
+                const remAmt = Math.max(0, oldGoal.targetAmount - oldGoal.currentSavings);
+                const oldSip = oldGoal.targetMonths > 0 ? remAmt / oldGoal.targetMonths : 0;
+                available += oldSip;
+            }
+        }
         const infeasible = newGoalSip > available && newGoalSip > 0;
         
         if (isEditMode && selectedGoalId) {
+            const oldGoal = goals.find(g => g.id === selectedGoalId);
+            const savingsDiff = currentSavings - (oldGoal?.currentSavings || 0);
+
             const updatedGoals = goals.map(g => {
                 if (g.id === selectedGoalId) {
                     return {
@@ -92,7 +103,10 @@ export const FutureGoalsDashboard = () => {
                 }
                 return g;
             });
-            await updateFinancialData({ goals: updatedGoals });
+            await updateFinancialData({ 
+                goals: updatedGoals,
+                currentSavings: Math.max(0, (financialData.currentSavings || 0) - savingsDiff)
+            });
             setIsEditMode(false);
             setSelectedGoalId(null);
         } else {
@@ -108,7 +122,10 @@ export const FutureGoalsDashboard = () => {
             };
 
             const updatedGoals = [...goals, newGoal];
-            await updateFinancialData({ goals: updatedGoals });
+            await updateFinancialData({ 
+                goals: updatedGoals,
+                currentSavings: Math.max(0, (financialData.currentSavings || 0) - currentSavings)
+            });
             
             if (!infeasible) {
                 const investmentSip = financialData.defaultMonthlySIP || 0;
@@ -172,7 +189,10 @@ export const FutureGoalsDashboard = () => {
             return g;
         });
 
-        await updateFinancialData({ goals: updatedGoals });
+        await updateFinancialData({ 
+            goals: updatedGoals,
+            currentSavings: Math.max(0, (financialData.currentSavings || 0) - amountToAdd)
+        });
         if (goalReached) {
             setAchievedGoal(goalReached);
             confetti({

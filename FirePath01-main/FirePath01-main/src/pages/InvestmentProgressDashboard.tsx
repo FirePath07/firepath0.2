@@ -208,16 +208,15 @@ export const InvestmentProgressDashboard = () => {
         const defaultSip = financialData.defaultMonthlySIP || 0;
         const totalBonus = Number(bonusAmount) || 0;
         
-        // Amount logic: We invest the defaultSip + any extra bonus in the FIRE portfolio.
-        // Additionally, we process the active goal SIPs.
-        const fireInvestAmount = defaultSip + totalBonus;
+        // Amount logic: We invest the overallSIP (FIRE + Goals) + any extra bonus in the portfolio.
+        const investAmount = overallSIP + totalBonus;
         
-        if (fireInvestAmount <= 0 && activeGoalsSIP <= 0) return;
+        if (investAmount <= 0) return;
 
-        // 1. Update Portfolio (FIRE Corpus)
+        // 1. Update Portfolio (Total Wealth)
         const newPortfolio = [...portfolio];
-        if (fireInvestAmount > 0) {
-            const distributedFunds = distributeSIPAcrossFunds(fireInvestAmount, basket.funds);
+        if (investAmount > 0) {
+            const distributedFunds = distributeSIPAcrossFunds(investAmount, basket.funds);
             distributedFunds.forEach(fund => {
                 if (fund.amount <= 0) return;
                 const nav = navPrices[fund.name] || getBaseNav(fund.name);
@@ -248,22 +247,22 @@ export const InvestmentProgressDashboard = () => {
             if (reqSip > 0 && remainingAmt > 0) {
                 const newSavings = goal.currentSavings + reqSip;
                 if (newSavings >= goal.targetAmount && goal.currentSavings < goal.targetAmount) {
-                    goalReached = { ...goal, currentSavings: newSavings };
+                    goalReached = { ...goal, currentSavings: newSavings, targetMonths: Math.max(0, goal.targetMonths - 1) };
                 }
-                return { ...goal, currentSavings: newSavings };
+                return { ...goal, currentSavings: newSavings, targetMonths: Math.max(0, goal.targetMonths - 1) };
             }
             return goal;
         });
 
         const newMonthlyContribs = [...(financialData.monthlyContributions || []), {
             date: new Date().toISOString().split('T')[0],
-            amount: fireInvestAmount + activeGoalsSIP // Total cash out
+            amount: investAmount // Total cash out
         }];
 
         const newHistory = [...(financialData.portfolioHistory || []), {
             date: new Date().toISOString().split('T')[0],
-            totalInvested: totalInvested + fireInvestAmount,
-            currentValue: currentValue + fireInvestAmount
+            totalInvested: totalInvested + investAmount,
+            currentValue: currentValue + investAmount
         }];
 
         await updateFinancialData({
@@ -398,7 +397,7 @@ export const InvestmentProgressDashboard = () => {
                         <p className="text-[10px] text-gray-500 mt-1 font-medium">Inv: {formatIndianCurrency(financialData.defaultMonthlySIP || 0)} | Goals: {formatIndianCurrency(activeGoalsSIP)}</p>
                     </div>
                     <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-6 border border-gray-100 dark:border-gray-700 flex flex-col justify-center transition hover:shadow-xl">
-                        <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">Total Invested</p>
+                        <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">Total Invested (FIRE)</p>
                         <p className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">{formatIndianCurrency(totalInvested)}</p>
                     </div>
                     <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-6 border border-gray-100 dark:border-gray-700 flex flex-col justify-center transition hover:shadow-xl">
@@ -583,9 +582,10 @@ export const InvestmentProgressDashboard = () => {
                             <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Confirm your monthly SIP allocation. It will be seamlessly split according to your selected basket ({basket?.name || 'None'}).</p>
 
                             <div className="mb-4">
-                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Suggested Monthly SIP (₹)</label>
+                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Overall Suggested SIP (₹)</label>
                                 <div className="w-full px-5 py-4 bg-gray-100 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl font-bold text-gray-800 dark:text-gray-200 text-lg">
-                                    {formatIndianCurrency(financialData.defaultMonthlySIP || 0)}
+                                    {formatIndianCurrency(overallSIP)}
+                                    {activeGoalsSIP > 0 && <span className="text-xs text-gray-500 font-normal block mt-1">(FIRE: {formatIndianCurrency(financialData.defaultMonthlySIP || 0)} + Goals: {formatIndianCurrency(activeGoalsSIP)})</span>}
                                 </div>
                             </div>
                             <div className="mb-6">
@@ -597,14 +597,14 @@ export const InvestmentProgressDashboard = () => {
                                     placeholder="Bonus Amount (e.g. 5000)"
                                     className="w-full px-5 py-4 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl font-bold text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none transition text-lg"
                                 />
-                                <p className="mt-3 font-bold text-sm text-gray-700 dark:text-gray-300 text-right">Total: {formatIndianCurrency((financialData.defaultMonthlySIP || 0) + (Number(bonusAmount) || 0))}</p>
+                                <p className="mt-3 font-bold text-sm text-gray-700 dark:text-gray-300 text-right">Total Investment: {formatIndianCurrency(overallSIP + (Number(bonusAmount) || 0))}</p>
                             </div>
 
-                            {((financialData.defaultMonthlySIP || 0) + (Number(bonusAmount) || 0)) > 0 && basket && (
+                            {(overallSIP + (Number(bonusAmount) || 0)) > 0 && basket && (
                                 <div className="mb-6 bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-xl border border-emerald-100 dark:border-emerald-800/30">
                                     <p className="text-xs font-bold uppercase text-emerald-800 dark:text-emerald-400 mb-3 tracking-wider">Preview Allocation</p>
                                     <div className="space-y-4">
-                                        {distributeSIPAcrossFunds(((financialData.defaultMonthlySIP || 0) + (Number(bonusAmount) || 0)), basket.funds).map(f => (
+                                        {distributeSIPAcrossFunds(overallSIP + (Number(bonusAmount) || 0), basket.funds).map(f => (
                                             <div key={f.name} className="flex justify-between items-center text-sm">
                                                 <div className="flex flex-col">
                                                     <span className="text-gray-700 dark:text-gray-300 font-bold truncate pr-4">{f.name}</span>
